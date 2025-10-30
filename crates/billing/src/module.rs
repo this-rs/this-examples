@@ -38,12 +38,9 @@ impl Module for BillingModule {
     }
 
     fn links_config(&self) -> Result<LinksConfig, anyhow::Error> {
-        // Return empty configuration for now
-        Ok(LinksConfig {
-            links: vec![],
-            entities: vec![],
-            validation_rules: None,
-        })
+        // Load configuration from YAML file
+        let config_path = concat!(env!("CARGO_MANIFEST_DIR"), "/config/links.yaml");
+        LinksConfig::from_yaml_file(config_path)
     }
 
     fn get_entity_fetcher(&self, entity_type: &str) -> Option<Arc<dyn EntityFetcher>> {

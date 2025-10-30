@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
         let link_service_arc = Arc::new(InMemoryLinkService::new());
 
         // Populate test data BEFORE building the host
-        populate_test_data(stores_for_seed).await?;
+        populate_test_data(stores_for_seed, link_service_arc.clone()).await?;
 
         // Construire l'hôte (agnostique au transport) ensuite
         let host = Arc::new(

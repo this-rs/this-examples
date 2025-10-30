@@ -1,11 +1,71 @@
+# Configuration for the billing microservice
+# This microservice manages orders, invoices, and payments
+
+entities:
+  - singular: order
+    plural: orders
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: owner
+      delete: owner_or_role:admin
+
+  - singular: invoice
+    plural: invoices
+    auth:
+      list: authenticated
+      get: authenticated
+      create: service_only
+      update: service_only
+      delete: admin_only
+
+  - singular: payment
+    plural: payments
+    auth:
+      list: owner
+      get: owner
+      create: authenticated
+      update: service_only
+      delete: admin_only
+
 links:
-  - link_type: order_to_invoice
+  # Order has invoices
+  # Invoices are automatically created by the system when an order is placed
+  - link_type: has_invoice
     source_type: order
     target_type: invoice
     forward_route_name: invoices
-    
-  - link_type: invoice_to_payment
+    reverse_route_name: order
+    description: "Order has invoices"
+    auth:
+      list: authenticated          # Anyone authenticated can list invoices for an order
+      get: authenticated           # Anyone authenticated can get a specific link
+      create: service_only         # Only internal services can create this link
+      update: service_only         # Only internal services can update link metadata
+      delete: admin_only           # Only admins can delete order-invoice links
+
+  # Invoice has payments
+  # Payments can be created by the order owner or by internal services
+  # The link can carry metadata like payment method, transaction ID, etc.
+  - link_type: payment
     source_type: invoice
     target_type: payment
     forward_route_name: payments
+    reverse_route_name: invoice
+    description: "Payment for invoice"
+    auth:
+      list: owner                  # Only the owner can list payments
+      get: owner                   # Only the owner can get a specific payment link
+      create: owner_or_service     # Owner or service can create payments
+      update: owner_or_service     # Owner or service can update payment metadata
+      delete: admin_only           # Only admins can delete payments
 
+validation_rules:
+  has_invoice:
+    - source: order
+      targets: [invoice]
+  
+  payment:
+    - source: invoice
+      targets: [payment]

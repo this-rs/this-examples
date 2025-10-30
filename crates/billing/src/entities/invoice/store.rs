@@ -23,4 +23,3 @@ pub trait InvoiceStore: Send + Sync {
     async fn delete(&self, id: &Uuid) -> Result<(), InvoiceStoreError>;
     async fn list(&self) -> Result<Vec<Invoice>, InvoiceStoreError>;
 }
-

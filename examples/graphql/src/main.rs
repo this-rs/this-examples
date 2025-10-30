@@ -6,8 +6,8 @@ use axum::Router;
 use billing::{BillingModule, BillingStores};
 use test_data::populate_test_data;
 
-use this::server::{GraphQLExposure, RestExposure};
 use this::server::builder::ServerBuilder;
+use this::server::{GraphQLExposure, RestExposure};
 use this::storage::InMemoryLinkService;
 
 #[tokio::main]
@@ -69,6 +69,3 @@ async fn main() -> Result<()> {
 
     Ok(())
 }
-
-
-

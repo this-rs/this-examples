@@ -1,8 +1,8 @@
 use anyhow::Result;
-use billing::BillingStores;
-use billing::entities::order::{Order, OrderStore};
 use billing::entities::invoice::{Invoice, InvoiceStore};
+use billing::entities::order::{Order, OrderStore};
 use billing::entities::payment::{Payment, PaymentStore};
+use billing::BillingStores;
 
 /// Populate test data in the billing stores
 pub async fn populate_test_data(stores: BillingStores) -> Result<()> {

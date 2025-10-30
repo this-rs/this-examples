@@ -1,13 +1,13 @@
 use std::sync::Arc;
-use this::server::entity_registry::EntityRegistry;
 use this::core::module::Module;
 use this::prelude::LinksConfig;
-use this::prelude::{EntityFetcher, EntityCreator};
+use this::prelude::{EntityCreator, EntityFetcher};
+use this::server::entity_registry::EntityRegistry;
 
-use crate::entities::order::descriptor::OrderDescriptor;
 use crate::entities::invoice::descriptor::InvoiceDescriptor;
+use crate::entities::order::descriptor::OrderDescriptor;
 use crate::entities::payment::descriptor::PaymentDescriptor;
-use crate::stores::{InMemoryOrderStore, InMemoryInvoiceStore, InMemoryPaymentStore};
+use crate::stores::{InMemoryInvoiceStore, InMemoryOrderStore, InMemoryPaymentStore};
 
 pub struct BillingStores {
     pub orders: Arc<InMemoryOrderStore>,
@@ -26,8 +26,12 @@ impl BillingModule {
 }
 
 impl Module for BillingModule {
-    fn name(&self) -> &str { "billing" }
-    fn version(&self) -> &str { "0.1.0" }
+    fn name(&self) -> &str {
+        "billing"
+    }
+    fn version(&self) -> &str {
+        "0.1.0"
+    }
 
     fn entity_types(&self) -> Vec<&str> {
         vec!["order", "invoice", "payment"]
@@ -35,7 +39,11 @@ impl Module for BillingModule {
 
     fn links_config(&self) -> Result<LinksConfig, anyhow::Error> {
         // Return empty configuration for now
-        Ok(LinksConfig { links: vec![], entities: vec![], validation_rules: None })
+        Ok(LinksConfig {
+            links: vec![],
+            entities: vec![],
+            validation_rules: None,
+        })
     }
 
     fn get_entity_fetcher(&self, entity_type: &str) -> Option<Arc<dyn EntityFetcher>> {
@@ -57,14 +65,12 @@ impl Module for BillingModule {
     }
 
     fn register_entities(&self, registry: &mut EntityRegistry) {
-        registry.register(Box::new(
-            OrderDescriptor::new(self.stores.orders.clone())
-        ));
-        registry.register(Box::new(
-            InvoiceDescriptor::new(self.stores.invoices.clone())
-        ));
-        registry.register(Box::new(
-            PaymentDescriptor::new(self.stores.payments.clone())
-        ));
+        registry.register(Box::new(OrderDescriptor::new(self.stores.orders.clone())));
+        registry.register(Box::new(InvoiceDescriptor::new(
+            self.stores.invoices.clone(),
+        )));
+        registry.register(Box::new(PaymentDescriptor::new(
+            self.stores.payments.clone(),
+        )));
     }
 }

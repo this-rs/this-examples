@@ -1,6 +1,5 @@
 use this::prelude::*;
 
-/// Order entity model using macro for GraphQL + validation
 impl_data_entity_validated!(
     Order,
     "order",

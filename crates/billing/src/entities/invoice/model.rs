@@ -1,6 +1,5 @@
 use this::prelude::*;
 
-/// Invoice entity model with validation and filtering via macro
 impl_data_entity_validated!(
     Invoice,
     "invoice",

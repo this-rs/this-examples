@@ -23,4 +23,3 @@ pub trait PaymentStore: Send + Sync {
     async fn delete(&self, id: &Uuid) -> Result<(), PaymentStoreError>;
     async fn list(&self) -> Result<Vec<Payment>, PaymentStoreError>;
 }
-

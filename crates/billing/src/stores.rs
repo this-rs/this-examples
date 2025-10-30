@@ -1,9 +1,9 @@
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use this::prelude::*;
+use tokio::sync::RwLock;
 
-use crate::entities::order::{Order, OrderStore, OrderStoreError};
 use crate::entities::invoice::{Invoice, InvoiceStore, InvoiceStoreError};
+use crate::entities::order::{Order, OrderStore, OrderStoreError};
 use crate::entities::payment::{Payment, PaymentStore, PaymentStoreError};
 
 use crate::module::BillingStores;
@@ -19,14 +19,16 @@ impl BillingStores {
 }
 
 #[derive(Clone, Default)]
-pub struct InMemoryOrderStore { 
-    inner: Arc<RwLock<Vec<Order>>> 
+pub struct InMemoryOrderStore {
+    inner: Arc<RwLock<Vec<Order>>>,
 }
 
 #[async_trait::async_trait]
 impl EntityFetcher for InMemoryOrderStore {
     async fn fetch_as_json(&self, entity_id: &Uuid) -> Result<serde_json::Value, anyhow::Error> {
-        let order = self.get(entity_id).await
+        let order = self
+            .get(entity_id)
+            .await
             .map_err(|_| anyhow::anyhow!("Order not found: {}", entity_id))?;
         Ok(serde_json::to_value(order)?)
     }
@@ -50,11 +52,20 @@ impl EntityFetcher for InMemoryOrderStore {
 
 #[async_trait::async_trait]
 impl EntityCreator for InMemoryOrderStore {
-    async fn create_from_json(&self, entity_data: serde_json::Value) -> Result<serde_json::Value, anyhow::Error> {
+    async fn create_from_json(
+        &self,
+        entity_data: serde_json::Value,
+    ) -> Result<serde_json::Value, anyhow::Error> {
         let order = Order::new(
             entity_data["name"].as_str().unwrap_or("Order").to_string(),
-            entity_data["status"].as_str().unwrap_or("pending").to_string(),
-            entity_data["number"].as_str().unwrap_or("ORD-000").to_string(),
+            entity_data["status"]
+                .as_str()
+                .unwrap_or("pending")
+                .to_string(),
+            entity_data["number"]
+                .as_str()
+                .unwrap_or("ORD-000")
+                .to_string(),
             entity_data["amount"].as_f64().unwrap_or(0.0),
             entity_data["customer_name"].as_str().map(String::from),
             entity_data["notes"].as_str().map(String::from),
@@ -69,21 +80,21 @@ impl EntityCreator for InMemoryOrderStore {
 impl OrderStore for InMemoryOrderStore {
     async fn create(&self, order: Order) -> Result<Order, OrderStoreError> {
         let mut g = self.inner.write().await;
-        if g.iter().any(|o| o.id == order.id) { 
-            return Err(OrderStoreError::Conflict(order.id.to_string())); 
+        if g.iter().any(|o| o.id == order.id) {
+            return Err(OrderStoreError::Conflict(order.id.to_string()));
         }
         g.push(order.clone());
         Ok(order)
     }
-    
+
     async fn get(&self, id: &Uuid) -> Result<Order, OrderStoreError> {
         let g = self.inner.read().await;
         g.iter()
-            .cloned()
             .find(|o| &o.id == id)
+            .cloned()
             .ok_or_else(|| OrderStoreError::NotFound(id.to_string()))
     }
-    
+
     async fn update(&self, order: Order) -> Result<Order, OrderStoreError> {
         let mut g = self.inner.write().await;
         if let Some(x) = g.iter_mut().find(|o| o.id == order.id) {
@@ -93,7 +104,7 @@ impl OrderStore for InMemoryOrderStore {
             Err(OrderStoreError::NotFound(order.id.to_string()))
         }
     }
-    
+
     async fn delete(&self, id: &Uuid) -> Result<(), OrderStoreError> {
         let mut g = self.inner.write().await;
         let before = g.len();
@@ -103,21 +114,23 @@ impl OrderStore for InMemoryOrderStore {
         }
         Ok(())
     }
-    
+
     async fn list(&self) -> Result<Vec<Order>, OrderStoreError> {
         Ok(self.inner.read().await.clone())
     }
 }
 
 #[derive(Clone, Default)]
-pub struct InMemoryInvoiceStore { 
-    inner: Arc<RwLock<Vec<Invoice>>> 
+pub struct InMemoryInvoiceStore {
+    inner: Arc<RwLock<Vec<Invoice>>>,
 }
 
 #[async_trait::async_trait]
 impl EntityFetcher for InMemoryInvoiceStore {
     async fn fetch_as_json(&self, entity_id: &Uuid) -> Result<serde_json::Value, anyhow::Error> {
-        let invoice = self.get(entity_id).await
+        let invoice = self
+            .get(entity_id)
+            .await
             .map_err(|_| anyhow::anyhow!("Invoice not found: {}", entity_id))?;
         Ok(serde_json::to_value(invoice)?)
     }
@@ -141,11 +154,23 @@ impl EntityFetcher for InMemoryInvoiceStore {
 
 #[async_trait::async_trait]
 impl EntityCreator for InMemoryInvoiceStore {
-    async fn create_from_json(&self, entity_data: serde_json::Value) -> Result<serde_json::Value, anyhow::Error> {
+    async fn create_from_json(
+        &self,
+        entity_data: serde_json::Value,
+    ) -> Result<serde_json::Value, anyhow::Error> {
         let invoice = Invoice::new(
-            entity_data["name"].as_str().unwrap_or("Invoice").to_string(),
-            entity_data["status"].as_str().unwrap_or("draft").to_string(),
-            entity_data["number"].as_str().unwrap_or("INV-000").to_string(),
+            entity_data["name"]
+                .as_str()
+                .unwrap_or("Invoice")
+                .to_string(),
+            entity_data["status"]
+                .as_str()
+                .unwrap_or("draft")
+                .to_string(),
+            entity_data["number"]
+                .as_str()
+                .unwrap_or("INV-000")
+                .to_string(),
             entity_data["amount"].as_f64().unwrap_or(0.0),
             entity_data["due_date"].as_str().map(String::from),
             entity_data["paid_at"].as_str().map(String::from),
@@ -166,15 +191,15 @@ impl InvoiceStore for InMemoryInvoiceStore {
         g.push(invoice.clone());
         Ok(invoice)
     }
-    
+
     async fn get(&self, id: &Uuid) -> Result<Invoice, InvoiceStoreError> {
         let g = self.inner.read().await;
         g.iter()
-            .cloned()
             .find(|o| &o.id == id)
+            .cloned()
             .ok_or_else(|| InvoiceStoreError::NotFound(id.to_string()))
     }
-    
+
     async fn update(&self, invoice: Invoice) -> Result<Invoice, InvoiceStoreError> {
         let mut g = self.inner.write().await;
         if let Some(x) = g.iter_mut().find(|o| o.id == invoice.id) {
@@ -184,7 +209,7 @@ impl InvoiceStore for InMemoryInvoiceStore {
             Err(InvoiceStoreError::NotFound(invoice.id.to_string()))
         }
     }
-    
+
     async fn delete(&self, id: &Uuid) -> Result<(), InvoiceStoreError> {
         let mut g = self.inner.write().await;
         let before = g.len();
@@ -194,21 +219,23 @@ impl InvoiceStore for InMemoryInvoiceStore {
         }
         Ok(())
     }
-    
+
     async fn list(&self) -> Result<Vec<Invoice>, InvoiceStoreError> {
         Ok(self.inner.read().await.clone())
     }
 }
 
 #[derive(Clone, Default)]
-pub struct InMemoryPaymentStore { 
-    inner: Arc<RwLock<Vec<Payment>>> 
+pub struct InMemoryPaymentStore {
+    inner: Arc<RwLock<Vec<Payment>>>,
 }
 
 #[async_trait::async_trait]
 impl EntityFetcher for InMemoryPaymentStore {
     async fn fetch_as_json(&self, entity_id: &Uuid) -> Result<serde_json::Value, anyhow::Error> {
-        let payment = self.get(entity_id).await
+        let payment = self
+            .get(entity_id)
+            .await
             .map_err(|_| anyhow::anyhow!("Payment not found: {}", entity_id))?;
         Ok(serde_json::to_value(payment)?)
     }
@@ -232,13 +259,28 @@ impl EntityFetcher for InMemoryPaymentStore {
 
 #[async_trait::async_trait]
 impl EntityCreator for InMemoryPaymentStore {
-    async fn create_from_json(&self, entity_data: serde_json::Value) -> Result<serde_json::Value, anyhow::Error> {
+    async fn create_from_json(
+        &self,
+        entity_data: serde_json::Value,
+    ) -> Result<serde_json::Value, anyhow::Error> {
         let payment = Payment::new(
-            entity_data["name"].as_str().unwrap_or("Payment").to_string(),
-            entity_data["status"].as_str().unwrap_or("pending").to_string(),
-            entity_data["number"].as_str().unwrap_or("PAY-000").to_string(),
+            entity_data["name"]
+                .as_str()
+                .unwrap_or("Payment")
+                .to_string(),
+            entity_data["status"]
+                .as_str()
+                .unwrap_or("pending")
+                .to_string(),
+            entity_data["number"]
+                .as_str()
+                .unwrap_or("PAY-000")
+                .to_string(),
             entity_data["amount"].as_f64().unwrap_or(0.0),
-            entity_data["method"].as_str().unwrap_or("credit_card").to_string(),
+            entity_data["method"]
+                .as_str()
+                .unwrap_or("credit_card")
+                .to_string(),
             entity_data["transaction_id"].as_str().map(String::from),
         );
 
@@ -257,15 +299,15 @@ impl PaymentStore for InMemoryPaymentStore {
         g.push(payment.clone());
         Ok(payment)
     }
-    
+
     async fn get(&self, id: &Uuid) -> Result<Payment, PaymentStoreError> {
         let g = self.inner.read().await;
         g.iter()
-            .cloned()
             .find(|o| &o.id == id)
+            .cloned()
             .ok_or_else(|| PaymentStoreError::NotFound(id.to_string()))
     }
-    
+
     async fn update(&self, payment: Payment) -> Result<Payment, PaymentStoreError> {
         let mut g = self.inner.write().await;
         if let Some(x) = g.iter_mut().find(|o| o.id == payment.id) {
@@ -275,7 +317,7 @@ impl PaymentStore for InMemoryPaymentStore {
             Err(PaymentStoreError::NotFound(payment.id.to_string()))
         }
     }
-    
+
     async fn delete(&self, id: &Uuid) -> Result<(), PaymentStoreError> {
         let mut g = self.inner.write().await;
         let before = g.len();
@@ -285,7 +327,7 @@ impl PaymentStore for InMemoryPaymentStore {
         }
         Ok(())
     }
-    
+
     async fn list(&self) -> Result<Vec<Payment>, PaymentStoreError> {
         Ok(self.inner.read().await.clone())
     }

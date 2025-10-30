@@ -1,6 +1,5 @@
 use this::prelude::*;
 
-/// Payment entity model using macro for GraphQL + validation
 impl_data_entity_validated!(
     Payment,
     "payment",

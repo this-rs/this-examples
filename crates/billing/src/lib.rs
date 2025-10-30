@@ -4,4 +4,3 @@ pub mod stores;
 
 // Re-export for convenience
 pub use module::{BillingModule, BillingStores};
-

@@ -23,4 +23,3 @@ pub trait OrderStore: Send + Sync {
     async fn delete(&self, id: &Uuid) -> Result<(), OrderStoreError>;
     async fn list(&self) -> Result<Vec<Order>, OrderStoreError>;
 }
-

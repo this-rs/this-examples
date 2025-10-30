@@ -19,6 +19,7 @@ Complete documentation for the this-examples project.
 
 - **[Protocols: REST and GraphQL](protocols.md)** - Dual protocol exposure, router composition
 - **[REST API Guide](rest-api.md)** - REST endpoints, usage examples, testing
+- **[Nested Routes](nested-routes.md)** - Entity relationships via auto-generated nested REST routes
 - **[GraphQL Playground](graphql-playground.md)** - Using the GraphQL interface, queries, mutations
 
 ### Advanced Topics

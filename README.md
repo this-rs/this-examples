@@ -32,7 +32,11 @@ cargo run -p graphql_example --features graphql
 - GraphQL Playground: `http://127.0.0.1:4242/graphql/playground`
 - GraphQL endpoint: `POST http://127.0.0.1:4242/graphql`
 - GraphQL schema: `GET http://127.0.0.1:4242/graphql/schema`
-- REST endpoints: `GET /health`, `GET /order`, `GET /invoice`, `GET /payment`
+- REST endpoints:
+  - Entity routes: `GET /order`, `GET /invoice`, `GET /payment`
+  - Nested routes: `GET /order/{id}/invoices`, `GET /invoice/{id}/payments`
+  - Multi-level chaining: `GET /order/{id}/invoices/{id}/payments`
+  - Health: `GET /health`
 
 ### Run the REST-only example
 
@@ -41,16 +45,21 @@ cargo run -p rest_example
 ```
 
 - Server: `http://0.0.0.0:4242`
-- REST endpoints: `GET /health`, `GET /order`, `GET /invoice`, `GET /payment`
+- REST endpoints:
+  - Entity routes: `GET /order`, `GET /invoice`, `GET /payment`
+  - Nested routes: `GET /order/{id}/invoices`, `GET /invoice/{id}/payments`
+  - Multi-level chaining: `GET /order/{id}/invoices/{id}/payments`
+  - Health: `GET /health`
 
-Both examples use in-memory stores and are seeded with sample data from the `test-data` crate at startup.
+Both examples use in-memory stores and are seeded with sample data and entity links from the `test-data` crate at startup.
 
 ## Key concepts
 
-- Module isolation: keep your business logic in `crates/<module>` and expose it via one or more protocols.
-- Uniform entity structure: each entity directory contains `model`, `store`, `handlers`, and a `descriptor` describing the entity to the framework.
-- Transport-agnostic host: build a host once, then compose one or many exposures (REST/GraphQL) over it.
-- Links/relations: a link service manages generic and typed relationships across entities.
+- **Module isolation**: keep your business logic in `crates/<module>` and expose it via one or more protocols.
+- **Uniform entity structure**: each entity directory contains `model`, `store`, `handlers`, and a `descriptor` describing the entity to the framework.
+- **Transport-agnostic host**: build a host once, then compose one or many exposures (REST/GraphQL) over it.
+- **Links/relations**: a link service manages relationships across entities, automatically generating nested routes.
+- **Link chaining**: define individual links in YAML; the framework automatically chains them to create multi-level routes (e.g., `/order/{id}/invoices/{id}/payments`).
 
 ## Documentation
 

@@ -1,0 +1,11 @@
+links:
+  - link_type: order_to_invoice
+    source_type: order
+    target_type: invoice
+    forward_route_name: invoices
+    
+  - link_type: invoice_to_payment
+    source_type: invoice
+    target_type: payment
+    forward_route_name: payments
+

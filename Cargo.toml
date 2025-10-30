@@ -1,0 +1,10 @@
+[workspace]
+members = [
+  "crates/billing",
+  "crates/test-data",
+  "examples/rest",
+  "examples/graphql",
+]
+resolver = "2"
+
+

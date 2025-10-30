@@ -54,16 +54,17 @@ Both examples use in-memory stores and are seeded with sample data from the `tes
 
 ## Documentation
 
-- Overview: `docs/overview.md`
-- Architecture: `docs/architecture.md`
-- Entities and macros: `docs/entities-and-macros.md`
-- Protocols (REST/GraphQL): `docs/protocols.md`
-- GraphQL Playground guide: `docs/graphql-playground.md`
-- REST API guide: `docs/rest-api.md`
-- Best practices: `docs/best-practices.md`
-- Development workflow: `docs/development.md`
-- Testing and seeded data: `docs/testing.md`
-- Links and relations: `docs/links-and-relations.md`
+📚 **[Complete Documentation](docs/README.md)** - Full documentation with organized table of contents
+
+### Quick Links
+
+- **[Overview](docs/overview.md)** - Project goals and structure
+- **[Architecture](docs/architecture.md)** - Core components and data flow
+- **[Entities and Macros](docs/entities-and-macros.md)** - Entity structure and conventions
+- **[Protocols](docs/protocols.md)** - REST and GraphQL exposure
+- **[Best Practices](docs/best-practices.md)** - Development conventions
+
+See the [docs directory](docs/) for the complete list of guides covering GraphQL playground, REST API, testing, links/relations, and development workflow.
 
 ## License
 

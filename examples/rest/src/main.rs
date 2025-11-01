@@ -6,16 +6,11 @@ use this::storage::InMemoryLinkService;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let stores = BillingStores::new_in_memory();
     let link_service = Arc::new(InMemoryLinkService::new());
 
-    // Populate test data
-    let stores_for_seed = BillingStores {
-        orders: stores.orders.clone(),
-        invoices: stores.invoices.clone(),
-        payments: stores.payments.clone(),
-    };
-    populate_test_data(stores_for_seed, link_service.clone()).await?;
+    // Create stores and populate with test data
+    let stores = BillingStores::new_in_memory();
+    populate_test_data(&stores, link_service.clone()).await?;
 
     let billing_module = BillingModule::new(stores);
 

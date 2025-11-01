@@ -1,7 +1,7 @@
 use anyhow::Result;
-use billing::entities::invoice::{Invoice, InvoiceStore};
-use billing::entities::order::{Order, OrderStore};
-use billing::entities::payment::{Payment, PaymentStore};
+use billing::entities::invoice::Invoice;
+use billing::entities::order::Order;
+use billing::entities::payment::Payment;
 use billing::BillingStores;
 use std::sync::Arc;
 use this::core::LinkService;
@@ -9,7 +9,7 @@ use this::prelude::{InMemoryLinkService, LinkEntity};
 
 /// Populate test data in the billing stores and create links between entities
 pub async fn populate_test_data(
-    stores: BillingStores,
+    stores: &BillingStores,
     link_service: Arc<InMemoryLinkService>,
 ) -> Result<()> {
     // Orders
@@ -29,8 +29,8 @@ pub async fn populate_test_data(
         Some("Customer 2".into()),
         Some("Test order 2".into()),
     );
-    let order1_result = stores.orders.create(order1.clone()).await.ok();
-    let order2_result = stores.orders.create(order2.clone()).await.ok();
+    let order1_result = stores.orders_store.create(order1.clone()).await.ok();
+    let order2_result = stores.orders_store.create(order2.clone()).await.ok();
 
     // Invoices
     let invoice1 = Invoice::new(
@@ -57,9 +57,9 @@ pub async fn populate_test_data(
         Some("2025-12-31".into()),
         None,
     );
-    let invoice1_result = stores.invoices.create(invoice1.clone()).await.ok();
-    let invoice2_result = stores.invoices.create(invoice2.clone()).await.ok();
-    let invoice3_result = stores.invoices.create(invoice3.clone()).await.ok();
+    let invoice1_result = stores.invoices_store.create(invoice1.clone()).await.ok();
+    let invoice2_result = stores.invoices_store.create(invoice2.clone()).await.ok();
+    let invoice3_result = stores.invoices_store.create(invoice3.clone()).await.ok();
 
     // Payments
     let payment1 = Payment::new(
@@ -86,9 +86,9 @@ pub async fn populate_test_data(
         "credit_card".into(),
         Some("txn_003".into()),
     );
-    let payment1_result = stores.payments.create(payment1.clone()).await.ok();
-    let payment2_result = stores.payments.create(payment2.clone()).await.ok();
-    let payment3_result = stores.payments.create(payment3.clone()).await.ok();
+    let payment1_result = stores.payments_store.create(payment1.clone()).await.ok();
+    let payment2_result = stores.payments_store.create(payment2.clone()).await.ok();
+    let payment3_result = stores.payments_store.create(payment3.clone()).await.ok();
 
     // Create links between entities
     // order1 -> invoice1

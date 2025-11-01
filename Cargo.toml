@@ -4,6 +4,7 @@ members = [
   "crates/test-data",
   "examples/rest",
   "examples/graphql",
+  "examples/dynamodb",
 ]
 resolver = "2"
 

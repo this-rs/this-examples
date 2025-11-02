@@ -74,7 +74,7 @@ dynamodb: dynamodb-setup
 	export AWS_ACCESS_KEY_ID=dummy && \
 	export AWS_SECRET_ACCESS_KEY=dummy && \
 	export AWS_DEFAULT_REGION=us-east-1 && \
-	cargo run --features dynamodb,graphql
+	cargo run -p dynamodb_example --features graphql
 
 # Setup DynamoDB Local and create tables
 dynamodb-setup:

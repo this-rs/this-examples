@@ -16,11 +16,26 @@ crates/
 examples/
   graphql/           # GraphQL + REST on the same server (playground included)
   rest/              # REST-only server
+  dynamodb/          # DynamoDB backend example with local setup
 ```
 
 ## Quick start
 
 Prerequisites: Rust toolchain (stable), internet access for crates, and a free port 4242.
+
+### Using the Makefile (Recommended)
+
+```bash
+# See all available commands
+make help
+
+# Run different examples
+make rest      # REST-only server
+make graphql   # GraphQL + REST server  
+make dynamodb  # DynamoDB example with local setup
+```
+
+### Manual commands
 
 ### Run the GraphQL + REST example
 
@@ -51,7 +66,23 @@ cargo run -p rest_example
   - Multi-level chaining: `GET /order/{id}/invoices/{id}/payments`
   - Health: `GET /health`
 
-Both examples use in-memory stores and are seeded with sample data and entity links from the `test-data` crate at startup.
+### Run the DynamoDB example
+
+```bash
+# Setup local DynamoDB with Docker
+cd examples/dynamodb
+./setup.sh
+
+# Run the application
+cargo run --features dynamodb
+```
+
+- Server: `http://0.0.0.0:4242`
+- DynamoDB Admin UI: `http://localhost:8001`
+- Same REST and GraphQL endpoints as other examples
+- Uses local DynamoDB for persistent storage
+
+The REST and GraphQL examples use in-memory stores, while the DynamoDB example provides persistent storage. All are seeded with sample data and entity links from the `test-data` crate at startup.
 
 ## Key concepts
 

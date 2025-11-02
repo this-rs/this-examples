@@ -15,11 +15,6 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     let stores = BillingStores::new_in_memory();
-    let stores_for_seed = BillingStores {
-        orders: stores.orders.clone(),
-        invoices: stores.invoices.clone(),
-        payments: stores.payments.clone(),
-    };
     // Préparer le module ensuite pour l'enregistrer
     let billing_module = BillingModule::new(stores);
 
@@ -28,7 +23,7 @@ async fn main() -> Result<()> {
         let link_service_arc = Arc::new(InMemoryLinkService::new());
 
         // Populate test data BEFORE building the host
-        populate_test_data(stores_for_seed, link_service_arc.clone()).await?;
+        populate_test_data(&billing_module.stores, link_service_arc.clone()).await?;
 
         // Construire l'hôte (agnostique au transport) ensuite
         let host = Arc::new(

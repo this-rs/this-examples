@@ -8,11 +8,20 @@ use super::{Payment, PaymentStore};
 #[derive(Clone)]
 pub struct PaymentState {
     pub store: Arc<dyn PaymentStore>,
+    pub entity_creator: Arc<dyn EntityCreator>,
 }
 
-pub async fn list_payments(State(state): State<PaymentState>) -> Json<Vec<Payment>> {
-    let items = state.store.list().await.unwrap_or_default();
-    Json(items)
+pub async fn list_payments(State(state): State<PaymentState>) -> Json<serde_json::Value> {
+    match state.store.list().await {
+        Ok(items) => Json(serde_json::to_value(items).unwrap_or_else(|_| serde_json::json!([]))),
+        Err(e) => {
+            eprintln!("List payments error: {:?}", e);
+            Json(serde_json::json!({
+                "error": "Failed to list payments",
+                "details": e.to_string()
+            }))
+        }
+    }
 }
 
 pub async fn get_payment(
@@ -25,10 +34,22 @@ pub async fn get_payment(
 
 pub async fn create_payment(
     State(state): State<PaymentState>,
-    Json(payment): Json<Payment>,
-) -> Json<Payment> {
-    let created = state.store.create(payment.clone()).await.unwrap_or(payment);
-    Json(created)
+    Json(entity_data): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    eprintln!("Creating payment with data: {:?}", entity_data);
+    match state.entity_creator.create_from_json(entity_data).await {
+        Ok(created) => {
+            eprintln!("Payment created successfully: {:?}", created);
+            Json(created)
+        }
+        Err(e) => {
+            eprintln!("Create payment error: {:?}", e);
+            Json(serde_json::json!({
+                "error": "Failed to create payment",
+                "details": e.to_string()
+            }))
+        }
+    }
 }
 
 pub async fn update_payment(

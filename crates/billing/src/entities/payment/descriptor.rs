@@ -10,12 +10,23 @@ use super::handlers::{
 
 #[derive(Clone)]
 pub struct PaymentDescriptor {
-    store: Arc<dyn PaymentStore>,
+    store: Arc<dyn PaymentStore + Send + Sync>,
+    entity_creator: Arc<dyn this::prelude::EntityCreator + Send + Sync>,
 }
 
 impl PaymentDescriptor {
-    pub fn new(store: Arc<dyn PaymentStore>) -> Self {
-        Self { store }
+    pub fn new(_store: Arc<dyn PaymentStore + Send + Sync>) -> Self {
+        unimplemented!("Need to provide both store and entity_creator")
+    }
+
+    pub fn new_with_creator(
+        store: Arc<dyn PaymentStore + Send + Sync>,
+        entity_creator: Arc<dyn this::prelude::EntityCreator + Send + Sync>,
+    ) -> Self {
+        Self {
+            store,
+            entity_creator,
+        }
     }
 }
 
@@ -29,6 +40,7 @@ impl EntityDescriptor for PaymentDescriptor {
     fn build_routes(&self) -> Router {
         let state = PaymentState {
             store: self.store.clone(),
+            entity_creator: self.entity_creator.clone(),
         };
         Router::new()
             .route("/payments", get(list_payments).post(create_payment))

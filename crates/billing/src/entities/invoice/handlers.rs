@@ -8,11 +8,20 @@ use super::{Invoice, InvoiceStore};
 #[derive(Clone)]
 pub struct InvoiceState {
     pub store: Arc<dyn InvoiceStore>,
+    pub entity_creator: Arc<dyn EntityCreator>,
 }
 
-pub async fn list_invoices(State(state): State<InvoiceState>) -> Json<Vec<Invoice>> {
-    let items = state.store.list().await.unwrap_or_default();
-    Json(items)
+pub async fn list_invoices(State(state): State<InvoiceState>) -> Json<serde_json::Value> {
+    match state.store.list().await {
+        Ok(items) => Json(serde_json::to_value(items).unwrap_or_else(|_| serde_json::json!([]))),
+        Err(e) => {
+            eprintln!("List invoices error: {:?}", e);
+            Json(serde_json::json!({
+                "error": "Failed to list invoices",
+                "details": e.to_string()
+            }))
+        }
+    }
 }
 
 pub async fn get_invoice(
@@ -25,10 +34,22 @@ pub async fn get_invoice(
 
 pub async fn create_invoice(
     State(state): State<InvoiceState>,
-    Json(invoice): Json<Invoice>,
-) -> Json<Invoice> {
-    let created = state.store.create(invoice.clone()).await.unwrap_or(invoice);
-    Json(created)
+    Json(entity_data): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    eprintln!("Creating invoice with data: {:?}", entity_data);
+    match state.entity_creator.create_from_json(entity_data).await {
+        Ok(created) => {
+            eprintln!("Invoice created successfully: {:?}", created);
+            Json(created)
+        },
+        Err(e) => {
+            eprintln!("Create invoice error: {:?}", e);
+            Json(serde_json::json!({
+                "error": "Failed to create invoice",
+                "details": e.to_string()
+            }))
+        }
+    }
 }
 
 pub async fn update_invoice(

@@ -8,11 +8,20 @@ use super::{Order, OrderStore};
 #[derive(Clone)]
 pub struct OrderState {
     pub store: Arc<dyn OrderStore>,
+    pub entity_creator: Arc<dyn EntityCreator>,
 }
 
-pub async fn list_orders(State(state): State<OrderState>) -> Json<Vec<Order>> {
-    let items = state.store.list().await.unwrap_or_default();
-    Json(items)
+pub async fn list_orders(State(state): State<OrderState>) -> Json<serde_json::Value> {
+    match state.store.list().await {
+        Ok(items) => Json(serde_json::to_value(items).unwrap_or_else(|_| serde_json::json!([]))),
+        Err(e) => {
+            eprintln!("List orders error: {:?}", e);
+            Json(serde_json::json!({
+                "error": "Failed to list orders",
+                "details": e.to_string()
+            }))
+        }
+    }
 }
 
 pub async fn get_order(
@@ -25,10 +34,22 @@ pub async fn get_order(
 
 pub async fn create_order(
     State(state): State<OrderState>,
-    Json(order): Json<Order>,
-) -> Json<Order> {
-    let created = state.store.create(order.clone()).await.unwrap_or(order);
-    Json(created)
+    Json(entity_data): Json<serde_json::Value>,
+) -> Json<serde_json::Value> {
+    eprintln!("Creating order with data: {:?}", entity_data);
+    match state.entity_creator.create_from_json(entity_data).await {
+        Ok(created) => {
+            eprintln!("Order created successfully: {:?}", created);
+            Json(created)
+        },
+        Err(e) => {
+            eprintln!("Create order error: {:?}", e);
+            Json(serde_json::json!({
+                "error": "Failed to create order",
+                "details": e.to_string()
+            }))
+        }
+    }
 }
 
 pub async fn update_order(

@@ -10,12 +10,20 @@ use super::handlers::{
 
 #[derive(Clone)]
 pub struct InvoiceDescriptor {
-    store: Arc<dyn InvoiceStore>,
+    store: Arc<dyn InvoiceStore + Send + Sync>,
+    entity_creator: Arc<dyn this::prelude::EntityCreator + Send + Sync>,
 }
 
 impl InvoiceDescriptor {
-    pub fn new(store: Arc<dyn InvoiceStore>) -> Self {
-        Self { store }
+    pub fn new(store: Arc<dyn InvoiceStore + Send + Sync>) -> Self {
+        unimplemented!("Need to provide both store and entity_creator")
+    }
+    
+    pub fn new_with_creator(
+        store: Arc<dyn InvoiceStore + Send + Sync>,
+        entity_creator: Arc<dyn this::prelude::EntityCreator + Send + Sync>,
+    ) -> Self {
+        Self { store, entity_creator }
     }
 }
 
@@ -29,6 +37,7 @@ impl EntityDescriptor for InvoiceDescriptor {
     fn build_routes(&self) -> Router {
         let state = InvoiceState {
             store: self.store.clone(),
+            entity_creator: self.entity_creator.clone(),
         };
         Router::new()
             .route("/invoices", get(list_invoices).post(create_invoice))

@@ -1,0 +1,20 @@
+# Environment variables
+.env
+
+# DynamoDB Local data (if persistence is enabled)
+dynamodb_local_db/
+*.db
+
+# Cargo
+target/
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

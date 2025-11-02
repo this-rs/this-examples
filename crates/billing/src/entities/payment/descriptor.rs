@@ -15,7 +15,7 @@ pub struct PaymentDescriptor {
 }
 
 impl PaymentDescriptor {
-    pub fn new(store: Arc<dyn PaymentStore + Send + Sync>) -> Self {
+    pub fn new(_store: Arc<dyn PaymentStore + Send + Sync>) -> Self {
         unimplemented!("Need to provide both store and entity_creator")
     }
 

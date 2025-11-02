@@ -15,7 +15,7 @@ pub struct OrderDescriptor {
 }
 
 impl OrderDescriptor {
-    pub fn new(store: Arc<dyn OrderStore + Send + Sync>) -> Self {
+    pub fn new(_store: Arc<dyn OrderStore + Send + Sync>) -> Self {
         // We know our stores also implement EntityCreator, but we need to handle it carefully
         // For now, let's create a simple wrapper or assume the caller provides both
         unimplemented!("Need to provide both store and entity_creator")

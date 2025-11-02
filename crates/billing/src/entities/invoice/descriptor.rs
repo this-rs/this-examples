@@ -15,7 +15,7 @@ pub struct InvoiceDescriptor {
 }
 
 impl InvoiceDescriptor {
-    pub fn new(store: Arc<dyn InvoiceStore + Send + Sync>) -> Self {
+    pub fn new(_store: Arc<dyn InvoiceStore + Send + Sync>) -> Self {
         unimplemented!("Need to provide both store and entity_creator")
     }
 

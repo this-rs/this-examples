@@ -1,6 +1,6 @@
 use axum::routing::get;
 use std::sync::Arc;
-use this::prelude::{Router, EntityCreator};
+use this::prelude::{EntityCreator, Router};
 use this::server::entity_registry::EntityDescriptor;
 
 use super::OrderStore;
@@ -20,12 +20,15 @@ impl OrderDescriptor {
         // For now, let's create a simple wrapper or assume the caller provides both
         unimplemented!("Need to provide both store and entity_creator")
     }
-    
+
     pub fn new_with_creator(
         store: Arc<dyn OrderStore + Send + Sync>,
         entity_creator: Arc<dyn EntityCreator + Send + Sync>,
     ) -> Self {
-        Self { store, entity_creator }
+        Self {
+            store,
+            entity_creator,
+        }
     }
 }
 

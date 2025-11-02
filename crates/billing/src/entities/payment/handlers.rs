@@ -41,7 +41,7 @@ pub async fn create_payment(
         Ok(created) => {
             eprintln!("Payment created successfully: {:?}", created);
             Json(created)
-        },
+        }
         Err(e) => {
             eprintln!("Create payment error: {:?}", e);
             Json(serde_json::json!({

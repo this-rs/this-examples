@@ -41,7 +41,7 @@ pub async fn create_order(
         Ok(created) => {
             eprintln!("Order created successfully: {:?}", created);
             Json(created)
-        },
+        }
         Err(e) => {
             eprintln!("Create order error: {:?}", e);
             Json(serde_json::json!({

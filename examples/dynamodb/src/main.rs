@@ -22,13 +22,13 @@ async fn main() -> Result<()> {
 
     // Load AWS config with local DynamoDB endpoint if specified
     let mut config_loader = aws_config::defaults(aws_config::BehaviorVersion::latest());
-    
+
     // Configure endpoint for local DynamoDB if AWS_ENDPOINT_URL is set
     if let Ok(endpoint_url) = env::var("AWS_ENDPOINT_URL") {
         config_loader = config_loader.endpoint_url(&endpoint_url);
         println!("Using DynamoDB endpoint: {}", endpoint_url);
     }
-    
+
     let config = config_loader.load().await;
     let client = Client::new(&config);
 

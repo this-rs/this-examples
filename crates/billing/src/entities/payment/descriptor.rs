@@ -18,12 +18,15 @@ impl PaymentDescriptor {
     pub fn new(store: Arc<dyn PaymentStore + Send + Sync>) -> Self {
         unimplemented!("Need to provide both store and entity_creator")
     }
-    
+
     pub fn new_with_creator(
         store: Arc<dyn PaymentStore + Send + Sync>,
         entity_creator: Arc<dyn this::prelude::EntityCreator + Send + Sync>,
     ) -> Self {
-        Self { store, entity_creator }
+        Self {
+            store,
+            entity_creator,
+        }
     }
 }
 

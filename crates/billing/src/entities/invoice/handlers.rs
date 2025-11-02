@@ -41,7 +41,7 @@ pub async fn create_invoice(
         Ok(created) => {
             eprintln!("Invoice created successfully: {:?}", created);
             Json(created)
-        },
+        }
         Err(e) => {
             eprintln!("Create invoice error: {:?}", e);
             Json(serde_json::json!({

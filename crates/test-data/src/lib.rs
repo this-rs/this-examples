@@ -177,3 +177,207 @@ pub async fn populate_test_data(
 
     Ok(())
 }
+
+/// Populate test data in the catalog stores and create links between entities
+pub async fn populate_catalog_data(
+    stores: &catalog::CatalogStores,
+    link_service: Arc<InMemoryLinkService>,
+) -> Result<()> {
+    use catalog::entities::product::Product;
+    use catalog::entities::category::Category;
+    use catalog::entities::tag::Tag;
+
+    // Categories
+    let category1 = Category::new(
+        "Electronics".into(),
+        "active".into(),
+        "electronics".into(),
+        Some("Electronic products".into()),
+    );
+    let category2 = Category::new(
+        "Clothing".into(),
+        "active".into(),
+        "clothing".into(),
+        Some("Clothing items".into()),
+    );
+    let category3 = Category::new(
+        "Laptops".into(),
+        "active".into(),
+        "laptops".into(),
+        Some("Laptop computers".into()),
+    );
+    let category1_result = stores.categories_store.create(category1.clone()).await.ok();
+    let category2_result = stores.categories_store.create(category2.clone()).await.ok();
+    let category3_result = stores.categories_store.create(category3.clone()).await.ok();
+
+    // Tags
+    let tag1 = Tag::new(
+        "featured".into(),
+        "active".into(),
+        Some("#FF5733".into()),
+        Some("Featured products".into()),
+    );
+    let tag2 = Tag::new(
+        "new".into(),
+        "active".into(),
+        Some("#33FF57".into()),
+        Some("New arrivals".into()),
+    );
+    let tag3 = Tag::new(
+        "sale".into(),
+        "active".into(),
+        Some("#3357FF".into()),
+        Some("On sale".into()),
+    );
+    let tag1_result = stores.tags_store.create(tag1.clone()).await.ok();
+    let tag2_result = stores.tags_store.create(tag2.clone()).await.ok();
+    let tag3_result = stores.tags_store.create(tag3.clone()).await.ok();
+
+    // Products
+    let product1 = Product::new(
+        "Laptop Pro".into(),
+        "active".into(),
+        "LAP-001".into(),
+        1299.99,
+        10,
+        Some("High-performance laptop".into()),
+    );
+    let product2 = Product::new(
+        "T-Shirt Basic".into(),
+        "active".into(),
+        "TSH-001".into(),
+        19.99,
+        50,
+        Some("Basic cotton t-shirt".into()),
+    );
+    let product3 = Product::new(
+        "Smartphone X".into(),
+        "active".into(),
+        "PHN-001".into(),
+        899.99,
+        25,
+        Some("Latest smartphone model".into()),
+    );
+    let product1_result = stores.products_store.create(product1.clone()).await.ok();
+    let product2_result = stores.products_store.create(product2.clone()).await.ok();
+    let product3_result = stores.products_store.create(product3.clone()).await.ok();
+
+    // Create links between entities
+    // Product → Category (many-to-many)
+    if let (Some(p1), Some(c1)) = (product1_result.as_ref(), category1_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_category",
+            p1.id,
+            c1.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "primary": true
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p1), Some(c3)) = (product1_result.as_ref(), category3_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_category",
+            p1.id,
+            c3.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "primary": false
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p2), Some(c2)) = (product2_result.as_ref(), category2_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_category",
+            p2.id,
+            c2.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "primary": true
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p3), Some(c1)) = (product3_result.as_ref(), category1_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_category",
+            p3.id,
+            c1.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "primary": true
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    // Product → Tag (many-to-many)
+    if let (Some(p1), Some(t1)) = (product1_result.as_ref(), tag1_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_tag",
+            p1.id,
+            t1.id,
+            Some(serde_json::json!({
+                "created_by": "test-data"
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p1), Some(t2)) = (product1_result.as_ref(), tag2_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_tag",
+            p1.id,
+            t2.id,
+            Some(serde_json::json!({
+                "created_by": "test-data"
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p2), Some(t3)) = (product2_result.as_ref(), tag3_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_tag",
+            p2.id,
+            t3.id,
+            Some(serde_json::json!({
+                "created_by": "test-data"
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p3), Some(t1)) = (product3_result.as_ref(), tag1_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_tag",
+            p3.id,
+            t1.id,
+            Some(serde_json::json!({
+                "created_by": "test-data"
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    // Category → Category (hierarchical - reflexive)
+    if let (Some(c3), Some(c1)) = (category3_result.as_ref(), category1_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_parent",
+            c3.id,
+            c1.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "level": 1
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    Ok(())
+}

@@ -1,0 +1,22 @@
+[package]
+name = "multi_module_example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+billing = { path = "../../crates/billing" }
+catalog = { path = "../../crates/catalog" }
+test-data = { path = "../../crates/test-data" }
+this-rs = { version = "0.0.6", features = ["graphql"] }
+anyhow = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+async-trait = "0.1"
+axum = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+
+[features]
+# Proxy feature to optionally compile the example without GraphQL
+graphql = ["billing/graphql"]
+

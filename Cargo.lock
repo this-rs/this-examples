@@ -746,6 +746,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
+name = "catalog"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "aws-config",
+ "aws-sdk-dynamodb",
+ "axum",
+ "chrono",
+ "serde",
+ "serde_json",
+ "this-rs 0.0.6",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "uuid",
+]
+
+[[package]]
 name = "cc"
 version = "1.2.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1985,6 +2004,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "multi_module_example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "billing",
+ "catalog",
+ "serde",
+ "serde_json",
+ "test-data",
+ "this-rs 0.0.6",
+ "tokio",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "multimap"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2955,6 +2991,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "billing",
+ "catalog",
  "serde_json",
  "this-rs 0.0.7",
 ]

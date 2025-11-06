@@ -1,12 +1,14 @@
 [workspace]
 members = [
   "crates/billing",
+  "crates/catalog",
   "crates/test-data",
   "examples/rest",
   "examples/graphql",
   "examples/dynamodb",
   "examples/websocket",
   "examples/grpc",
+  "examples/multi-module",
   "benches/endpoint-benchmarks",
 ]
 resolver = "2"

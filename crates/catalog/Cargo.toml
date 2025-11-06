@@ -1,0 +1,27 @@
+[package]
+name = "catalog"
+version = "0.0.1"
+edition = "2024"
+
+[features]
+default = []
+graphql = ["this-rs/graphql"]
+dynamodb = ["this-rs/dynamodb"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+async-trait = "0.1"
+thiserror = "1"
+anyhow = "1"
+this-rs = { version = "0.0.6", features = ["dynamodb"] }
+axum = "0.8"
+tokio = { version = "1", features = ["sync"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+aws-sdk-dynamodb = "1"
+aws-config = "1"
+
+[dev-dependencies]
+tokio-test = "0.4"
+

@@ -1,5 +1,5 @@
 use billing::entities::{invoice::Invoice, order::Order, payment::Payment};
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use this::prelude::*;
 
 fn benchmark_invoice_creation(c: &mut Criterion) {

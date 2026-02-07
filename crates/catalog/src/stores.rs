@@ -3,14 +3,14 @@ use std::sync::Arc;
 use crate::module::CatalogStores;
 
 // Import stores from entity modules
-use crate::entities::product::InMemoryProductStore;
 use crate::entities::category::InMemoryCategoryStore;
+use crate::entities::product::InMemoryProductStore;
 use crate::entities::tag::InMemoryTagStore;
 
 #[cfg(feature = "dynamodb")]
-use crate::entities::product::ProductDynamoDBStore;
-#[cfg(feature = "dynamodb")]
 use crate::entities::category::CategoryDynamoDBStore;
+#[cfg(feature = "dynamodb")]
+use crate::entities::product::ProductDynamoDBStore;
 #[cfg(feature = "dynamodb")]
 use crate::entities::tag::TagDynamoDBStore;
 #[cfg(feature = "dynamodb")]
@@ -59,4 +59,8 @@ impl CatalogStores {
         }
     }
 }
+
+
+
+
 

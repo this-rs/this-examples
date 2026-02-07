@@ -2,6 +2,7 @@
 members = [
   "crates/billing",
   "crates/catalog",
+  "crates/inventory",
   "crates/test-data",
   "examples/rest",
   "examples/graphql",

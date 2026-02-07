@@ -1,0 +1,216 @@
+# Configuration for the inventory module
+# This module manages stores, activities, warehouses, stock items, movements, and usage tracking
+
+entities:
+  - singular: store
+    plural: stores
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+  - singular: activity
+    plural: activities
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+  - singular: warehouse
+    plural: warehouses
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+  - singular: stock_item
+    plural: stock_items
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+  - singular: stock_movement
+    plural: stock_movements
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+  - singular: usage
+    plural: usages
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+links:
+  # Store ↔ Activity (many-to-many)
+  # A store can have multiple activities (e.g., bar + co-working)
+  - link_type: has_activity
+    source_type: store
+    target_type: activity
+    forward_route_name: activities
+    reverse_route_name: stores
+    description: "Store has activities"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+  # Store → Warehouse (1-N)
+  # A store can have multiple warehouses
+  - link_type: has_warehouse
+    source_type: store
+    target_type: warehouse
+    forward_route_name: warehouses
+    reverse_route_name: store
+    description: "Store has warehouses"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+  # Warehouse → StockItem (1-N)
+  # A warehouse contains stock items
+  - link_type: contains
+    source_type: warehouse
+    target_type: stock_item
+    forward_route_name: stock_items
+    reverse_route_name: warehouse
+    description: "Warehouse contains stock items"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+  # StockItem → StockMovement (1-N)
+  # A stock item has multiple movements (in/out/transfer)
+  - link_type: has_movement
+    source_type: stock_item
+    target_type: stock_movement
+    forward_route_name: movements
+    reverse_route_name: stock_item
+    description: "Stock item has movements"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+  # StockItem → Product (cross-module to catalog)
+  # A stock item references a product from the catalog module
+  - link_type: references
+    source_type: stock_item
+    target_type: product
+    forward_route_name: product
+    reverse_route_name: stock_items
+    description: "Stock item references product (cross-module)"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+  # Activity → Usage (1-N)
+  # An activity can have multiple usage records for tracking and refacturation
+  - link_type: has_usage
+    source_type: activity
+    target_type: usage
+    forward_route_name: usages
+    reverse_route_name: activity
+    description: "Activity has usage records"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+  # Usage → Activity (from_activity for refacturation)
+  # A usage record can reference the source activity (for refacturation)
+  - link_type: from_activity
+    source_type: usage
+    target_type: activity
+    forward_route_name: from_activity
+    reverse_route_name: usages
+    description: "Usage from activity (for refacturation)"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+  # StockMovement → Activity (optional, for tracking which activity consumed stock)
+  - link_type: consumed_by
+    source_type: stock_movement
+    target_type: activity
+    forward_route_name: activity
+    reverse_route_name: stock_movements
+    description: "Stock movement consumed by activity"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+validation_rules:
+  has_activity:
+    - source: store
+      targets: [activity]
+  
+  has_warehouse:
+    - source: store
+      targets: [warehouse]
+  
+  contains:
+    - source: warehouse
+      targets: [stock_item]
+  
+  has_movement:
+    - source: stock_item
+      targets: [stock_movement]
+  
+  references:
+    - source: stock_item
+      targets: [product]
+  
+  has_usage:
+    - source: activity
+      targets: [usage]
+  
+  from_activity:
+    - source: usage
+      targets: [activity]
+  
+  consumed_by:
+    - source: stock_movement
+      targets: [activity]
+
+
+
+
+
+

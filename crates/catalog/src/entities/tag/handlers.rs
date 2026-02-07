@@ -24,10 +24,7 @@ pub async fn list_tags(State(state): State<TagState>) -> Json<serde_json::Value>
     }
 }
 
-pub async fn get_tag(
-    State(state): State<TagState>,
-    Path(id): Path<Uuid>,
-) -> Json<Option<Tag>> {
+pub async fn get_tag(State(state): State<TagState>, Path(id): Path<Uuid>) -> Json<Option<Tag>> {
     let item = state.store.get(&id).await.ok();
     Json(item)
 }
@@ -52,10 +49,7 @@ pub async fn create_tag(
     }
 }
 
-pub async fn update_tag(
-    State(state): State<TagState>,
-    Json(tag): Json<Tag>,
-) -> Json<Option<Tag>> {
+pub async fn update_tag(State(state): State<TagState>, Json(tag): Json<Tag>) -> Json<Option<Tag>> {
     let updated = state.store.update(tag).await.ok();
     Json(updated)
 }
@@ -64,4 +58,8 @@ pub async fn delete_tag(State(state): State<TagState>, Path(id): Path<Uuid>) -> 
     let ok = state.store.delete(&id).await.is_ok();
     Json(ok)
 }
+
+
+
+
 

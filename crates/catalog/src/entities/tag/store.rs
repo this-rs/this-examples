@@ -56,8 +56,7 @@ impl EntityFetcher for InMemoryTagStore {
         let limit = limit.unwrap_or(20) as usize;
 
         let tags: Vec<Tag> = all_tags.into_iter().skip(offset).take(limit).collect();
-        tags
-            .into_iter()
+        tags.into_iter()
             .map(|tag| serde_json::to_value(tag).map_err(Into::into))
             .collect()
     }
@@ -70,10 +69,7 @@ impl EntityCreator for InMemoryTagStore {
         entity_data: serde_json::Value,
     ) -> Result<serde_json::Value, anyhow::Error> {
         let tag = Tag::new(
-            entity_data["name"]
-                .as_str()
-                .unwrap_or("Tag")
-                .to_string(),
+            entity_data["name"].as_str().unwrap_or("Tag").to_string(),
             entity_data["status"]
                 .as_str()
                 .unwrap_or("active")
@@ -177,8 +173,7 @@ impl EntityFetcher for TagDynamoDBStore {
         let limit = limit.unwrap_or(20) as usize;
 
         let tags: Vec<Tag> = all_tags.into_iter().skip(offset).take(limit).collect();
-        tags
-            .into_iter()
+        tags.into_iter()
             .map(|tag| serde_json::to_value(tag).map_err(Into::into))
             .collect()
     }
@@ -192,10 +187,7 @@ impl EntityCreator for TagDynamoDBStore {
         entity_data: serde_json::Value,
     ) -> Result<serde_json::Value, anyhow::Error> {
         let tag = Tag::new(
-            entity_data["name"]
-                .as_str()
-                .unwrap_or("Tag")
-                .to_string(),
+            entity_data["name"].as_str().unwrap_or("Tag").to_string(),
             entity_data["status"]
                 .as_str()
                 .unwrap_or("active")
@@ -248,4 +240,8 @@ impl TagStore for TagDynamoDBStore {
             .map_err(|e| TagStoreError::Other(anyhow::anyhow!(e)))
     }
 }
+
+
+
+
 

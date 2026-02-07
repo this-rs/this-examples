@@ -4,9 +4,7 @@ use this::prelude::Router;
 use this::server::entity_registry::EntityDescriptor;
 
 use super::TagStore;
-use super::handlers::{
-    TagState, create_tag, delete_tag, get_tag, list_tags, update_tag,
-};
+use super::handlers::{TagState, create_tag, delete_tag, get_tag, list_tags, update_tag};
 
 #[derive(Clone)]
 pub struct TagDescriptor {
@@ -34,11 +32,11 @@ impl EntityDescriptor for TagDescriptor {
     fn entity_type(&self) -> &str {
         "tag"
     }
-    
+
     fn plural(&self) -> &str {
         "tags"
     }
-    
+
     fn build_routes(&self) -> Router {
         let state = TagState {
             store: self.store.clone(),
@@ -53,4 +51,8 @@ impl EntityDescriptor for TagDescriptor {
             .with_state(state)
     }
 }
+
+
+
+
 

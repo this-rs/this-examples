@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 billing = { path = "../../crates/billing" }
 catalog = { path = "../../crates/catalog" }
+inventory = { path = "../../crates/inventory" }
 test-data = { path = "../../crates/test-data" }
 this-rs = { version = "0.0.6", features = ["graphql"] }
 anyhow = "1"

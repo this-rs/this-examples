@@ -34,11 +34,11 @@ impl EntityDescriptor for ProductDescriptor {
     fn entity_type(&self) -> &str {
         "product"
     }
-    
+
     fn plural(&self) -> &str {
         "products"
     }
-    
+
     fn build_routes(&self) -> Router {
         let state = ProductState {
             store: self.store.clone(),
@@ -53,4 +53,8 @@ impl EntityDescriptor for ProductDescriptor {
             .with_state(state)
     }
 }
+
+
+
+
 

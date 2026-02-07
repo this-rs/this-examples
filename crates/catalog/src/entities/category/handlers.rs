@@ -60,8 +60,15 @@ pub async fn update_category(
     Json(updated)
 }
 
-pub async fn delete_category(State(state): State<CategoryState>, Path(id): Path<Uuid>) -> Json<bool> {
+pub async fn delete_category(
+    State(state): State<CategoryState>,
+    Path(id): Path<Uuid>,
+) -> Json<bool> {
     let ok = state.store.delete(&id).await.is_ok();
     Json(ok)
 }
+
+
+
+
 

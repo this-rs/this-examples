@@ -1,9 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use endpoint_benchmarks::{
-    create_graphql_server_in_memory, start_test_server, data, TestServer
-};
-use tokio::runtime::Runtime;
+use endpoint_benchmarks::{create_graphql_server_in_memory, data, start_test_server, TestServer};
 use serde_json::json;
+use tokio::runtime::Runtime;
 
 /// Benchmark GraphQL queries
 async fn bench_graphql_queries(server: &TestServer) -> anyhow::Result<()> {
@@ -37,7 +35,10 @@ async fn bench_graphql_mutations(server: &TestServer) -> anyhow::Result<()> {
 }
 
 /// Benchmark individual GraphQL query
-async fn bench_single_graphql_query(server: &TestServer, query: serde_json::Value) -> anyhow::Result<()> {
+async fn bench_single_graphql_query(
+    server: &TestServer,
+    query: serde_json::Value,
+) -> anyhow::Result<()> {
     let response = server.post_json("/graphql", query).await?;
     let body = TestServer::response_body_string(response).await?;
     black_box(body);
@@ -46,7 +47,7 @@ async fn bench_single_graphql_query(server: &TestServer, query: serde_json::Valu
 
 fn benchmark_graphql_in_memory(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     // Create server once for all benchmarks
     let server = rt.block_on(async {
         let router = create_graphql_server_in_memory().await.unwrap();
@@ -57,9 +58,18 @@ fn benchmark_graphql_in_memory(c: &mut Criterion) {
 
     // Benchmark individual queries
     let query_test_cases = vec![
-        ("orders_query", json!({"query": "query { orders { id name number amount status customer_name notes } }"})),
-        ("invoices_query", json!({"query": "query { invoices { id name number amount status due_date paid_at } }"})),
-        ("payments_query", json!({"query": "query { payments { id name number amount status method transaction_id } }"})),
+        (
+            "orders_query",
+            json!({"query": "query { orders { id name number amount status customer_name notes } }"}),
+        ),
+        (
+            "invoices_query",
+            json!({"query": "query { invoices { id name number amount status due_date paid_at } }"}),
+        ),
+        (
+            "payments_query",
+            json!({"query": "query { payments { id name number amount status method transaction_id } }"}),
+        ),
         ("health_query", json!({"query": "query { health }"})),
     ];
 
@@ -69,7 +79,9 @@ fn benchmark_graphql_in_memory(c: &mut Criterion) {
             &(&server, query),
             |b, (server, query)| {
                 b.to_async(&rt).iter(|| async {
-                    bench_single_graphql_query(server, query.clone()).await.unwrap()
+                    bench_single_graphql_query(server, query.clone())
+                        .await
+                        .unwrap()
                 });
             },
         );
@@ -77,44 +89,53 @@ fn benchmark_graphql_in_memory(c: &mut Criterion) {
 
     // Benchmark mutations
     let mutation_test_cases = vec![
-        ("create_order", json!({
-            "query": "mutation CreateOrder($input: OrderInput!) { createOrder(input: $input) { id name number amount status } }",
-            "variables": {
-                "input": {
-                    "name": "Benchmark Order",
-                    "status": "pending",
-                    "number": "ORD-BENCH-001",
-                    "amount": 999.99,
-                    "customer_name": "Test Customer",
-                    "notes": "Benchmark test order"
+        (
+            "create_order",
+            json!({
+                "query": "mutation CreateOrder($input: OrderInput!) { createOrder(input: $input) { id name number amount status } }",
+                "variables": {
+                    "input": {
+                        "name": "Benchmark Order",
+                        "status": "pending",
+                        "number": "ORD-BENCH-001",
+                        "amount": 999.99,
+                        "customer_name": "Test Customer",
+                        "notes": "Benchmark test order"
+                    }
                 }
-            }
-        })),
-        ("create_invoice", json!({
-            "query": "mutation CreateInvoice($input: InvoiceInput!) { createInvoice(input: $input) { id name number amount status } }",
-            "variables": {
-                "input": {
-                    "name": "Benchmark Invoice",
-                    "status": "draft",
-                    "number": "INV-BENCH-001",
-                    "amount": 1999.50,
-                    "due_date": "2024-12-31"
+            }),
+        ),
+        (
+            "create_invoice",
+            json!({
+                "query": "mutation CreateInvoice($input: InvoiceInput!) { createInvoice(input: $input) { id name number amount status } }",
+                "variables": {
+                    "input": {
+                        "name": "Benchmark Invoice",
+                        "status": "draft",
+                        "number": "INV-BENCH-001",
+                        "amount": 1999.50,
+                        "due_date": "2024-12-31"
+                    }
                 }
-            }
-        })),
-        ("create_payment", json!({
-            "query": "mutation CreatePayment($input: PaymentInput!) { createPayment(input: $input) { id name number amount status } }",
-            "variables": {
-                "input": {
-                    "name": "Benchmark Payment",
-                    "status": "pending",
-                    "number": "PAY-BENCH-001",
-                    "amount": 999.99,
-                    "method": "credit_card",
-                    "transaction_id": "txn_bench_001"
+            }),
+        ),
+        (
+            "create_payment",
+            json!({
+                "query": "mutation CreatePayment($input: PaymentInput!) { createPayment(input: $input) { id name number amount status } }",
+                "variables": {
+                    "input": {
+                        "name": "Benchmark Payment",
+                        "status": "pending",
+                        "number": "PAY-BENCH-001",
+                        "amount": 999.99,
+                        "method": "credit_card",
+                        "transaction_id": "txn_bench_001"
+                    }
                 }
-            }
-        })),
+            }),
+        ),
     ];
 
     for (name, mutation) in mutation_test_cases {
@@ -123,7 +144,9 @@ fn benchmark_graphql_in_memory(c: &mut Criterion) {
             &(&server, mutation),
             |b, (server, mutation)| {
                 b.to_async(&rt).iter(|| async {
-                    bench_single_graphql_query(server, mutation.clone()).await.unwrap()
+                    bench_single_graphql_query(server, mutation.clone())
+                        .await
+                        .unwrap()
                 });
             },
         );
@@ -131,15 +154,13 @@ fn benchmark_graphql_in_memory(c: &mut Criterion) {
 
     // Benchmark combined operations
     group.bench_function("all_queries", |b| {
-        b.to_async(&rt).iter(|| async {
-            bench_graphql_queries(black_box(&server)).await.unwrap()
-        });
+        b.to_async(&rt)
+            .iter(|| async { bench_graphql_queries(black_box(&server)).await.unwrap() });
     });
 
     group.bench_function("all_mutations", |b| {
-        b.to_async(&rt).iter(|| async {
-            bench_graphql_mutations(black_box(&server)).await.unwrap()
-        });
+        b.to_async(&rt)
+            .iter(|| async { bench_graphql_mutations(black_box(&server)).await.unwrap() });
     });
 
     group.finish();
@@ -147,7 +168,7 @@ fn benchmark_graphql_in_memory(c: &mut Criterion) {
 
 fn benchmark_graphql_complex_queries(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let server = rt.block_on(async {
         let router = create_graphql_server_in_memory().await.unwrap();
         start_test_server(router).await.unwrap()
@@ -157,8 +178,10 @@ fn benchmark_graphql_complex_queries(c: &mut Criterion) {
 
     // Complex nested queries
     let complex_queries = vec![
-        ("all_entities_detailed", json!({
-            "query": r#"
+        (
+            "all_entities_detailed",
+            json!({
+                "query": r#"
                 query AllEntitiesDetailed {
                     orders {
                         id
@@ -195,9 +218,12 @@ fn benchmark_graphql_complex_queries(c: &mut Criterion) {
                     }
                 }
             "#
-        })),
-        ("filtered_query", json!({
-            "query": r#"
+            }),
+        ),
+        (
+            "filtered_query",
+            json!({
+                "query": r#"
                 query FilteredEntities {
                     orders {
                         id
@@ -215,7 +241,8 @@ fn benchmark_graphql_complex_queries(c: &mut Criterion) {
                     }
                 }
             "#
-        })),
+            }),
+        ),
     ];
 
     for (name, query) in complex_queries {
@@ -224,7 +251,9 @@ fn benchmark_graphql_complex_queries(c: &mut Criterion) {
             &(&server, query),
             |b, (server, query)| {
                 b.to_async(&rt).iter(|| async {
-                    bench_single_graphql_query(server, query.clone()).await.unwrap()
+                    bench_single_graphql_query(server, query.clone())
+                        .await
+                        .unwrap()
                 });
             },
         );
@@ -235,7 +264,7 @@ fn benchmark_graphql_complex_queries(c: &mut Criterion) {
 
 fn benchmark_graphql_load_test(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let server = rt.block_on(async {
         let router = create_graphql_server_in_memory().await.unwrap();
         start_test_server(router).await.unwrap()
@@ -251,9 +280,7 @@ fn benchmark_graphql_load_test(c: &mut Criterion) {
                 let query = json!({
                     "query": format!("query {{ orders {{ id name number amount status }} }}")
                 });
-                tokio::spawn(async move {
-                    server.post_json("/graphql", query).await.unwrap()
-                })
+                tokio::spawn(async move { server.post_json("/graphql", query).await.unwrap() })
             });
 
             let results = futures::future::join_all(queries).await;
@@ -306,7 +333,7 @@ fn benchmark_graphql_load_test(c: &mut Criterion) {
 
 fn benchmark_graphql_response_parsing(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let server = rt.block_on(async {
         let router = create_graphql_server_in_memory().await.unwrap();
         start_test_server(router).await.unwrap()

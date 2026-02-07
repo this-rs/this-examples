@@ -1823,6 +1823,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "inventory"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "aws-config",
+ "aws-sdk-dynamodb",
+ "axum",
+ "chrono",
+ "serde",
+ "serde_json",
+ "this-rs",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-test",
+ "uuid",
+]
+
+[[package]]
 name = "ipnet"
 version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2012,6 +2031,7 @@ dependencies = [
  "axum",
  "billing",
  "catalog",
+ "inventory",
  "serde",
  "serde_json",
  "test-data",
@@ -2992,6 +3012,7 @@ dependencies = [
  "anyhow",
  "billing",
  "catalog",
+ "inventory",
  "serde_json",
  "this-rs 0.0.7",
 ]

@@ -78,10 +78,7 @@ impl EntityCreator for InMemoryProductStore {
                 .as_str()
                 .unwrap_or("active")
                 .to_string(),
-            entity_data["sku"]
-                .as_str()
-                .unwrap_or("SKU-000")
-                .to_string(),
+            entity_data["sku"].as_str().unwrap_or("SKU-000").to_string(),
             entity_data["price"].as_f64().unwrap_or(0.0),
             entity_data["stock_quantity"].as_i64().unwrap_or(0) as i32,
             entity_data["description"].as_str().map(String::from),
@@ -205,10 +202,7 @@ impl EntityCreator for ProductDynamoDBStore {
                 .as_str()
                 .unwrap_or("active")
                 .to_string(),
-            entity_data["sku"]
-                .as_str()
-                .unwrap_or("SKU-000")
-                .to_string(),
+            entity_data["sku"].as_str().unwrap_or("SKU-000").to_string(),
             entity_data["price"].as_f64().unwrap_or(0.0),
             entity_data["stock_quantity"].as_i64().unwrap_or(0) as i32,
             entity_data["description"].as_str().map(String::from),
@@ -258,4 +252,8 @@ impl ProductStore for ProductDynamoDBStore {
             .map_err(|e| ProductStoreError::Other(anyhow::anyhow!(e)))
     }
 }
+
+
+
+
 

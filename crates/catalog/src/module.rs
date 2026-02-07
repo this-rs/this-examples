@@ -4,10 +4,10 @@ use this::prelude::LinksConfig;
 use this::prelude::{EntityCreator, EntityFetcher};
 use this::server::entity_registry::EntityRegistry;
 
-use crate::entities::product::ProductStore;
-use crate::entities::product::descriptor::ProductDescriptor;
 use crate::entities::category::CategoryStore;
 use crate::entities::category::descriptor::CategoryDescriptor;
+use crate::entities::product::ProductStore;
+use crate::entities::product::descriptor::ProductDescriptor;
 use crate::entities::tag::TagStore;
 use crate::entities::tag::descriptor::TagDescriptor;
 
@@ -40,7 +40,7 @@ impl Module for CatalogModule {
     fn name(&self) -> &str {
         "catalog"
     }
-    
+
     fn version(&self) -> &str {
         "0.1.0"
     }
@@ -88,4 +88,8 @@ impl Module for CatalogModule {
         )));
     }
 }
+
+
+
+
 

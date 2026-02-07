@@ -1,25 +1,29 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use endpoint_benchmarks::{
-    create_rest_server_dynamodb, create_graphql_server_dynamodb, start_test_server, data, TestServer
+    create_graphql_server_dynamodb, create_rest_server_dynamodb, data, start_test_server,
+    TestServer,
 };
-use tokio::runtime::Runtime;
 use serde_json::json;
 use std::time::{Duration, Instant};
+use tokio::runtime::Runtime;
 
 /// Stress test DynamoDB avec métriques détaillées
 async fn dynamodb_stress_test(
-    server: &TestServer, 
-    concurrent_requests: usize, 
+    server: &TestServer,
+    concurrent_requests: usize,
     endpoint: &str,
-    operation: &str
+    operation: &str,
 ) -> anyhow::Result<StressTestResults> {
     let start_time = Instant::now();
     let mut latencies = Vec::new();
     let mut errors = 0;
     let mut timeouts = 0;
 
-    println!("\n🔥 DynamoDB Stress Test: {} requêtes sur {}", concurrent_requests, endpoint);
-    
+    println!(
+        "\n🔥 DynamoDB Stress Test: {} requêtes sur {}",
+        concurrent_requests, endpoint
+    );
+
     let tasks = (0..concurrent_requests).map(|i| {
         let server = server.clone();
         let endpoint = endpoint.to_string();
@@ -91,22 +95,26 @@ async fn dynamodb_stress_test(
 
     let results = futures::future::join_all(tasks).await;
     let total_time = start_time.elapsed();
-    
+
     // Collecter les résultats
     for result in results {
         match result? {
             Ok((latency, is_error, is_timeout)) => {
                 latencies.push(latency);
-                if is_error { errors += 1; }
-                if is_timeout { timeouts += 1; }
-            },
+                if is_error {
+                    errors += 1;
+                }
+                if is_timeout {
+                    timeouts += 1;
+                }
+            }
             Err(_) => errors += 1,
         }
     }
-    
+
     latencies.sort();
     let len = latencies.len();
-    
+
     Ok(StressTestResults {
         total_requests: concurrent_requests,
         successful_requests: len - errors - timeouts,
@@ -116,7 +124,9 @@ async fn dynamodb_stress_test(
         latencies,
         requests_per_second: if total_time.as_secs_f64() > 0.0 {
             concurrent_requests as f64 / total_time.as_secs_f64()
-        } else { 0.0 },
+        } else {
+            0.0
+        },
     })
 }
 
@@ -147,8 +157,13 @@ impl StressTestResults {
         let p99 = self.latencies.get(len * 99 / 100).copied().unwrap_or(0);
 
         println!("\n📊 === {} ===", test_name);
-        println!("🎯 Requêtes: {} total, {} réussies, {} échecs, {} timeouts", 
-                self.total_requests, self.successful_requests, self.failed_requests, self.timeout_requests);
+        println!(
+            "🎯 Requêtes: {} total, {} réussies, {} échecs, {} timeouts",
+            self.total_requests,
+            self.successful_requests,
+            self.failed_requests,
+            self.timeout_requests
+        );
         println!("⏱️  Temps total: {:?}", self.total_time);
         println!("🚀 Throughput: {:.1} req/s", self.requests_per_second);
         println!("📈 Latences:");
@@ -158,11 +173,11 @@ impl StressTestResults {
         println!("   P95: {:.1}ms", p95 as f64 / 1000.0);
         println!("   P99: {:.1}ms", p99 as f64 / 1000.0);
         println!("   Max: {:.1}ms", max as f64 / 1000.0);
-        
+
         // Analyse des performances
         let success_rate = (self.successful_requests as f64 / self.total_requests as f64) * 100.0;
         println!("✅ Taux de succès: {:.1}%", success_rate);
-        
+
         if p95 as f64 / 1000.0 < 100.0 {
             println!("🎉 Performance excellente (P95 < 100ms)");
         } else if p95 as f64 / 1000.0 < 500.0 {
@@ -175,7 +190,7 @@ impl StressTestResults {
 
 fn dynamodb_stress_test_scaling(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     // Try to create server with DynamoDB
     let server_result = rt.block_on(async {
         match create_rest_server_dynamodb().await {
@@ -197,8 +212,8 @@ fn dynamodb_stress_test_scaling(c: &mut Criterion) {
     };
 
     let mut group = c.benchmark_group("dynamodb_stress_scaling");
-    group.measurement_time(Duration::from_secs(30));  // Plus de temps pour les stress tests
-    
+    group.measurement_time(Duration::from_secs(30)); // Plus de temps pour les stress tests
+
     // Test de montée en charge progressive
     for concurrent_req in [1, 5, 10, 25, 50, 100].iter() {
         group.bench_with_input(
@@ -206,7 +221,9 @@ fn dynamodb_stress_test_scaling(c: &mut Criterion) {
             concurrent_req,
             |b, &concurrent_req| {
                 b.to_async(&rt).iter(|| async {
-                    let results = dynamodb_stress_test(&server, concurrent_req, "/orders", "GET").await.unwrap();
+                    let results = dynamodb_stress_test(&server, concurrent_req, "/orders", "GET")
+                        .await
+                        .unwrap();
                     results.print_stats(&format!("GET /orders - {} requêtes", concurrent_req));
                     black_box(results);
                 });
@@ -219,7 +236,7 @@ fn dynamodb_stress_test_scaling(c: &mut Criterion) {
 
 fn dynamodb_stress_test_operations(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let server_result = rt.block_on(async {
         match create_rest_server_dynamodb().await {
             Ok(router) => start_test_server(router).await,
@@ -237,7 +254,7 @@ fn dynamodb_stress_test_operations(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("dynamodb_stress_operations");
     group.measurement_time(Duration::from_secs(20));
-    
+
     // Test différentes opérations avec charge modérée
     let operations = vec![
         ("GET_orders", "/orders", "GET"),
@@ -254,7 +271,9 @@ fn dynamodb_stress_test_operations(c: &mut Criterion) {
             &(endpoint, operation),
             |b, &(endpoint, operation)| {
                 b.to_async(&rt).iter(|| async {
-                    let results = dynamodb_stress_test(&server, 20, endpoint, operation).await.unwrap();
+                    let results = dynamodb_stress_test(&server, 20, endpoint, operation)
+                        .await
+                        .unwrap();
                     results.print_stats(&format!("{} {} - 20 requêtes", operation, endpoint));
                     black_box(results);
                 });
@@ -267,7 +286,7 @@ fn dynamodb_stress_test_operations(c: &mut Criterion) {
 
 fn dynamodb_stress_test_graphql(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let server_result = rt.block_on(async {
         match create_graphql_server_dynamodb().await {
             Ok(router) => start_test_server(router).await,
@@ -285,7 +304,7 @@ fn dynamodb_stress_test_graphql(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("dynamodb_stress_graphql");
     group.measurement_time(Duration::from_secs(20));
-    
+
     // Test GraphQL avec DynamoDB
     let graphql_operations = vec![
         ("GraphQL_Query", "/graphql", "GRAPHQL_QUERY"),
@@ -298,7 +317,9 @@ fn dynamodb_stress_test_graphql(c: &mut Criterion) {
             &(endpoint, operation),
             |b, &(endpoint, operation)| {
                 b.to_async(&rt).iter(|| async {
-                    let results = dynamodb_stress_test(&server, 15, endpoint, operation).await.unwrap();
+                    let results = dynamodb_stress_test(&server, 15, endpoint, operation)
+                        .await
+                        .unwrap();
                     results.print_stats(&format!("GraphQL {} - 15 requêtes", test_name));
                     black_box(results);
                 });
@@ -311,7 +332,7 @@ fn dynamodb_stress_test_graphql(c: &mut Criterion) {
 
 fn dynamodb_endurance_test(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let server_result = rt.block_on(async {
         match create_rest_server_dynamodb().await {
             Ok(router) => start_test_server(router).await,
@@ -328,42 +349,53 @@ fn dynamodb_endurance_test(c: &mut Criterion) {
     };
 
     let mut group = c.benchmark_group("dynamodb_endurance");
-    group.measurement_time(Duration::from_secs(60));  // Test d'endurance de 1 minute
-    group.sample_size(10);  // Moins d'échantillons pour le test d'endurance
-    
+    group.measurement_time(Duration::from_secs(60)); // Test d'endurance de 1 minute
+    group.sample_size(10); // Moins d'échantillons pour le test d'endurance
+
     group.bench_function("sustained_load_dynamodb", |b| {
         b.to_async(&rt).iter(|| async {
             println!("\n🏃‍♂️ === Test d'endurance DynamoDB (charge soutenue) ===");
-            
+
             // Simuler une charge constante pendant la durée du test
             let mut total_requests = 0;
             let mut all_latencies = Vec::new();
             let test_start = Instant::now();
-            
+
             // Envoyer des vagues de 10 requêtes toutes les 100ms
-            while test_start.elapsed() < Duration::from_secs(5) {  // 5 secondes pour le bench
-                let wave_results = dynamodb_stress_test(&server, 10, "/orders", "GET").await.unwrap();
+            while test_start.elapsed() < Duration::from_secs(5) {
+                // 5 secondes pour le bench
+                let wave_results = dynamodb_stress_test(&server, 10, "/orders", "GET")
+                    .await
+                    .unwrap();
                 total_requests += wave_results.total_requests;
                 all_latencies.extend(wave_results.latencies);
-                
+
                 tokio::time::sleep(Duration::from_millis(100)).await;
             }
-            
+
             let total_time = test_start.elapsed();
             let rps = total_requests as f64 / total_time.as_secs_f64();
-            
+
             all_latencies.sort();
             let len = all_latencies.len();
-            let avg = if len > 0 { all_latencies.iter().sum::<u128>() / len as u128 } else { 0 };
-            let p95 = if len > 0 { all_latencies[len * 95 / 100] } else { 0 };
-            
+            let avg = if len > 0 {
+                all_latencies.iter().sum::<u128>() / len as u128
+            } else {
+                0
+            };
+            let p95 = if len > 0 {
+                all_latencies[len * 95 / 100]
+            } else {
+                0
+            };
+
             println!("🏆 Test d'endurance terminé:");
             println!("   Total requêtes: {}", total_requests);
             println!("   Durée: {:?}", total_time);
             println!("   RPS moyen: {:.1}", rps);
             println!("   Latence moyenne: {:.1}ms", avg as f64 / 1000.0);
             println!("   P95: {:.1}ms", p95 as f64 / 1000.0);
-            
+
             black_box((total_requests, rps, avg));
         });
     });

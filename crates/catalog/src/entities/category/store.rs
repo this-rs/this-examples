@@ -55,7 +55,11 @@ impl EntityFetcher for InMemoryCategoryStore {
         let offset = offset.unwrap_or(0) as usize;
         let limit = limit.unwrap_or(20) as usize;
 
-        let categories: Vec<Category> = all_categories.into_iter().skip(offset).take(limit).collect();
+        let categories: Vec<Category> = all_categories
+            .into_iter()
+            .skip(offset)
+            .take(limit)
+            .collect();
         categories
             .into_iter()
             .map(|category| serde_json::to_value(category).map_err(Into::into))
@@ -179,7 +183,11 @@ impl EntityFetcher for CategoryDynamoDBStore {
         let offset = offset.unwrap_or(0) as usize;
         let limit = limit.unwrap_or(20) as usize;
 
-        let categories: Vec<Category> = all_categories.into_iter().skip(offset).take(limit).collect();
+        let categories: Vec<Category> = all_categories
+            .into_iter()
+            .skip(offset)
+            .take(limit)
+            .collect();
         categories
             .into_iter()
             .map(|category| serde_json::to_value(category).map_err(Into::into))
@@ -254,4 +262,8 @@ impl CategoryStore for CategoryDynamoDBStore {
             .map_err(|e| CategoryStoreError::Other(anyhow::anyhow!(e)))
     }
 }
+
+
+
+
 

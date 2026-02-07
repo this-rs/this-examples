@@ -8,6 +8,7 @@ Cargo.lock
 # IDE / Editor files
 .vscode/
 .idea/
+.cursor/
 *.swp
 *.swo
 *~

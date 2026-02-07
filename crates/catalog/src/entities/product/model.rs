@@ -33,4 +33,3 @@ impl_data_entity_validated!(
         },
     }
 );
-

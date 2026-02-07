@@ -34,11 +34,11 @@ impl EntityDescriptor for CategoryDescriptor {
     fn entity_type(&self) -> &str {
         "category"
     }
-    
+
     fn plural(&self) -> &str {
         "categories"
     }
-    
+
     fn build_routes(&self) -> Router {
         let state = CategoryState {
             store: self.store.clone(),
@@ -48,9 +48,15 @@ impl EntityDescriptor for CategoryDescriptor {
             .route("/categories", get(list_categories).post(create_category))
             .route(
                 "/categories/{id}",
-                get(get_category).put(update_category).delete(delete_category),
+                get(get_category)
+                    .put(update_category)
+                    .delete(delete_category),
             )
             .with_state(state)
     }
 }
+
+
+
+
 

@@ -1,17 +1,11 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use endpoint_benchmarks::{
-    create_rest_server_in_memory, start_test_server, data, TestServer
-};
+use endpoint_benchmarks::{create_rest_server_in_memory, data, start_test_server, TestServer};
 use tokio::runtime::Runtime;
 
 /// Benchmark REST GET endpoints
 async fn bench_rest_get_endpoints(server: &TestServer) -> anyhow::Result<()> {
     // Test different GET endpoints
-    let endpoints = vec![
-        "/orders",
-        "/invoices", 
-        "/payments",
-    ];
+    let endpoints = vec!["/orders", "/invoices", "/payments"];
 
     for endpoint in endpoints {
         let response = server.get(endpoint).await?;
@@ -21,7 +15,7 @@ async fn bench_rest_get_endpoints(server: &TestServer) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Benchmark REST POST endpoints 
+/// Benchmark REST POST endpoints
 async fn bench_rest_post_endpoints(server: &TestServer) -> anyhow::Result<()> {
     // Test POST endpoints with sample data
     let test_cases = vec![
@@ -47,7 +41,11 @@ async fn bench_single_get_endpoint(server: &TestServer, endpoint: &str) -> anyho
 }
 
 /// Benchmark individual POST endpoint
-async fn bench_single_post_endpoint(server: &TestServer, endpoint: &str, data: serde_json::Value) -> anyhow::Result<()> {
+async fn bench_single_post_endpoint(
+    server: &TestServer,
+    endpoint: &str,
+    data: serde_json::Value,
+) -> anyhow::Result<()> {
     let response = server.post_json(endpoint, data).await?;
     let body = TestServer::response_body_string(response).await?;
     black_box(body);
@@ -56,7 +54,7 @@ async fn bench_single_post_endpoint(server: &TestServer, endpoint: &str, data: s
 
 fn benchmark_rest_in_memory(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     // Create server once for all benchmarks
     let server = rt.block_on(async {
         let router = create_rest_server_in_memory().await.unwrap();
@@ -68,7 +66,7 @@ fn benchmark_rest_in_memory(c: &mut Criterion) {
     // Benchmark GET endpoints individually
     let get_endpoints = vec![
         ("orders", "/orders"),
-        ("invoices", "/invoices"), 
+        ("invoices", "/invoices"),
         ("payments", "/payments"),
     ];
 
@@ -77,14 +75,13 @@ fn benchmark_rest_in_memory(c: &mut Criterion) {
             BenchmarkId::new("get", name),
             &(&server, endpoint),
             |b, (server, endpoint)| {
-                b.to_async(&rt).iter(|| async {
-                    bench_single_get_endpoint(server, endpoint).await.unwrap()
-                });
+                b.to_async(&rt)
+                    .iter(|| async { bench_single_get_endpoint(server, endpoint).await.unwrap() });
             },
         );
     }
 
-    // Benchmark POST endpoints individually  
+    // Benchmark POST endpoints individually
     let post_test_cases = vec![
         ("orders", "/orders", data::sample_order()),
         ("invoices", "/invoices", data::sample_invoice()),
@@ -97,7 +94,9 @@ fn benchmark_rest_in_memory(c: &mut Criterion) {
             &(&server, endpoint, sample_data),
             |b, (server, endpoint, data)| {
                 b.to_async(&rt).iter(|| async {
-                    bench_single_post_endpoint(server, endpoint, data.clone()).await.unwrap()
+                    bench_single_post_endpoint(server, endpoint, data.clone())
+                        .await
+                        .unwrap()
                 });
             },
         );
@@ -105,15 +104,13 @@ fn benchmark_rest_in_memory(c: &mut Criterion) {
 
     // Benchmark combined operations
     group.bench_function("get_all_endpoints", |b| {
-        b.to_async(&rt).iter(|| async {
-            bench_rest_get_endpoints(black_box(&server)).await.unwrap()
-        });
+        b.to_async(&rt)
+            .iter(|| async { bench_rest_get_endpoints(black_box(&server)).await.unwrap() });
     });
 
     group.bench_function("post_all_endpoints", |b| {
-        b.to_async(&rt).iter(|| async {
-            bench_rest_post_endpoints(black_box(&server)).await.unwrap()
-        });
+        b.to_async(&rt)
+            .iter(|| async { bench_rest_post_endpoints(black_box(&server)).await.unwrap() });
     });
 
     group.finish();
@@ -121,7 +118,7 @@ fn benchmark_rest_in_memory(c: &mut Criterion) {
 
 fn benchmark_rest_load_test(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let server = rt.block_on(async {
         let router = create_rest_server_in_memory().await.unwrap();
         start_test_server(router).await.unwrap()
@@ -135,7 +132,10 @@ fn benchmark_rest_load_test(c: &mut Criterion) {
             let tasks = (0..10).map(|_| {
                 let server = server.clone();
                 tokio::spawn(async move {
-                    server.post_json("/orders", data::sample_order()).await.unwrap()
+                    server
+                        .post_json("/orders", data::sample_order())
+                        .await
+                        .unwrap()
                 })
             });
 
@@ -149,15 +149,16 @@ fn benchmark_rest_load_test(c: &mut Criterion) {
             // Mix of GET and POST operations
             let get_tasks = (0..5).map(|_| {
                 let server = server.clone();
-                tokio::spawn(async move {
-                    server.get("/orders").await.unwrap()
-                })
+                tokio::spawn(async move { server.get("/orders").await.unwrap() })
             });
 
             let post_tasks = (0..5).map(|_| {
                 let server = server.clone();
                 tokio::spawn(async move {
-                    server.post_json("/invoices", data::sample_invoice()).await.unwrap()
+                    server
+                        .post_json("/invoices", data::sample_invoice())
+                        .await
+                        .unwrap()
                 })
             });
 
@@ -175,7 +176,7 @@ fn benchmark_rest_load_test(c: &mut Criterion) {
 
 fn benchmark_rest_response_parsing(c: &mut Criterion) {
     let rt = Runtime::new().unwrap();
-    
+
     let server = rt.block_on(async {
         let router = create_rest_server_in_memory().await.unwrap();
         start_test_server(router).await.unwrap()
@@ -194,7 +195,10 @@ fn benchmark_rest_response_parsing(c: &mut Criterion) {
 
     group.bench_function("create_and_parse_invoice", |b| {
         b.to_async(&rt).iter(|| async {
-            let response = server.post_json("/invoices", data::sample_invoice()).await.unwrap();
+            let response = server
+                .post_json("/invoices", data::sample_invoice())
+                .await
+                .unwrap();
             let body = TestServer::response_body_string(response).await.unwrap();
             let parsed: serde_json::Value = serde_json::from_str(&body).unwrap();
             black_box(parsed);

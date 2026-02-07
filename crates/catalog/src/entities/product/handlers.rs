@@ -65,3 +65,7 @@ pub async fn delete_product(State(state): State<ProductState>, Path(id): Path<Uu
     Json(ok)
 }
 
+
+
+
+

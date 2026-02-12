@@ -1,7 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use endpoint_benchmarks::{
-    create_graphql_server_in_memory, create_rest_server_in_memory, data, start_test_server,
-    TestServer,
+    create_graphql_server_in_memory, create_rest_server_in_memory, start_test_server, TestServer,
 };
 use serde_json::json;
 use tokio::runtime::Runtime;
@@ -12,7 +11,7 @@ async fn stress_test_rest(
 ) -> anyhow::Result<Vec<u128>> {
     let start_time = std::time::Instant::now();
 
-    let tasks = (0..concurrent_requests).map(|i| {
+    let tasks = (0..concurrent_requests).map(|_i| {
         let server = server.clone();
         tokio::spawn(async move {
             let start = std::time::Instant::now();
@@ -35,7 +34,7 @@ async fn stress_test_rest(
         "🚀 {} requêtes concurrentes en {:?}",
         concurrent_requests, total_time
     );
-    Ok(latencies?)
+    latencies
 }
 
 async fn stress_test_graphql(
@@ -70,7 +69,7 @@ async fn stress_test_graphql(
         "🌐 {} requêtes GraphQL concurrentes en {:?}",
         concurrent_requests, total_time
     );
-    Ok(latencies?)
+    latencies
 }
 
 fn stress_test_rest_scaling(c: &mut Criterion) {

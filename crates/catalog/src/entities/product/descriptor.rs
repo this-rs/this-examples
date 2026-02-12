@@ -53,8 +53,3 @@ impl EntityDescriptor for ProductDescriptor {
             .with_state(state)
     }
 }
-
-
-
-
-

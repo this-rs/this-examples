@@ -64,8 +64,3 @@ pub async fn delete_store(State(state): State<StoreState>, Path(id): Path<Uuid>)
     let ok = state.store.delete(&id).await.is_ok();
     Json(ok)
 }
-
-
-
-
-

@@ -672,7 +672,7 @@ dependencies = [
  "criterion",
  "serde",
  "serde_json",
- "this-rs 0.0.7",
+ "this-rs",
  "thiserror 1.0.69",
  "tokio",
  "tokio-test",
@@ -757,7 +757,7 @@ dependencies = [
  "chrono",
  "serde",
  "serde_json",
- "this-rs 0.0.6",
+ "this-rs",
  "thiserror 1.0.69",
  "tokio",
  "tokio-test",
@@ -1091,7 +1091,7 @@ dependencies = [
  "billing",
  "serde",
  "serde_json",
- "this-rs 0.0.7",
+ "this-rs",
  "tokio",
  "tracing-subscriber",
 ]
@@ -1129,7 +1129,7 @@ dependencies = [
  "serde",
  "serde_json",
  "test-data",
- "this-rs 0.0.6",
+ "this-rs",
  "tokio",
  "tokio-test",
  "tower",
@@ -1362,7 +1362,7 @@ dependencies = [
  "serde",
  "serde_json",
  "test-data",
- "this-rs 0.0.7",
+ "this-rs",
  "tokio",
  "tracing-subscriber",
 ]
@@ -1377,7 +1377,7 @@ dependencies = [
  "serde",
  "serde_json",
  "test-data",
- "this-rs 0.0.7",
+ "this-rs",
  "tokio",
  "tracing-subscriber",
 ]
@@ -2035,7 +2035,7 @@ dependencies = [
  "serde",
  "serde_json",
  "test-data",
- "this-rs 0.0.6",
+ "this-rs",
  "tokio",
  "tracing-subscriber",
 ]
@@ -2520,7 +2520,7 @@ dependencies = [
  "axum",
  "billing",
  "test-data",
- "this-rs 0.0.7",
+ "this-rs",
  "tokio",
 ]
 
@@ -3014,37 +3014,7 @@ dependencies = [
  "catalog",
  "inventory",
  "serde_json",
- "this-rs 0.0.7",
-]
-
-[[package]]
-name = "this-rs"
-version = "0.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58e414d835e760d702848d539d5ac88e3ddb67d1956280bfa64610351b948829"
-dependencies = [
- "anyhow",
- "async-graphql",
- "async-graphql-axum",
- "async-trait",
- "aws-sdk-dynamodb",
- "axum",
- "chrono",
- "futures",
- "graphql-parser",
- "regex",
- "serde",
- "serde_dynamo",
- "serde_json",
- "serde_yaml",
- "thiserror 2.0.17",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "tracing-subscriber",
- "uuid",
- "validator",
+ "this-rs",
 ]
 
 [[package]]
@@ -3743,7 +3713,7 @@ dependencies = [
  "serde",
  "serde_json",
  "test-data",
- "this-rs 0.0.7",
+ "this-rs",
  "tokio",
  "tower-http",
  "tracing-subscriber",

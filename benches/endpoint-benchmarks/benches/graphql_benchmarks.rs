@@ -275,7 +275,7 @@ fn benchmark_graphql_load_test(c: &mut Criterion) {
     // Simulate concurrent GraphQL requests
     group.bench_function("concurrent_queries", |b| {
         b.to_async(&rt).iter(|| async {
-            let queries = (0..10).map(|i| {
+            let queries = (0..10).map(|_i| {
                 let server = server.clone();
                 let query = json!({
                     "query": format!("query {{ orders {{ id name number amount status }} }}")

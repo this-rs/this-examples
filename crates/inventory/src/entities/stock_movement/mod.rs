@@ -8,8 +8,3 @@ pub use store::{InMemoryStockMovementStore, StockMovementStore, StockMovementSto
 
 #[cfg(feature = "dynamodb")]
 pub use store::StockMovementDynamoDBStore;
-
-
-
-
-

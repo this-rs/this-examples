@@ -64,8 +64,3 @@ pub async fn delete_product(State(state): State<ProductState>, Path(id): Path<Uu
     let ok = state.store.delete(&id).await.is_ok();
     Json(ok)
 }
-
-
-
-
-

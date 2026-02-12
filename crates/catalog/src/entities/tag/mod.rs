@@ -8,8 +8,3 @@ pub use store::{InMemoryTagStore, TagStore, TagStoreError};
 
 #[cfg(feature = "dynamodb")]
 pub use store::TagDynamoDBStore;
-
-
-
-
-

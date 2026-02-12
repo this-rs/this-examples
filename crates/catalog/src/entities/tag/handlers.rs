@@ -58,8 +58,3 @@ pub async fn delete_tag(State(state): State<TagState>, Path(id): Path<Uuid>) -> 
     let ok = state.store.delete(&id).await.is_ok();
     Json(ok)
 }
-
-
-
-
-

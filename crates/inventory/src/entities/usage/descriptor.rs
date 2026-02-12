@@ -53,8 +53,3 @@ impl EntityDescriptor for UsageDescriptor {
             .with_state(state)
     }
 }
-
-
-
-
-

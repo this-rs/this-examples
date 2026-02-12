@@ -56,8 +56,3 @@ impl EntityDescriptor for WarehouseDescriptor {
             .with_state(state)
     }
 }
-
-
-
-
-

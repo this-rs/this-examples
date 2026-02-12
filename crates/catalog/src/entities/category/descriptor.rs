@@ -55,8 +55,3 @@ impl EntityDescriptor for CategoryDescriptor {
             .with_state(state)
     }
 }
-
-
-
-
-

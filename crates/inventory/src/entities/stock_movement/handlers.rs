@@ -69,8 +69,3 @@ pub async fn delete_stock_movement(
     let ok = state.store.delete(&id).await.is_ok();
     Json(ok)
 }
-
-
-
-
-

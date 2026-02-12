@@ -59,8 +59,3 @@ impl EntityDescriptor for StockItemDescriptor {
             .with_state(state)
     }
 }
-
-
-
-
-

@@ -67,8 +67,3 @@ pub async fn delete_category(
     let ok = state.store.delete(&id).await.is_ok();
     Json(ok)
 }
-
-
-
-
-

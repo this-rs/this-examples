@@ -8,8 +8,3 @@ pub use store::{InMemoryStockItemStore, StockItemStore, StockItemStoreError};
 
 #[cfg(feature = "dynamodb")]
 pub use store::StockItemDynamoDBStore;
-
-
-
-
-

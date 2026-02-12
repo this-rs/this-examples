@@ -8,8 +8,3 @@ pub use store::{InMemoryWarehouseStore, WarehouseStore, WarehouseStoreError};
 
 #[cfg(feature = "dynamodb")]
 pub use store::WarehouseDynamoDBStore;
-
-
-
-
-

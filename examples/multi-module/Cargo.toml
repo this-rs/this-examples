@@ -8,7 +8,7 @@ billing = { path = "../../crates/billing" }
 catalog = { path = "../../crates/catalog" }
 inventory = { path = "../../crates/inventory" }
 test-data = { path = "../../crates/test-data" }
-this-rs = { version = "0.0.6", features = ["graphql"] }
+this-rs = { version = "0.0.7", features = ["graphql"] }
 anyhow = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 async-trait = "0.1"

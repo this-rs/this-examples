@@ -51,8 +51,3 @@ impl EntityDescriptor for TagDescriptor {
             .with_state(state)
     }
 }
-
-
-
-
-

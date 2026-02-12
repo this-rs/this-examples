@@ -59,8 +59,3 @@ impl EntityDescriptor for StockMovementDescriptor {
             .with_state(state)
     }
 }
-
-
-
-
-

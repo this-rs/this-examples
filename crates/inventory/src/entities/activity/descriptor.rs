@@ -55,8 +55,3 @@ impl EntityDescriptor for ActivityDescriptor {
             .with_state(state)
     }
 }
-
-
-
-
-

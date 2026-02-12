@@ -59,7 +59,7 @@ async fn stress_test_dynamo_rest(
         "🗄️ DynamoDB - {} requêtes concurrentes en {:?}",
         concurrent_requests, total_time
     );
-    Ok(latencies?)
+    latencies
 }
 
 fn benchmark_rest_dynamodb(c: &mut Criterion) {
@@ -71,7 +71,7 @@ fn benchmark_rest_dynamodb(c: &mut Criterion) {
             Ok(router) => start_test_server(router).await,
             Err(e) => {
                 println!("⚠️ DynamoDB non disponible, benchmark ignoré: {}", e);
-                return Err(e);
+                Err(e)
             }
         }
     });
@@ -143,7 +143,7 @@ fn benchmark_graphql_dynamodb(c: &mut Criterion) {
                     "⚠️ DynamoDB non disponible pour GraphQL, benchmark ignoré: {}",
                     e
                 );
-                return Err(e);
+                Err(e)
             }
         }
     });
@@ -237,7 +237,7 @@ fn benchmark_dynamodb_load_test(c: &mut Criterion) {
                     "⚠️ DynamoDB non disponible pour load test, benchmark ignoré: {}",
                     e
                 );
-                return Err(e);
+                Err(e)
             }
         }
     });

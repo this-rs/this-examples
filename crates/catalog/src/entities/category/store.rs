@@ -262,8 +262,3 @@ impl CategoryStore for CategoryDynamoDBStore {
             .map_err(|e| CategoryStoreError::Other(anyhow::anyhow!(e)))
     }
 }
-
-
-
-
-

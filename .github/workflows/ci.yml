@@ -99,6 +99,9 @@ jobs:
       - name: Build grpc_example
         run: cargo build -p grpc_example
 
+      - name: Build multi_module_example
+        run: cargo build -p multi_module_example
+
   # ── Tests ──────────────────────────────────────────────────────────
   test:
     name: Test Suite

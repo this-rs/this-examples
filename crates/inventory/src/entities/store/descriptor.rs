@@ -53,8 +53,3 @@ impl EntityDescriptor for StoreDescriptor {
             .with_state(state)
     }
 }
-
-
-
-
-

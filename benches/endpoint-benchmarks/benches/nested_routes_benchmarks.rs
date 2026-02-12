@@ -5,6 +5,7 @@ use tokio::runtime::Runtime;
 
 /// Structure pour les résultats d'un test de route imbriquée
 #[derive(Debug)]
+#[allow(dead_code)]
 struct NestedRouteResult {
     route: String,
     depth: u8,
@@ -18,7 +19,7 @@ async fn extract_first_id(response_body: &str) -> Option<String> {
     if let Ok(json) = serde_json::from_str::<Value>(response_body) {
         // Si c'est un array, prendre le premier élément
         if let Some(array) = json.as_array() {
-            if let Some(first) = array.get(0) {
+            if let Some(first) = array.first() {
                 return first.get("id")?.as_str().map(|s| s.to_string());
             }
         }
@@ -29,7 +30,7 @@ async fn extract_first_id(response_body: &str) -> Option<String> {
         // Si c'est dans un wrapper "data"
         if let Some(data) = json.get("data") {
             if let Some(array) = data.as_array() {
-                if let Some(first) = array.get(0) {
+                if let Some(first) = array.first() {
                     return first.get("id")?.as_str().map(|s| s.to_string());
                 }
             }

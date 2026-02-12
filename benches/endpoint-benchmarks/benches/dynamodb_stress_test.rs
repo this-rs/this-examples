@@ -28,10 +28,10 @@ async fn dynamodb_stress_test(
         let server = server.clone();
         let endpoint = endpoint.to_string();
         let operation = operation.to_string();
-        
+
         tokio::spawn(async move {
             let start = Instant::now();
-            
+
             let result = match operation.as_str() {
                 "GET" => {
                     server.get(&endpoint).await
@@ -67,9 +67,9 @@ async fn dynamodb_stress_test(
                 },
                 _ => server.get(&endpoint).await
             };
-            
+
             let elapsed = start.elapsed();
-            
+
             match result {
                 Ok(response) => {
                     let status = response.status();
@@ -198,7 +198,7 @@ fn dynamodb_stress_test_scaling(c: &mut Criterion) {
             Err(e) => {
                 println!("🚫 DynamoDB non disponible pour stress test: {}", e);
                 println!("💡 Conseil: Lancez './setup_dynamodb.sh start' d'abord");
-                return Err(e);
+                Err(e)
             }
         }
     });
@@ -242,7 +242,7 @@ fn dynamodb_stress_test_operations(c: &mut Criterion) {
             Ok(router) => start_test_server(router).await,
             Err(e) => {
                 println!("🚫 DynamoDB non disponible: {}", e);
-                return Err(e);
+                Err(e)
             }
         }
     });
@@ -292,7 +292,7 @@ fn dynamodb_stress_test_graphql(c: &mut Criterion) {
             Ok(router) => start_test_server(router).await,
             Err(e) => {
                 println!("🚫 DynamoDB GraphQL non disponible: {}", e);
-                return Err(e);
+                Err(e)
             }
         }
     });
@@ -338,7 +338,7 @@ fn dynamodb_endurance_test(c: &mut Criterion) {
             Ok(router) => start_test_server(router).await,
             Err(e) => {
                 println!("🚫 DynamoDB non disponible pour endurance test: {}", e);
-                return Err(e);
+                Err(e)
             }
         }
     });

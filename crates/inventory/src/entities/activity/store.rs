@@ -247,8 +247,3 @@ impl ActivityStore for ActivityDynamoDBStore {
             .map_err(|e| ActivityStoreError::Other(anyhow::anyhow!(e)))
     }
 }
-
-
-
-
-

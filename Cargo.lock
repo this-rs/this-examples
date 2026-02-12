@@ -2647,6 +2647,8 @@ dependencies = [
 [[package]]
 name = "this-rs"
 version = "0.0.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b299faa7c05f38714c1a0128da5b401bfc2fc4e9d842f59523d8b454c3b82c6e"
 dependencies = [
  "anyhow",
  "async-graphql",

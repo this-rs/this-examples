@@ -8,6 +8,3 @@ members = [
   "examples/websocket",
 ]
 resolver = "2"
-
-[patch.crates-io]
-this-rs = { path = "../this" }

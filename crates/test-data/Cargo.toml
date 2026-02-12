@@ -5,6 +5,6 @@ edition = "2021"
 
 [dependencies]
 billing = { path = "../billing" }
-this-rs = "0.0.6"
+this-rs = "0.0.7"
 anyhow = "1"
 serde_json = "1"

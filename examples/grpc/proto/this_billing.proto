@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+package this_api;
+
+// Invoice entity
+message Invoice {
+}
+
+message GetInvoiceRequest {
+  string id = 1;
+}
+
+message ListInvoiceRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListInvoiceResponse {
+  repeated Invoice items = 1;
+  int32 total = 2;
+}
+
+message CreateInvoiceRequest {
+}
+
+message UpdateInvoiceRequest {
+  string id = 1;
+}
+
+message DeleteInvoiceRequest {
+  string id = 1;
+}
+
+message DeleteInvoiceResponse {
+  bool success = 1;
+}
+
+service InvoiceService {
+  rpc GetInvoice(GetInvoiceRequest) returns (Invoice);
+  rpc ListInvoice(ListInvoiceRequest) returns (ListInvoiceResponse);
+  rpc CreateInvoice(CreateInvoiceRequest) returns (Invoice);
+  rpc UpdateInvoice(UpdateInvoiceRequest) returns (Invoice);
+  rpc DeleteInvoice(DeleteInvoiceRequest) returns (DeleteInvoiceResponse);
+}
+
+// Payment entity
+message Payment {
+}
+
+message GetPaymentRequest {
+  string id = 1;
+}
+
+message ListPaymentRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListPaymentResponse {
+  repeated Payment items = 1;
+  int32 total = 2;
+}
+
+message CreatePaymentRequest {
+}
+
+message UpdatePaymentRequest {
+  string id = 1;
+}
+
+message DeletePaymentRequest {
+  string id = 1;
+}
+
+message DeletePaymentResponse {
+  bool success = 1;
+}
+
+service PaymentService {
+  rpc GetPayment(GetPaymentRequest) returns (Payment);
+  rpc ListPayment(ListPaymentRequest) returns (ListPaymentResponse);
+  rpc CreatePayment(CreatePaymentRequest) returns (Payment);
+  rpc UpdatePayment(UpdatePaymentRequest) returns (Payment);
+  rpc DeletePayment(DeletePaymentRequest) returns (DeletePaymentResponse);
+}
+
+// Order entity
+message Order {
+}
+
+message GetOrderRequest {
+  string id = 1;
+}
+
+message ListOrderRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListOrderResponse {
+  repeated Order items = 1;
+  int32 total = 2;
+}
+
+message CreateOrderRequest {
+}
+
+message UpdateOrderRequest {
+  string id = 1;
+}
+
+message DeleteOrderRequest {
+  string id = 1;
+}
+
+message DeleteOrderResponse {
+  bool success = 1;
+}
+
+service OrderService {
+  rpc GetOrder(GetOrderRequest) returns (Order);
+  rpc ListOrder(ListOrderRequest) returns (ListOrderResponse);
+  rpc CreateOrder(CreateOrderRequest) returns (Order);
+  rpc UpdateOrder(UpdateOrderRequest) returns (Order);
+  rpc DeleteOrder(DeleteOrderRequest) returns (DeleteOrderResponse);
+}
+
+// Link messages
+message Link {
+  string id = 1;
+  string link_type = 2;
+  string source_id = 3;
+  string target_id = 4;
+  string created_at = 5;
+  string updated_at = 6;
+}
+
+message CreateLinkRequest {
+  string link_type = 1;
+  string source_id = 2;
+  string target_id = 3;
+}
+
+message GetLinkRequest {
+  string id = 1;
+}
+
+message FindLinksRequest {
+  string entity_id = 1;
+  string link_type = 2;
+}
+
+message LinkListResponse {
+  repeated Link links = 1;
+}
+
+message DeleteLinkRequest {
+  string id = 1;
+}
+
+message DeleteLinkResponse {
+  bool success = 1;
+}
+
+service LinkService {
+  rpc CreateLink(CreateLinkRequest) returns (Link);
+  rpc GetLink(GetLinkRequest) returns (Link);
+  rpc FindLinksBySource(FindLinksRequest) returns (LinkListResponse);
+  rpc FindLinksByTarget(FindLinksRequest) returns (LinkListResponse);
+  rpc DeleteLink(DeleteLinkRequest) returns (DeleteLinkResponse);
+}

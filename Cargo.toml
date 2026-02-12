@@ -5,6 +5,7 @@ members = [
   "examples/rest",
   "examples/graphql",
   "examples/dynamodb",
+  "examples/websocket",
 ]
 resolver = "2"
 

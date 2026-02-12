@@ -1,5 +1,8 @@
 # this-examples
 
+[![CI](https://github.com/this-rs/this-examples/actions/workflows/ci.yml/badge.svg)](https://github.com/this-rs/this-examples/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/this-rs/this-examples/graph/badge.svg)](https://codecov.io/gh/this-rs/this-examples)
+
 A collection of runnable examples demonstrating how to build modular, protocol-agnostic backends with the this-rs framework.
 
 - Domain modules are isolated as Rust crates under `crates/` for clean boundaries and data isolation.

@@ -57,7 +57,9 @@ async fn main() -> Result<()> {
     println!("    WS     /ws");
     println!("\n  Client de test:");
     println!("    GET    /static/ws-client.html");
-    println!("\n💡 Ouvrez le client HTML dans un navigateur, puis utilisez curl pour créer des entités.");
+    println!(
+        "\n💡 Ouvrez le client HTML dans un navigateur, puis utilisez curl pour créer des entités."
+    );
     println!("   Les événements apparaîtront en temps réel dans le client WebSocket.\n");
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:4243").await?;

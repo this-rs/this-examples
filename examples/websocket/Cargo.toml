@@ -1,11 +1,12 @@
 [package]
-name = "dynamodb_example"
+name = "websocket_example"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-billing = { path = "../../crates/billing", features = ["dynamodb"] }
-this-rs = { version = "0.0.7", features = ["graphql", "dynamodb"] }
+billing = { path = "../../crates/billing" }
+test-data = { path = "../../crates/test-data" }
+this-rs = { version = "0.0.7", features = ["websocket"] }
 anyhow = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 async-trait = "0.1"
@@ -13,9 +14,4 @@ axum = "0.8"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
-aws-sdk-dynamodb = "1"
-aws-config = "1"
-
-[features]
-graphql = ["billing/graphql"]
-
+tower-http = { version = "0.6", features = ["fs"] }

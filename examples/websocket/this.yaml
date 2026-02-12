@@ -1,0 +1,7 @@
+name: websocket-example
+
+api:
+  path: .
+  port: 4243
+
+targets: []

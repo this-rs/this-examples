@@ -73,18 +73,18 @@ async fn main() -> Result<()> {
     println!("\n🌐 Server running on http://0.0.0.0:4242");
     println!("\n📚 Endpoints disponibles:");
     println!("\n  REST API:");
-    println!("    GET    /order");
-    println!("    POST   /order");
-    println!("    GET    /order/{{id}}");
-    println!("    DELETE /order/{{id}}");
-    println!("    GET    /invoice");
-    println!("    POST   /invoice");
-    println!("    GET    /invoice/{{id}}");
-    println!("    DELETE /invoice/{{id}}");
-    println!("    GET    /payment");
-    println!("    POST   /payment");
-    println!("    GET    /payment/{{id}}");
-    println!("    DELETE /payment/{{id}}");
+    println!("    GET    /orders");
+    println!("    POST   /orders");
+    println!("    GET    /orders/{{id}}");
+    println!("    DELETE /orders/{{id}}");
+    println!("    GET    /invoices");
+    println!("    POST   /invoices");
+    println!("    GET    /invoices/{{id}}");
+    println!("    DELETE /invoices/{{id}}");
+    println!("    GET    /payments");
+    println!("    POST   /payments");
+    println!("    GET    /payments/{{id}}");
+    println!("    DELETE /payments/{{id}}");
 
     #[cfg(feature = "graphql")]
     {

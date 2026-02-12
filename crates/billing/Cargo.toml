@@ -6,6 +6,8 @@ edition = "2024"
 [features]
 default = []
 graphql = ["this-rs/graphql"]
+grpc = ["this-rs/grpc"]
+websocket = ["this-rs/websocket"]
 dynamodb = ["this-rs/dynamodb"]
 
 [dependencies]
@@ -21,3 +23,11 @@ uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 aws-sdk-dynamodb = "1"
 aws-config = "1"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+tokio-test = "0.4"
+
+[[bench]]
+name = "billing_benchmarks"
+harness = false

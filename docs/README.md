@@ -32,6 +32,12 @@ Complete documentation for the this-examples project.
 
 - **[test-data](../crates/test-data/README.md)** - Data provisioning for demos and tests
 - **[billing](../crates/billing/)** - Domain module with orders, invoices, and payments
+- **[catalog](../crates/catalog/)** - Domain module with products, categories, and tags
+- **[inventory](../crates/inventory/)** - Domain module with stores, activities, warehouses, stock, and usage tracking
+
+## Examples
+
+- **[multi-module](../examples/multi-module/)** - Combines billing, catalog, and inventory in a single server with REST and GraphQL
 
 ## Quick Links
 

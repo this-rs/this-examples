@@ -1,0 +1,7 @@
+name: grpc-example
+
+api:
+  path: .
+  port: 4244
+
+targets: []

@@ -1,0 +1,95 @@
+# Configuration for the catalog module
+# This module manages products, categories, and tags with many-to-many relationships
+
+entities:
+  - singular: product
+    plural: products
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+  - singular: category
+    plural: categories
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+  - singular: tag
+    plural: tags
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+links:
+  # Product ↔ Category (many-to-many)
+  # Products can belong to multiple categories
+  - link_type: has_category
+    source_type: product
+    target_type: category
+    forward_route_name: categories
+    reverse_route_name: products
+    description: "Product belongs to categories"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+  # Product ↔ Tag (many-to-many)
+  # Products can have multiple tags for classification
+  - link_type: has_tag
+    source_type: product
+    target_type: tag
+    forward_route_name: tags
+    reverse_route_name: products
+    description: "Product has tags"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+  # Category → Category (reflexive, hierarchical)
+  # Categories can have parent categories (hierarchy)
+  - link_type: has_parent
+    source_type: category
+    target_type: category
+    forward_route_name: children
+    reverse_route_name: parent
+    description: "Category hierarchy (parent/child)"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+validation_rules:
+  has_category:
+    - source: product
+      targets: [category]
+  
+  has_tag:
+    - source: product
+      targets: [tag]
+  
+  has_parent:
+    - source: category
+      targets: [category]
+
+
+
+
+
+

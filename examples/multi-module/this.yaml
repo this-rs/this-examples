@@ -1,0 +1,7 @@
+name: multi-module-example
+
+api:
+  path: .
+  port: 4242
+
+targets: []

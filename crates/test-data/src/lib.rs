@@ -177,3 +177,463 @@ pub async fn populate_test_data(
 
     Ok(())
 }
+
+/// Populate test data in the catalog stores and create links between entities
+pub async fn populate_catalog_data(
+    stores: &catalog::CatalogStores,
+    link_service: Arc<InMemoryLinkService>,
+) -> Result<()> {
+    use catalog::entities::category::Category;
+    use catalog::entities::product::Product;
+    use catalog::entities::tag::Tag;
+
+    // Categories
+    let category1 = Category::new(
+        "Electronics".into(),
+        "active".into(),
+        "electronics".into(),
+        Some("Electronic products".into()),
+    );
+    let category2 = Category::new(
+        "Clothing".into(),
+        "active".into(),
+        "clothing".into(),
+        Some("Clothing items".into()),
+    );
+    let category3 = Category::new(
+        "Laptops".into(),
+        "active".into(),
+        "laptops".into(),
+        Some("Laptop computers".into()),
+    );
+    let category1_result = stores.categories_store.create(category1.clone()).await.ok();
+    let category2_result = stores.categories_store.create(category2.clone()).await.ok();
+    let category3_result = stores.categories_store.create(category3.clone()).await.ok();
+
+    // Tags
+    let tag1 = Tag::new(
+        "featured".into(),
+        "active".into(),
+        Some("#FF5733".into()),
+        Some("Featured products".into()),
+    );
+    let tag2 = Tag::new(
+        "new".into(),
+        "active".into(),
+        Some("#33FF57".into()),
+        Some("New arrivals".into()),
+    );
+    let tag3 = Tag::new(
+        "sale".into(),
+        "active".into(),
+        Some("#3357FF".into()),
+        Some("On sale".into()),
+    );
+    let tag1_result = stores.tags_store.create(tag1.clone()).await.ok();
+    let tag2_result = stores.tags_store.create(tag2.clone()).await.ok();
+    let tag3_result = stores.tags_store.create(tag3.clone()).await.ok();
+
+    // Products
+    let product1 = Product::new(
+        "Laptop Pro".into(),
+        "active".into(),
+        "LAP-001".into(),
+        1299.99,
+        10,
+        Some("High-performance laptop".into()),
+    );
+    let product2 = Product::new(
+        "T-Shirt Basic".into(),
+        "active".into(),
+        "TSH-001".into(),
+        19.99,
+        50,
+        Some("Basic cotton t-shirt".into()),
+    );
+    let product3 = Product::new(
+        "Smartphone X".into(),
+        "active".into(),
+        "PHN-001".into(),
+        899.99,
+        25,
+        Some("Latest smartphone model".into()),
+    );
+    let product1_result = stores.products_store.create(product1.clone()).await.ok();
+    let product2_result = stores.products_store.create(product2.clone()).await.ok();
+    let product3_result = stores.products_store.create(product3.clone()).await.ok();
+
+    // Create links between entities
+    // Product → Category (many-to-many)
+    if let (Some(p1), Some(c1)) = (product1_result.as_ref(), category1_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_category",
+            p1.id,
+            c1.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "primary": true
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p1), Some(c3)) = (product1_result.as_ref(), category3_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_category",
+            p1.id,
+            c3.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "primary": false
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p2), Some(c2)) = (product2_result.as_ref(), category2_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_category",
+            p2.id,
+            c2.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "primary": true
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p3), Some(c1)) = (product3_result.as_ref(), category1_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_category",
+            p3.id,
+            c1.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "primary": true
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    // Product → Tag (many-to-many)
+    if let (Some(p1), Some(t1)) = (product1_result.as_ref(), tag1_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_tag",
+            p1.id,
+            t1.id,
+            Some(serde_json::json!({
+                "created_by": "test-data"
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p1), Some(t2)) = (product1_result.as_ref(), tag2_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_tag",
+            p1.id,
+            t2.id,
+            Some(serde_json::json!({
+                "created_by": "test-data"
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p2), Some(t3)) = (product2_result.as_ref(), tag3_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_tag",
+            p2.id,
+            t3.id,
+            Some(serde_json::json!({
+                "created_by": "test-data"
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(p3), Some(t1)) = (product3_result.as_ref(), tag1_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_tag",
+            p3.id,
+            t1.id,
+            Some(serde_json::json!({
+                "created_by": "test-data"
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    // Category → Category (hierarchical - reflexive)
+    if let (Some(c3), Some(c1)) = (category3_result.as_ref(), category1_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_parent",
+            c3.id,
+            c1.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "level": 1
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    Ok(())
+}
+
+/// Populate test data in the inventory stores and create links between entities
+/// Scenario: Bar with co-working activity - demonstrates multi-activity store and refacturation
+pub async fn populate_inventory_data(
+    stores: &inventory::InventoryStores,
+    link_service: Arc<InMemoryLinkService>,
+) -> Result<()> {
+    use inventory::entities::activity::Activity;
+    use inventory::entities::stock_item::StockItem;
+    use inventory::entities::stock_movement::StockMovement;
+    use inventory::entities::store::Store;
+    use inventory::entities::usage::Usage;
+    use inventory::entities::warehouse::Warehouse;
+
+    // Store: Le Café Central (bar + co-working)
+    let store1 = Store::new(
+        "Le Café Central".into(),
+        "active".into(),
+        Some("123 Main Street, Paris".into()),
+    );
+    let store1_result = stores.stores_store.create(store1.clone()).await.ok();
+
+    // Activities: Bar and Co-working
+    let activity_bar = Activity::new(
+        "Bar".into(),
+        "active".into(),
+        Some("bar".into()),
+        Some("Bar service".into()),
+    );
+    let activity_coworking = Activity::new(
+        "Co-working".into(),
+        "active".into(),
+        Some("coworking".into()),
+        Some("Co-working space".into()),
+    );
+    let activity_bar_result = stores
+        .activities_store
+        .create(activity_bar.clone())
+        .await
+        .ok();
+    let activity_coworking_result = stores
+        .activities_store
+        .create(activity_coworking.clone())
+        .await
+        .ok();
+
+    // Link Store to Activities (many-to-many)
+    if let (Some(s1), Some(ab)) = (store1_result.as_ref(), activity_bar_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_activity",
+            s1.id,
+            ab.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "primary": true
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    if let (Some(s1), Some(ac)) = (store1_result.as_ref(), activity_coworking_result.as_ref()) {
+        let link = LinkEntity::new(
+            "has_activity",
+            s1.id,
+            ac.id,
+            Some(serde_json::json!({
+                "created_by": "test-data",
+                "primary": false
+            })),
+        );
+        link_service.create(link).await.ok();
+    }
+
+    // Warehouse for the store
+    if let Some(s1) = store1_result.as_ref() {
+        let warehouse1 = Warehouse::new(
+            "Main Warehouse".into(),
+            "active".into(),
+            Some("Storage room".into()),
+            s1.id,
+        );
+        let warehouse1_result = stores
+            .warehouses_store
+            .create(warehouse1.clone())
+            .await
+            .ok();
+
+        // Link Store to Warehouse
+        if let Some(w1) = warehouse1_result.as_ref() {
+            let link = LinkEntity::new(
+                "has_warehouse",
+                s1.id,
+                w1.id,
+                Some(serde_json::json!({
+                    "created_by": "test-data"
+                })),
+            );
+            link_service.create(link).await.ok();
+
+            // StockItem: Coffee (product from catalog would be linked via product_id)
+            let stock_item1 = StockItem::new(
+                "Coffee Stock".into(),
+                "available".into(),
+                None, // product_id would link to catalog product
+                100,
+                w1.id,
+                Some(10),
+            );
+            let stock_item1_result = stores
+                .stock_items_store
+                .create(stock_item1.clone())
+                .await
+                .ok();
+
+            // Link Warehouse to StockItem
+            if let Some(si1) = stock_item1_result.as_ref() {
+                let link = LinkEntity::new(
+                    "contains",
+                    w1.id,
+                    si1.id,
+                    Some(serde_json::json!({
+                        "created_by": "test-data"
+                    })),
+                );
+                link_service.create(link).await.ok();
+
+                // StockMovement: Out for bar service
+                if let Some(ab) = activity_bar_result.as_ref() {
+                    let movement1 = StockMovement::new(
+                        "Coffee served to coworkers".into(),
+                        "completed".into(),
+                        si1.id,
+                        "out".into(),
+                        15,
+                        Some("Service to co-working customers".into()),
+                        Some(ab.id),
+                    );
+                    let movement1_result = stores
+                        .stock_movements_store
+                        .create(movement1.clone())
+                        .await
+                        .ok();
+
+                    // Link StockItem to StockMovement
+                    if let Some(m1) = movement1_result.as_ref() {
+                        let link = LinkEntity::new(
+                            "has_movement",
+                            si1.id,
+                            m1.id,
+                            Some(serde_json::json!({
+                                "created_by": "test-data"
+                            })),
+                        );
+                        link_service.create(link).await.ok();
+
+                        // Link StockMovement to Activity (consumed_by)
+                        let link = LinkEntity::new(
+                            "consumed_by",
+                            m1.id,
+                            ab.id,
+                            Some(serde_json::json!({
+                                "created_by": "test-data",
+                                "reason": "service_to_coworking"
+                            })),
+                        );
+                        link_service.create(link).await.ok();
+                    }
+                }
+            }
+        }
+    }
+
+    // Usage: Track co-working space usage by bar
+    if let (Some(ac), Some(ab)) = (
+        activity_coworking_result.as_ref(),
+        activity_bar_result.as_ref(),
+    ) {
+        // Usage 1: Space used
+        let usage1 = Usage::new(
+            "Space usage by bar".into(),
+            "recorded".into(),
+            ac.id,
+            "espace_utilise".into(),
+            8.0,
+            Some("hours".into()),
+            Some(ab.id),
+            Some("2025-01-15".into()),
+        );
+        let usage1_result = stores.usages_store.create(usage1.clone()).await.ok();
+
+        // Link Activity to Usage
+        if let Some(u1) = usage1_result.as_ref() {
+            let link = LinkEntity::new(
+                "has_usage",
+                ac.id,
+                u1.id,
+                Some(serde_json::json!({
+                    "created_by": "test-data"
+                })),
+            );
+            link_service.create(link).await.ok();
+
+            // Link Usage to from_activity (for refacturation)
+            let link = LinkEntity::new(
+                "from_activity",
+                u1.id,
+                ab.id,
+                Some(serde_json::json!({
+                    "created_by": "test-data",
+                    "refacturation": true
+                })),
+            );
+            link_service.create(link).await.ok();
+        }
+
+        // Usage 2: Consumption tracked
+        let usage2 = Usage::new(
+            "Coffee consumption by coworkers".into(),
+            "recorded".into(),
+            ac.id,
+            "consommation".into(),
+            15.0,
+            Some("items".into()),
+            Some(ab.id),
+            Some("2025-01-15".into()),
+        );
+        let usage2_result = stores.usages_store.create(usage2.clone()).await.ok();
+
+        // Link Activity to Usage
+        if let Some(u2) = usage2_result.as_ref() {
+            let link = LinkEntity::new(
+                "has_usage",
+                ac.id,
+                u2.id,
+                Some(serde_json::json!({
+                    "created_by": "test-data"
+                })),
+            );
+            link_service.create(link).await.ok();
+
+            // Link Usage to from_activity (for refacturation)
+            let link = LinkEntity::new(
+                "from_activity",
+                u2.id,
+                ab.id,
+                Some(serde_json::json!({
+                    "created_by": "test-data",
+                    "refacturation": true
+                })),
+            );
+            link_service.create(link).await.ok();
+        }
+    }
+
+    Ok(())
+}

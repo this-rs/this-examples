@@ -6,7 +6,7 @@ Cross-entity relationships are modeled via a link service. This keeps entities d
 
 - The examples use `InMemoryLinkService` for simplicity.
 - The service stores generic links (source, target, type, metadata) and can be replaced by a persistent implementation.
-- Links are configured in `crates/billing/config/links.yaml` with forward and reverse route names.
+- Links are configured per module in `crates/<module>/config/links.yaml` with forward and reverse route names.
 
 ## Nested Routes
 
@@ -48,6 +48,47 @@ This follows two links:
 2. Invoice → Payment (validates the payment belongs to that invoice)
 
 See **[Nested Routes](nested-routes.md)** for complete documentation.
+
+## Cross-module links
+
+Links can reference entities from different modules. For example, the inventory module defines a link from `stock_item` to `product` (which belongs to the catalog module):
+
+```yaml
+# In crates/inventory/config/links.yaml
+- link_type: references
+  source_type: stock_item
+  target_type: product
+  forward_route_name: product
+  reverse_route_name: stock_items
+  description: "Stock item references product (cross-module)"
+```
+
+This generates routes like:
+- `GET /stock_item/{id}/product` - Get the product referenced by a stock item
+- `GET /product/{id}/stock_items` - List stock items for a product
+
+Cross-module links work transparently because the host merges all module registrations into a single entity registry.
+
+## Link configurations by module
+
+### Billing (`crates/billing/config/links.yaml`)
+- `order → invoice` (has_invoice) / `invoice → order`
+- `invoice → payment` (payment) / `payment → invoice`
+
+### Catalog (`crates/catalog/config/links.yaml`)
+- `product ↔ category` (has_category) - many-to-many
+- `product ↔ tag` (has_tag) - many-to-many
+- `category → category` (has_parent) - reflexive hierarchy (parent/child)
+
+### Inventory (`crates/inventory/config/links.yaml`)
+- `store ↔ activity` (has_activity) - many-to-many
+- `store → warehouse` (has_warehouse) - one-to-many
+- `warehouse → stock_item` (contains) - one-to-many
+- `stock_item → stock_movement` (has_movement) - one-to-many
+- `stock_item → product` (references) - cross-module to catalog
+- `activity → usage` (has_usage) - one-to-many
+- `usage → activity` (from_activity) - refacturation tracking
+- `stock_movement → activity` (consumed_by) - consumption tracking
 
 ## Generic links
 

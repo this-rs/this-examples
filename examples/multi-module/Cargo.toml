@@ -8,7 +8,7 @@ billing = { path = "../../crates/billing" }
 catalog = { path = "../../crates/catalog" }
 inventory = { path = "../../crates/inventory" }
 test-data = { path = "../../crates/test-data" }
-this-rs = { version = "0.0.7", features = ["graphql"] }
+this-rs = { version = "0.0.7", features = ["graphql", "grpc", "websocket"] }
 anyhow = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 async-trait = "0.1"
@@ -16,8 +16,4 @@ axum = "0.8"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
-
-[features]
-# Proxy feature to optionally compile the example without GraphQL
-graphql = ["billing/graphql"]
-
+tower-http = { version = "0.6", features = ["fs"] }

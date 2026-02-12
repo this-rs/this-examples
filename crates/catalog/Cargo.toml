@@ -6,6 +6,8 @@ edition = "2024"
 [features]
 default = []
 graphql = ["this-rs/graphql"]
+grpc = ["this-rs/grpc"]
+websocket = ["this-rs/websocket"]
 dynamodb = ["this-rs/dynamodb"]
 
 [dependencies]
@@ -24,9 +26,5 @@ aws-config = "1"
 
 [dev-dependencies]
 tokio-test = "0.4"
-
-
-
-
 
 

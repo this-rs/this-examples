@@ -2037,6 +2037,7 @@ dependencies = [
  "test-data",
  "this-rs",
  "tokio",
+ "tower-http",
  "tracing-subscriber",
 ]
 

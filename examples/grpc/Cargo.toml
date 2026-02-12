@@ -1,0 +1,15 @@
+[package]
+name = "grpc_example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+billing = { path = "../../crates/billing" }
+test-data = { path = "../../crates/test-data" }
+this-rs = { version = "0.0.7", features = ["grpc"] }
+anyhow = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+axum = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }

@@ -17,8 +17,8 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     // Connect to MySQL
-    let database_url =
-        env::var("DATABASE_URL").unwrap_or_else(|_| "mysql://billing:billing@localhost:3306/billing".to_string());
+    let database_url = env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "mysql://billing:billing@localhost:3306/billing".to_string());
 
     let pool = sqlx::MySqlPool::connect(&database_url).await?;
     println!("Connected to MySQL at {}", database_url);

@@ -19,8 +19,7 @@ async fn main() -> Result<()> {
     // Connect to MongoDB
     let mongodb_uri =
         env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
-    let database_name =
-        env::var("MONGODB_DATABASE").unwrap_or_else(|_| "billing".to_string());
+    let database_name = env::var("MONGODB_DATABASE").unwrap_or_else(|_| "billing".to_string());
 
     let client = mongodb::Client::with_uri_str(&mongodb_uri).await?;
     let database = client.database(&database_name);

@@ -19,8 +19,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     // Connect to ScyllaDB
-    let scylla_uri =
-        env::var("SCYLLA_URI").unwrap_or_else(|_| "localhost:9042".to_string());
+    let scylla_uri = env::var("SCYLLA_URI").unwrap_or_else(|_| "localhost:9042".to_string());
     let keyspace = env::var("SCYLLA_KEYSPACE").unwrap_or_else(|_| "billing".to_string());
 
     let session: Arc<Session> = Arc::new(

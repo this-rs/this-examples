@@ -17,8 +17,8 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     // Connect to PostgreSQL
-    let database_url =
-        env::var("DATABASE_URL").unwrap_or_else(|_| "postgres://billing:billing@localhost:5432/billing".to_string());
+    let database_url = env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://billing:billing@localhost:5432/billing".to_string());
 
     let pool = sqlx::PgPool::connect(&database_url).await?;
     println!("Connected to PostgreSQL at {}", database_url);

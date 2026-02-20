@@ -282,8 +282,7 @@ macro_rules! impl_order_backend_store {
                 let all_orders = self.list().await?;
                 let offset = offset.unwrap_or(0) as usize;
                 let limit = limit.unwrap_or(20) as usize;
-                let orders: Vec<Order> =
-                    all_orders.into_iter().skip(offset).take(limit).collect();
+                let orders: Vec<Order> = all_orders.into_iter().skip(offset).take(limit).collect();
                 orders
                     .into_iter()
                     .map(|o| serde_json::to_value(o).map_err(Into::into))

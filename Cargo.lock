@@ -2567,6 +2567,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "lmdb_example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "billing",
+ "serde",
+ "serde_json",
+ "this-rs 0.0.7",
+ "tokio",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2796,6 +2811,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "mongodb_example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "billing",
+ "mongodb",
+ "serde",
+ "serde_json",
+ "this-rs 0.0.7",
+ "tokio",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "multer"
 version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2836,6 +2867,38 @@ name = "multimap"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d87ecb2933e8aeadb3e3a02b828fed80a7528047e68b4f424523a0981a3a084"
+
+[[package]]
+name = "mysql_example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "billing",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "this-rs 0.0.7",
+ "tokio",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "neo4j_example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "billing",
+ "neo4rs",
+ "serde",
+ "serde_json",
+ "this-rs 0.0.7",
+ "tokio",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "neo4rs"
@@ -3260,6 +3323,22 @@ name = "portable-atomic"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c33a9471896f1c69cecef8d20cbe2f7accd12527ce60845ff44c153bb2a21b49"
+
+[[package]]
+name = "postgres_example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "billing",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "this-rs 0.0.7",
+ "tokio",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "potential_utf"
@@ -3882,6 +3961,22 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.108",
+]
+
+[[package]]
+name = "scylladb_example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "billing",
+ "scylla",
+ "serde",
+ "serde_json",
+ "this-rs 0.0.7",
+ "tokio",
+ "tracing-subscriber",
 ]
 
 [[package]]

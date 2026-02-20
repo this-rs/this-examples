@@ -8,7 +8,13 @@ default = []
 graphql = ["this-rs/graphql"]
 grpc = ["this-rs/grpc"]
 websocket = ["this-rs/websocket"]
-dynamodb = ["this-rs/dynamodb"]
+dynamodb = ["this-rs/dynamodb", "dep:aws-sdk-dynamodb", "dep:aws-config"]
+postgres = ["this-rs/postgres", "dep:sqlx"]
+mongodb_backend = ["this-rs/mongodb_backend", "dep:mongodb"]
+neo4j = ["this-rs/neo4j", "dep:neo4rs"]
+scylladb = ["this-rs/scylladb", "dep:scylla"]
+mysql = ["this-rs/mysql", "dep:sqlx"]
+lmdb = ["this-rs/lmdb", "dep:heed"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -16,13 +22,20 @@ serde_json = "1"
 async-trait = "0.1"
 thiserror = "1"
 anyhow = "1"
-this-rs = { version = "0.0.7", features = ["dynamodb"] }
+this-rs = { path = "../../../this" }
 axum = "0.8"
 tokio = { version = "1", features = ["sync"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-aws-sdk-dynamodb = "1"
-aws-config = "1"
+
+# Backend-specific dependencies (optional)
+aws-sdk-dynamodb = { version = "1", optional = true }
+aws-config = { version = "1", optional = true }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "uuid", "chrono", "json"], optional = true }
+mongodb = { version = "3", optional = true }
+neo4rs = { version = "0.8", optional = true }
+scylla = { version = "1.4", optional = true }
+heed = { version = "0.22", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }

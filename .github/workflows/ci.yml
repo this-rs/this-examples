@@ -19,6 +19,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Checkout this lib (path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: this-rs/this
+          path: ../this
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -34,6 +40,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
+      - name: Checkout this lib (path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: this-rs/this
+          path: ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -65,6 +77,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
+      - name: Checkout this lib (path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: this-rs/this
+          path: ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -102,6 +120,24 @@ jobs:
       - name: Build multi_module_example
         run: cargo build -p multi_module_example
 
+      - name: Build postgres_example
+        run: cargo build -p postgres_example
+
+      - name: Build mongodb_example
+        run: cargo build -p mongodb_example
+
+      - name: Build neo4j_example
+        run: cargo build -p neo4j_example
+
+      - name: Build scylladb_example
+        run: cargo build -p scylladb_example
+
+      - name: Build mysql_example
+        run: cargo build -p mysql_example
+
+      - name: Build lmdb_example
+        run: cargo build -p lmdb_example
+
   # ── Code coverage ─────────────────────────────────────────────────
   coverage:
     name: Code Coverage
@@ -109,6 +145,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
+      - name: Checkout this lib (path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: this-rs/this
+          path: ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -150,6 +192,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Checkout this lib (path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: this-rs/this
+          path: ../this
+
       - name: Install protoc
         uses: arduino/setup-protoc@v3
         with:
@@ -181,6 +229,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
+      - name: Checkout this lib (path dependency)
+        uses: actions/checkout@v5
+        with:
+          repository: this-rs/this
+          path: ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3

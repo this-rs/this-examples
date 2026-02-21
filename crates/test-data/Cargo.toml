@@ -7,6 +7,6 @@ edition = "2021"
 billing = { path = "../billing" }
 catalog = { path = "../catalog" }
 inventory = { path = "../inventory" }
-this-rs = { path = "../../../this" }
+this-rs = "0.0.8"
 anyhow = "1"
 serde_json = "1"

@@ -5,8 +5,7 @@ This guide shows how to run the GraphQL example, open the Playground, and try co
 ## Start the server
 
 ```
-cargo run -p graphql_example --features graphql
-```
+cargo run -p graphql_example ```
 
 - Playground: `http://127.0.0.1:4242/graphql/playground`
 - Endpoint: `http://127.0.0.1:4242/graphql`

@@ -81,20 +81,20 @@ make dynamodb  # DynamoDB example with local setup
 cargo run -p rest_example
 
 # GraphQL + REST
-cargo run -p graphql_example --features graphql
+cargo run -p graphql_example
 
-# gRPC
-cargo run -p grpc_example --features grpc
+# gRPC (requires protoc in PATH)
+cargo run -p grpc_example
 
 # WebSocket
-cargo run -p websocket_example --features websocket
+cargo run -p websocket_example
 
-# DynamoDB
-cd examples/dynamodb && ./setup.sh
-cargo run --features dynamodb
+# DynamoDB (start local DynamoDB first)
+cd examples/dynamodb && ./setup.sh && cd ../..
+cargo run -p dynamodb_example
 
 # Multi-module (all transports)
-cargo run -p multi_module_example --features "graphql grpc websocket"
+cargo run -p multi_module_example
 
 # Storage backends
 cargo run -p postgres_example     # PostgreSQL
@@ -117,9 +117,9 @@ cargo run -p rest_example
 ```
 
 - Server: `http://0.0.0.0:4242`
-- Entity routes: `GET /order`, `GET /invoice`, `GET /payment`
-- Nested routes: `GET /order/{id}/invoices`, `GET /invoice/{id}/payments`
-- Multi-level chaining: `GET /order/{id}/invoices/{id}/payments`
+- Entity routes: `GET /orders`, `GET /invoices`, `GET /payments`
+- Nested routes: `GET /orders/{id}/invoices`, `GET /invoices/{id}/payments`
+- Multi-level chaining: `GET /orders/{id}/invoices/{id}/payments`
 - Health: `GET /health`
 
 ### GraphQL (`examples/graphql/`)
@@ -127,7 +127,7 @@ cargo run -p rest_example
 GraphQL + REST on the same server with an interactive playground.
 
 ```bash
-cargo run -p graphql_example --features graphql
+cargo run -p graphql_example
 # or: cd examples/graphql && this dev --api-only
 ```
 
@@ -142,7 +142,7 @@ cargo run -p graphql_example --features graphql
 A gRPC server with server reflection, auto-generated from entity descriptors.
 
 ```bash
-cargo run -p grpc_example --features grpc
+cargo run -p grpc_example
 # or: cd examples/grpc && this dev --api-only
 ```
 
@@ -163,7 +163,7 @@ grpcurl -plaintext 127.0.0.1:4244 describe billing.OrderService
 Real-time WebSocket server with a static web client for testing.
 
 ```bash
-cargo run -p websocket_example --features websocket
+cargo run -p websocket_example
 # or: cd examples/websocket && this dev --api-only
 ```
 
@@ -179,8 +179,9 @@ Persistent storage backend using a local DynamoDB instance via Docker.
 ```bash
 cd examples/dynamodb
 ./setup.sh                    # Start local DynamoDB + admin UI
-cargo run --features dynamodb
-# or: this dev --api-only
+cd ../..
+cargo run -p dynamodb_example
+# or: cd examples/dynamodb && this dev --api-only
 ```
 
 - Server: `http://0.0.0.0:4242`
@@ -193,7 +194,7 @@ cargo run --features dynamodb
 The flagship example: three domain modules combined in a single server, exposed over all four transports simultaneously.
 
 ```bash
-cargo run -p multi_module_example --features "graphql grpc websocket"
+cargo run -p multi_module_example
 # or: cd examples/multi-module && this dev --api-only
 ```
 
@@ -278,7 +279,7 @@ cargo run -p lmdb_example
 - **Transport-agnostic host**: build a host once, then compose one or many exposures (REST, GraphQL, gRPC, WebSocket) over it.
 - **Storage backends**: swap the storage layer without changing business logic. Implement `DataService` and `LinkService` for any database (8 backends included).
 - **Links/relations**: a link service manages relationships across entities, automatically generating nested routes.
-- **Link chaining**: define individual links in YAML; the framework automatically chains them to create multi-level routes (e.g., `/order/{id}/invoices/{id}/payments`).
+- **Link chaining**: define individual links in YAML; the framework automatically chains them to create multi-level routes (e.g., `/orders/{id}/invoices/{id}/payments`).
 - **Cross-module links**: entities from different modules can reference each other (e.g., inventory's `stock_item` links to catalog's `product`).
 - **Multi-activity stores**: a single store can host multiple activities, each with independent stock and usage tracking.
 - **Feature gating**: REST is always available; other transports require Cargo features (`graphql`, `grpc`, `websocket`).

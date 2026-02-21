@@ -20,7 +20,7 @@ async fn main() -> anyhow::Result<()> {
     let link_service = Arc::new(InMemoryLinkService::new());
     
     // Populate with test data and links
-    populate_test_data(stores.clone(), link_service.clone()).await?;
+    populate_test_data(&stores, link_service.clone()).await?;
     
     // ... use stores and link_service in your application
     Ok(())
@@ -61,4 +61,4 @@ The function also creates links between entities:
   - Invoice 2 → Payment 2
   - Invoice 3 → Payment 3
 
-These links enable nested routes like `/order/{id}/invoices` and `/invoice/{id}/payments`.
+These links enable nested routes like `/orders/{id}/invoices` and `/invoices/{id}/payments`.

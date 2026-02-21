@@ -4,19 +4,15 @@ The examples are designed to be test-friendly by default. Stores are in-memory a
 
 ## Seeding data
 
-Use the `test-data` crate to populate stores before building the host:
+Use the `test-data` crate to populate stores **before** building the host (the builder consumes the link service):
 
 ```rust
+let link_service = Arc::new(InMemoryLinkService::new());
 let stores = BillingStores::new_in_memory();
-let stores_for_seed = BillingStores {
-    orders: stores.orders.clone(),
-    invoices: stores.invoices.clone(),
-    payments: stores.payments.clone(),
-};
-populate_test_data(stores_for_seed).await?;
+populate_test_data(&stores, link_service.clone()).await?;
 ```
 
-This pattern is used in both examples to ensure the server starts with non-empty data.
+This pattern is used in all examples to ensure the server starts with non-empty data and pre-linked entities.
 
 ## Unit tests
 

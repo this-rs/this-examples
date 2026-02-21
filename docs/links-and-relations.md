@@ -13,12 +13,12 @@ Cross-entity relationships are modeled via a link service. This keeps entities d
 The framework automatically generates nested REST routes based on link configuration:
 
 ### Forward routes
-- `GET /order/{id}/invoices` - List all invoices linked to an order
-- `GET /invoice/{id}/payments` - List all payments linked to an invoice
+- `GET /orders/{id}/invoices` - List all invoices linked to an order
+- `GET /invoices/{id}/payments` - List all payments linked to an invoice
 
 ### Reverse routes
-- `GET /invoice/{id}/order` - Get the order linked to an invoice
-- `GET /payment/{id}/invoice` - Get the invoice linked to a payment
+- `GET /invoices/{id}/order` - Get the order linked to an invoice
+- `GET /payments/{id}/invoice` - Get the invoice linked to a payment
 
 **Note**: The `{id}` placeholders are dynamically replaced with actual entity IDs at runtime. IDs are auto-generated UUIDs.
 
@@ -33,14 +33,14 @@ invoice → payment (payment link)
 
 You get both individual routes AND the chained route:
 ```
-GET /order/{id}/invoices
-GET /invoice/{id}/payments
-GET /order/{id}/invoices/{id}/payments  ← automatically generated!
+GET /orders/{id}/invoices
+GET /invoices/{id}/payments
+GET /orders/{id}/invoices/{id}/payments  ← automatically generated!
 ```
 
 Example:
 ```bash
-curl http://localhost:4242/order/0052a960-6707-4028-aa8f-29de26e47106/invoices/2d7a08d8-1b05-4396-af1d-bc4ea29d5ac8/payments/adfe6522-7b0e-4829-9472-420d011fa539
+curl http://localhost:4242/orders/0052a960-6707-4028-aa8f-29de26e47106/invoices/2d7a08d8-1b05-4396-af1d-bc4ea29d5ac8/payments/adfe6522-7b0e-4829-9472-420d011fa539
 ```
 
 This follows two links:
@@ -64,8 +64,8 @@ Links can reference entities from different modules. For example, the inventory 
 ```
 
 This generates routes like:
-- `GET /stock_item/{id}/product` - Get the product referenced by a stock item
-- `GET /product/{id}/stock_items` - List stock items for a product
+- `GET /stock_items/{id}/product` - Get the product referenced by a stock item
+- `GET /products/{id}/stock_items` - List stock items for a product
 
 Cross-module links work transparently because the host merges all module registrations into a single entity registry.
 

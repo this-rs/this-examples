@@ -3,11 +3,12 @@
 [![CI](https://github.com/this-rs/this-examples/actions/workflows/ci.yml/badge.svg)](https://github.com/this-rs/this-examples/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/this-rs/this-examples/graph/badge.svg)](https://codecov.io/gh/this-rs/this-examples)
 
-A collection of runnable examples demonstrating how to build modular, protocol-agnostic backends with the this-rs framework.
+A collection of runnable examples demonstrating how to build modular, protocol-agnostic backends with the [this-rs](https://crates.io/crates/this-rs) framework (v0.0.8).
 
 - Domain modules are isolated as Rust crates under `crates/` for clean boundaries and data isolation.
 - Each entity follows the same file nomenclature to keep development consistent and predictable (`model.rs`, `store.rs`, `handlers.rs`, `descriptor.rs`).
 - Multi-protocol exposure: the exact same domain is exposed via REST, GraphQL, gRPC, and WebSocket.
+- **8 storage backends**: In-Memory, PostgreSQL, MongoDB, Neo4j, ScyllaDB, MySQL, DynamoDB, and LMDB.
 - GraphQL schema is auto-generated from the registered entities.
 
 ## Repository layout
@@ -19,17 +20,23 @@ crates/
   inventory/         # Domain module (stores, activities, warehouses, stock, usage tracking)
   test-data/         # Utilities to seed in-memory stores for demos/tests
 examples/
-  rest/              # REST-only server
+  rest/              # REST-only server (in-memory)
   graphql/           # GraphQL + REST on the same server (playground included)
   grpc/              # gRPC server with reflection
   websocket/         # WebSocket real-time server with static web client
   dynamodb/          # DynamoDB backend example with local setup
-  multi-module/      # Multi-module example combining all transports (REST + GraphQL + gRPC + WebSocket)
+  multi-module/      # Multi-module example combining all transports
+  postgres/          # PostgreSQL storage backend
+  mongodb/           # MongoDB storage backend
+  neo4j/             # Neo4j graph database storage backend
+  scylladb/          # ScyllaDB storage backend
+  mysql/             # MySQL storage backend
+  lmdb/              # LMDB embedded storage backend
 ```
 
 ## Quick start
 
-Prerequisites: Rust toolchain (stable), internet access for crates, and a free port (4242–4244 depending on example).
+Prerequisites: Rust toolchain (stable), internet access for crates, and a free port (4242-4244 depending on example).
 
 ### Using this-cli (Recommended)
 
@@ -70,24 +77,32 @@ make dynamodb  # DynamoDB example with local setup
 ### Manual commands
 
 ```bash
-# REST-only
+# REST-only (in-memory)
 cargo run -p rest_example
 
 # GraphQL + REST
-cargo run -p graphql_example --features graphql
+cargo run -p graphql_example
 
-# gRPC
-cargo run -p grpc_example --features grpc
+# gRPC (requires protoc in PATH)
+cargo run -p grpc_example
 
 # WebSocket
-cargo run -p websocket_example --features websocket
+cargo run -p websocket_example
 
-# DynamoDB
-cd examples/dynamodb && ./setup.sh
-cargo run --features dynamodb
+# DynamoDB (start local DynamoDB first)
+cd examples/dynamodb && ./setup.sh && cd ../..
+cargo run -p dynamodb_example
 
 # Multi-module (all transports)
-cargo run -p multi_module_example --features "graphql grpc websocket"
+cargo run -p multi_module_example
+
+# Storage backends
+cargo run -p postgres_example     # PostgreSQL
+cargo run -p mongodb_example      # MongoDB
+cargo run -p neo4j_example        # Neo4j
+cargo run -p scylladb_example     # ScyllaDB
+cargo run -p mysql_example        # MySQL
+cargo run -p lmdb_example         # LMDB (embedded, no server needed)
 ```
 
 ## Examples
@@ -102,9 +117,9 @@ cargo run -p rest_example
 ```
 
 - Server: `http://0.0.0.0:4242`
-- Entity routes: `GET /order`, `GET /invoice`, `GET /payment`
-- Nested routes: `GET /order/{id}/invoices`, `GET /invoice/{id}/payments`
-- Multi-level chaining: `GET /order/{id}/invoices/{id}/payments`
+- Entity routes: `GET /orders`, `GET /invoices`, `GET /payments`
+- Nested routes: `GET /orders/{id}/invoices`, `GET /invoices/{id}/payments`
+- Multi-level chaining: `GET /orders/{id}/invoices/{id}/payments`
 - Health: `GET /health`
 
 ### GraphQL (`examples/graphql/`)
@@ -112,7 +127,7 @@ cargo run -p rest_example
 GraphQL + REST on the same server with an interactive playground.
 
 ```bash
-cargo run -p graphql_example --features graphql
+cargo run -p graphql_example
 # or: cd examples/graphql && this dev --api-only
 ```
 
@@ -127,7 +142,7 @@ cargo run -p graphql_example --features graphql
 A gRPC server with server reflection, auto-generated from entity descriptors.
 
 ```bash
-cargo run -p grpc_example --features grpc
+cargo run -p grpc_example
 # or: cd examples/grpc && this dev --api-only
 ```
 
@@ -148,7 +163,7 @@ grpcurl -plaintext 127.0.0.1:4244 describe billing.OrderService
 Real-time WebSocket server with a static web client for testing.
 
 ```bash
-cargo run -p websocket_example --features websocket
+cargo run -p websocket_example
 # or: cd examples/websocket && this dev --api-only
 ```
 
@@ -164,8 +179,9 @@ Persistent storage backend using a local DynamoDB instance via Docker.
 ```bash
 cd examples/dynamodb
 ./setup.sh                    # Start local DynamoDB + admin UI
-cargo run --features dynamodb
-# or: this dev --api-only
+cd ../..
+cargo run -p dynamodb_example
+# or: cd examples/dynamodb && this dev --api-only
 ```
 
 - Server: `http://0.0.0.0:4242`
@@ -178,7 +194,7 @@ cargo run --features dynamodb
 The flagship example: three domain modules combined in a single server, exposed over all four transports simultaneously.
 
 ```bash
-cargo run -p multi_module_example --features "graphql grpc websocket"
+cargo run -p multi_module_example
 # or: cd examples/multi-module && this dev --api-only
 ```
 
@@ -188,30 +204,87 @@ cargo run -p multi_module_example --features "graphql grpc websocket"
 - **GraphQL**: unified schema across all modules (`/graphql/playground`)
 - **gRPC**: reflection-enabled gRPC on the same port (HTTP/2 content-type routing)
 - **WebSocket**: real-time entity events (`/ws`)
-- Demonstrates cross-module links (e.g., `stock_item → product` from inventory to catalog)
+- Demonstrates cross-module links (e.g., `stock_item -> product` from inventory to catalog)
+
+### Storage backend examples
+
+Each backend example uses the **billing** module with the same REST API but swaps the storage layer. This demonstrates the `DataService` / `LinkService` abstraction: same business logic, different database.
+
+#### PostgreSQL (`examples/postgres/`)
+
+```bash
+# Start PostgreSQL
+docker run -d --name this-postgres -p 5432:5432 -e POSTGRES_PASSWORD=password postgres:16
+
+# Run the example
+cargo run -p postgres_example
+```
+
+#### MongoDB (`examples/mongodb/`)
+
+```bash
+# Start MongoDB
+docker run -d --name this-mongo -p 27017:27017 mongo:7
+
+# Run the example
+cargo run -p mongodb_example
+```
+
+#### Neo4j (`examples/neo4j/`)
+
+```bash
+# Start Neo4j
+docker run -d --name this-neo4j -p 7687:7687 -e NEO4J_AUTH=neo4j/password neo4j:5
+
+# Run the example
+cargo run -p neo4j_example
+```
+
+#### ScyllaDB (`examples/scylladb/`)
+
+```bash
+# Start ScyllaDB
+docker run -d --name this-scylladb -p 9042:9042 scylladb/scylla:latest
+
+# Run the example
+cargo run -p scylladb_example
+```
+
+#### MySQL (`examples/mysql/`)
+
+```bash
+# Start MySQL
+docker run -d --name this-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=this mysql:8
+
+# Run the example
+cargo run -p mysql_example
+```
+
+#### LMDB (`examples/lmdb/`)
+
+LMDB is an embedded key-value store - no external server required.
+
+```bash
+cargo run -p lmdb_example
+```
+
+- Data is stored in a local `data/` directory
+- Zero-copy reads for high performance
+- Great for development and single-node deployments
 
 ## Key concepts
 
 - **Module isolation**: keep your business logic in `crates/<module>` and expose it via one or more protocols.
 - **Uniform entity structure**: each entity directory contains `model`, `store`, `handlers`, and a `descriptor` describing the entity to the framework.
 - **Transport-agnostic host**: build a host once, then compose one or many exposures (REST, GraphQL, gRPC, WebSocket) over it.
+- **Storage backends**: swap the storage layer without changing business logic. Implement `DataService` and `LinkService` for any database (8 backends included).
 - **Links/relations**: a link service manages relationships across entities, automatically generating nested routes.
-- **Link chaining**: define individual links in YAML; the framework automatically chains them to create multi-level routes (e.g., `/order/{id}/invoices/{id}/payments`).
+- **Link chaining**: define individual links in YAML; the framework automatically chains them to create multi-level routes (e.g., `/orders/{id}/invoices/{id}/payments`).
 - **Cross-module links**: entities from different modules can reference each other (e.g., inventory's `stock_item` links to catalog's `product`).
 - **Multi-activity stores**: a single store can host multiple activities, each with independent stock and usage tracking.
 - **Feature gating**: REST is always available; other transports require Cargo features (`graphql`, `grpc`, `websocket`).
 
 ## Documentation
-
-📚 **[Complete Documentation](docs/README.md)** - Full documentation with organized table of contents
-
-### Quick Links
-
-- **[Overview](docs/overview.md)** - Project goals and structure
-- **[Architecture](docs/architecture.md)** - Core components and data flow
-- **[Entities and Macros](docs/entities-and-macros.md)** - Entity structure and conventions
-- **[Protocols](docs/protocols.md)** - REST and GraphQL exposure
-- **[Best Practices](docs/best-practices.md)** - Development conventions
 
 See the [docs directory](docs/) for the complete list of guides covering GraphQL playground, REST API, testing, links/relations, and development workflow.
 

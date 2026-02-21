@@ -17,12 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: this-rs/this
+          ref: main
           path: ../this
 
       - name: Install Rust toolchain
@@ -39,12 +40,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: this-rs/this
+          ref: main
           path: ../this
 
       - name: Install protoc
@@ -76,12 +78,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: this-rs/this
+          ref: main
           path: ../this
 
       - name: Install protoc
@@ -144,12 +147,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: this-rs/this
+          ref: main
           path: ../this
 
       - name: Install protoc
@@ -190,12 +194,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: this-rs/this
+          ref: main
           path: ../this
 
       - name: Install protoc
@@ -228,12 +233,13 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           repository: this-rs/this
+          ref: main
           path: ../this
 
       - name: Install protoc

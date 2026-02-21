@@ -20,11 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: this-rs/this
-          ref: main
-          path: ../this
+        run: git clone --depth 1 --branch main https://github.com/this-rs/this.git ../this
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -43,11 +39,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: this-rs/this
-          ref: main
-          path: ../this
+        run: git clone --depth 1 --branch main https://github.com/this-rs/this.git ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -81,11 +73,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: this-rs/this
-          ref: main
-          path: ../this
+        run: git clone --depth 1 --branch main https://github.com/this-rs/this.git ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -150,11 +138,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: this-rs/this
-          ref: main
-          path: ../this
+        run: git clone --depth 1 --branch main https://github.com/this-rs/this.git ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -197,11 +181,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: this-rs/this
-          ref: main
-          path: ../this
+        run: git clone --depth 1 --branch main https://github.com/this-rs/this.git ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -236,11 +216,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout this lib (path dependency)
-        uses: actions/checkout@v4
-        with:
-          repository: this-rs/this
-          ref: main
-          path: ../this
+        run: git clone --depth 1 --branch main https://github.com/this-rs/this.git ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3

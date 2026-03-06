@@ -34,7 +34,7 @@ harness = false
 [dependencies]
 billing = { path = "../../crates/billing", features = ["dynamodb"] }
 test-data = { path = "../../crates/test-data" }
-this-rs = { version = "0.0.8", features = ["graphql", "dynamodb"] }
+this-rs = { version = "0.0.9", features = ["graphql", "dynamodb"] }
 
 # HTTP client and server
 tokio = { version = "1", features = ["full"] }

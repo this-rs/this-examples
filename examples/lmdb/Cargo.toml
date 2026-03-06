@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 billing = { path = "../../crates/billing", features = ["lmdb"] }
-this-rs = { version = "0.0.8", features = ["lmdb"] }
+this-rs = { version = "0.0.9", features = ["lmdb"] }
 anyhow = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 async-trait = "0.1"

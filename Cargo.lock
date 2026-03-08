@@ -1600,6 +1600,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "event_flows_example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "billing",
+ "serde",
+ "serde_json",
+ "test-data",
+ "this-rs",
+ "tokio",
+ "tower-http",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "fast_chemail"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,0 +1,25 @@
+# Event configuration for grpc example
+sinks:
+  - name: in-app
+    type: in_app
+
+events:
+  backend:
+    type: memory
+  flows:
+    - name: notify-entity-created
+      description: "In-app notification when any entity is created"
+      trigger:
+        kind: entity.created
+      pipeline:
+        - map:
+            template:
+              notification_type: entity_created
+              title: "New {{ event.entity_type }}"
+              body: "{{ event.entity_type }} '{{ event.data.name | default(value='unnamed') }}' was created"
+              data:
+                entity_type: "{{ event.entity_type }}"
+                entity_id: "{{ event.entity_id }}"
+        - deliver:
+            recipient: "system"
+            sinks: [in-app]

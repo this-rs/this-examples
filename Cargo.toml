@@ -15,6 +15,7 @@ members = [
   "examples/lmdb",
   "examples/websocket",
   "examples/grpc",
+  "examples/event-flows",
   "examples/multi-module",
   "benches/endpoint-benchmarks",
 ]

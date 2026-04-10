@@ -1,0 +1,18 @@
+# WAMI STS Authentication — Bootstrap mode
+# Auto-generates Ed25519 key pair at startup (dev-friendly)
+
+provider: wami
+default_policy: authenticated
+
+wami:
+  mode: bootstrap
+  token_ttl_secs: 900
+  refresh_ttl_secs: 3600
+
+tenant:
+  enabled: true
+  claim_field: tenant_id
+  auto_provision: true
+
+gdpr:
+  erasure_cascade: true

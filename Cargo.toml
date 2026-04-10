@@ -17,6 +17,12 @@ members = [
   "examples/grpc",
   "examples/event-flows",
   "examples/multi-module",
+  "examples/auth-sts",
+  "examples/cognitive-signals",
   "benches/endpoint-benchmarks",
 ]
 resolver = "2"
+
+# Use local this-rs for development (new APIs not yet published to crates.io)
+[patch.crates-io]
+this-rs = { path = "../this" }

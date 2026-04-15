@@ -1,5 +1,14 @@
 # WAMI STS Authentication — Bootstrap mode
 # Auto-generates Ed25519 key pair at startup (dev-friendly)
+#
+# Custom resolvers registered in main.rs:
+#   "is_manager"   → checks ctx.has_role("manager")
+#   "is_delegated" → checks delegation rights or admin
+#
+# Reference in entity/link YAML config:
+#   auth:
+#     create: "resolver:is_manager"
+#     update: "owner_or_resolver:is_delegated"
 
 provider: wami
 default_policy: authenticated

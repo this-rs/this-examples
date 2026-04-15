@@ -3,13 +3,16 @@
 [![CI](https://github.com/this-rs/this-examples/actions/workflows/ci.yml/badge.svg)](https://github.com/this-rs/this-examples/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/this-rs/this-examples/graph/badge.svg)](https://codecov.io/gh/this-rs/this-examples)
 
-A collection of runnable examples demonstrating how to build modular, protocol-agnostic backends with the [this-rs](https://crates.io/crates/this-rs) framework (v0.0.8).
+A collection of runnable examples demonstrating how to build modular, protocol-agnostic backends with the [this-rs](https://crates.io/crates/this-rs) framework (v0.0.9).
 
 - Domain modules are isolated as Rust crates under `crates/` for clean boundaries and data isolation.
 - Each entity follows the same file nomenclature to keep development consistent and predictable (`model.rs`, `store.rs`, `handlers.rs`, `descriptor.rs`).
 - Multi-protocol exposure: the exact same domain is exposed via REST, GraphQL, gRPC, and WebSocket.
-- **8 storage backends**: In-Memory, PostgreSQL, MongoDB, Neo4j, ScyllaDB, MySQL, DynamoDB, and LMDB.
+- **9 storage backends**: In-Memory, PostgreSQL, MongoDB, Neo4j, ScyllaDB, MySQL, DynamoDB, LMDB, and Obrain.
 - GraphQL schema is auto-generated from the registered entities.
+- **EventBus + Event Flows**: declarative YAML pipelines with 8 operators and multi-sink delivery.
+- **Cognitive Signals**: anomaly detection, co-change tracking, stigmergy, scars, and episode learning.
+- **WAMI Auth STS**: JWT authentication with Ed25519, RBAC policies, custom resolvers, multi-tenant, GDPR erasure.
 
 ## Repository layout
 
@@ -32,6 +35,8 @@ examples/
   scylladb/          # ScyllaDB storage backend
   mysql/             # MySQL storage backend
   lmdb/              # LMDB embedded storage backend
+  auth-sts/          # WAMI Auth STS — JWT bootstrap, login, tenant isolation, GDPR erasure
+  cognitive-signals/ # Cognitive Signals — bridge + thresholds, anomaly detection demo
 ```
 
 ## Quick start
@@ -103,6 +108,10 @@ cargo run -p neo4j_example        # Neo4j
 cargo run -p scylladb_example     # ScyllaDB
 cargo run -p mysql_example        # MySQL
 cargo run -p lmdb_example         # LMDB (embedded, no server needed)
+
+# Auth & Cognitive
+cargo run -p auth_sts_example             # WAMI Auth STS (JWT, RBAC, GDPR)
+cargo run -p cognitive_signals_example    # Cognitive Signals (anomaly, co-change)
 ```
 
 ## Examples
@@ -272,17 +281,54 @@ cargo run -p lmdb_example
 - Zero-copy reads for high performance
 - Great for development and single-node deployments
 
+### Auth STS (`examples/auth-sts/`)
+
+WAMI Auth STS demo with JWT bootstrap, login, tenant isolation, and GDPR erasure.
+
+```bash
+cargo run -p auth_sts_example
+```
+
+- Server: `http://127.0.0.1:4242`
+- Bootstrap mode: auto-generates Ed25519 key pairs at startup
+- `POST /auth/token` — JWT token issuance
+- `GET /auth/keys` — Public key endpoint
+- `POST /auth/refresh` — Token refresh
+- `POST /auth/revoke` — Token revocation
+- `DELETE /tenants/:tenant_id/data` — GDPR erasure cascade
+- Per-entity RBAC policies with custom resolvers (`resolver:is_manager`)
+- Multi-tenant isolation via `tenant_id` claim
+
+### Cognitive Signals (`examples/cognitive-signals/`)
+
+Cognitive NotificationBridge demo with anomaly detection and threshold-based signal routing.
+
+```bash
+cargo run -p cognitive_signals_example
+```
+
+- Server: `http://127.0.0.1:4242`
+- CognitiveNotificationBridge subscribes to EventBus
+- 5 signal types: AnomalyDetected, CoChangeDetected, StigmergyLockIn, ScarCreated, EpisodeLearned
+- Configurable thresholds per signal type
+- Routes signals to SinkRegistry (webhook, in-app notification, SSE)
+- Create entities and watch cognitive signals fire in real-time
+
 ## Key concepts
 
 - **Module isolation**: keep your business logic in `crates/<module>` and expose it via one or more protocols.
 - **Uniform entity structure**: each entity directory contains `model`, `store`, `handlers`, and a `descriptor` describing the entity to the framework.
 - **Transport-agnostic host**: build a host once, then compose one or many exposures (REST, GraphQL, gRPC, WebSocket) over it.
-- **Storage backends**: swap the storage layer without changing business logic. Implement `DataService` and `LinkService` for any database (8 backends included).
+- **Storage backends**: swap the storage layer without changing business logic. Implement `DataService` and `LinkService` for any database (9 backends included).
 - **Links/relations**: a link service manages relationships across entities, automatically generating nested routes.
 - **Link chaining**: define individual links in YAML; the framework automatically chains them to create multi-level routes (e.g., `/orders/{id}/invoices/{id}/payments`).
 - **Cross-module links**: entities from different modules can reference each other (e.g., inventory's `stock_item` links to catalog's `product`).
 - **Multi-activity stores**: a single store can host multiple activities, each with independent stock and usage tracking.
 - **Feature gating**: REST is always available; other transports require Cargo features (`graphql`, `grpc`, `websocket`).
+- **EventBus**: built-in non-blocking broadcast on all CRUD operations, powers SSE, WebSocket, GraphQL subscriptions, and Event Flows.
+- **Event Flows**: declarative YAML pipelines with 8 operators (filter, map, batch, deduplicate, rate_limit, fan_out, resolve, deliver) and multi-sink delivery.
+- **Cognitive Signals**: CognitiveNotificationBridge monitors EventBus for anomalies, co-changes, stigmergy lock-ins, scars, and episodes with configurable thresholds.
+- **WAMI Auth**: JWT authentication with Ed25519 key pairs, bootstrap mode, per-entity RBAC policies, custom resolvers (`resolver:name`), multi-tenant isolation, GDPR erasure cascade.
 
 ## Documentation
 

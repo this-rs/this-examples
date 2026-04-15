@@ -5,6 +5,7 @@
 //! 2. **JWT auth endpoints**: /auth/token, /auth/keys, /auth/refresh, /auth/revoke
 //! 3. **Multi-tenant isolation**: Events and data scoped by tenant_id from JWT
 //! 4. **GDPR erasure**: DELETE /tenants/:tenant_id/data cascades all entity + link data
+//! 5. **Custom resolvers**: Named auth resolvers referenced from YAML as `resolver:name`
 //!
 //! # Running
 //!
@@ -77,6 +78,17 @@ async fn main() -> Result<()> {
                 env!("CARGO_MANIFEST_DIR"),
                 "/config/auth.yaml"
             ))?
+            // Custom auth resolvers — reference as "resolver:name" in YAML config
+            // e.g., auth: { create: "resolver:is_manager" }
+            .with_auth_resolver("is_manager", |ctx, _resource_id| {
+                // Example: only users with "manager" role can perform this action
+                ctx.has_role("manager")
+            })
+            .with_auth_resolver("is_delegated", |ctx, _resource_id| {
+                // Example: check if user has delegation rights
+                // In production, this would query a delegation table or check JWT claims
+                ctx.has_role("delegate") || ctx.is_admin()
+            })
             .register_module(billing_module)?
             .build_host()?,
     );

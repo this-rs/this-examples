@@ -4912,6 +4912,7 @@ dependencies = [
  "serde_dynamo",
  "serde_json",
  "serde_yaml",
+ "sha2",
  "sqlx",
  "tera",
  "thiserror 2.0.17",

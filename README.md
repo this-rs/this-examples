@@ -13,6 +13,9 @@ A collection of runnable examples demonstrating how to build modular, protocol-a
 - **EventBus + Event Flows**: declarative YAML pipelines with 8 operators and multi-sink delivery.
 - **Cognitive Signals**: anomaly detection, co-change tracking, stigmergy, scars, and episode learning.
 - **WAMI Auth STS**: JWT authentication with Ed25519, RBAC policies, custom resolvers, multi-tenant, GDPR erasure.
+- **Obrain relief, complete**: `GET /graph` publishes the **shape of the database** — node and edge totals, every label with its count, every edge type with its count, the property-key catalogue, the declared indexes — plus the engine's capabilities (introspected procedures), the identity contract, the write lease, the ordered journal, and **IAM as a native layer** (its schema, its properties, the property the enforcement reads at each request, and the trust boundary). Everything introspected from the live base; what cannot be introspected is published *empty*, never estimated. See [docs/relief-and-exposure.md](docs/relief-and-exposure.md).
+- **Multi-scale view**: `GET /graph/hierarchy/{id}?depth=N` shows the subgroups of subgroups of subgroups one bounded level at a time, with `children` counts (you know what is below without loading it), `total`/`truncated` per level (a cut is never silent), a `drill_down` address to continue, and cycles **reported rather than followed**. `?format=outline` renders it as indented text for an inference engine.
+- **Exposure and delegation**: `config/server.yaml` declares CORS, the served domains (any other `Host` is refused in 421), the tenant a domain designates, the Caddyfile for TLS/routing, and the PowerDNS zone — each **disabled by default**, each described rather than applied.
 
 ## Repository layout
 

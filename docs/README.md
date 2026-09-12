@@ -48,3 +48,4 @@ Complete documentation for the this-examples project.
 ---
 
 Each guide is self-contained and can be read independently, but following the order above provides a natural learning path.
+- [Relief and exposure](relief-and-exposure.md) — what the database contains, and who may reach it

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Flows — this-rs</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e4e4e7; padding: 24px; }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    .subtitle { color: #71717a; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1200px; }
+    .panel { background: #1a1d27; border: 1px solid #27272a; border-radius: 8px; padding: 16px; }
+    .panel h2 { font-size: 1rem; margin-bottom: 12px; color: #a1a1aa; }
+    .log { height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.8rem; line-height: 1.6; }
+    .log-entry { padding: 4px 8px; border-bottom: 1px solid #27272a; }
+    .log-entry.event { color: #60a5fa; }
+    .log-entry.notification { color: #34d399; }
+    .log-entry.error { color: #f87171; }
+    .log-entry .time { color: #52525b; margin-right: 8px; }
+    .actions { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    button { background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+    button:hover { background: #4338ca; }
+    button.secondary { background: #27272a; }
+    button.secondary:hover { background: #3f3f46; }
+    .status { display: flex; gap: 16px; margin-bottom: 16px; }
+    .status-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot.connected { background: #34d399; }
+    .dot.disconnected { background: #f87171; }
+    .count { background: #27272a; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; }
+    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <h1>Event Flows — this-rs</h1>
+  <p class="subtitle">Declarative event pipeline demo: SSE + WebSocket + Notifications</p>
+
+  <div class="status">
+    <div class="status-item">
+      <div class="dot" id="sse-dot"></div>
+      SSE <span class="count" id="sse-count">0</span>
+    </div>
+    <div class="status-item">
+      <div class="dot" id="ws-dot"></div>
+      WebSocket <span class="count" id="ws-count">0</span>
+    </div>
+    <div class="status-item">
+      <div class="dot" id="notif-dot"></div>
+      Notifications <span class="count" id="notif-count">0</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button onclick="createOrder()">Create Order</button>
+    <button onclick="createInvoiceForOrder()">Create Invoice + Link</button>
+    <button onclick="fetchNotifications()" class="secondary">Refresh Notifications</button>
+    <button onclick="clearLogs()" class="secondary">Clear Logs</button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>SSE Events (/events/stream)</h2>
+      <div class="log" id="sse-log"></div>
+    </div>
+    <div class="panel">
+      <h2>WebSocket Events (/ws)</h2>
+      <div class="log" id="ws-log"></div>
+    </div>
+    <div class="panel">
+      <h2>Notifications (in-app sink)</h2>
+      <div class="log" id="notif-log"></div>
+    </div>
+    <div class="panel">
+      <h2>API Responses</h2>
+      <div class="log" id="api-log"></div>
+    </div>
+  </div>
+
+  <script>
+    const BASE = window.location.origin;
+    let sseCount = 0, wsCount = 0, notifCount = 0;
+    let lastOrderId = null;
+    let lastInvoiceId = null;
+
+    function time() {
+      return new Date().toLocaleTimeString('en-US', { hour12: false });
+    }
+
+    function addLog(panelId, text, cls = '') {
+      const log = document.getElementById(panelId);
+      const entry = document.createElement('div');
+      entry.className = 'log-entry ' + cls;
+      entry.innerHTML = '<span class="time">' + time() + '</span>' + text;
+      log.prepend(entry);
+    }
+
+    // ─── SSE ─────────────────────────────────────
+    function connectSSE() {
+      const dot = document.getElementById('sse-dot');
+      const source = new EventSource(BASE + '/events/stream');
+      source.onopen = () => { dot.className = 'dot connected'; addLog('sse-log', 'Connected', 'event'); };
+      source.onmessage = (e) => {
+        sseCount++;
+        document.getElementById('sse-count').textContent = sseCount;
+        const data = JSON.parse(e.data);
+        const summary = (data.entity_type || data.link_type || '?') + '.' + (data.event_type || '?');
+        addLog('sse-log', summary + ' — ' + JSON.stringify(data).substring(0, 120), 'event');
+      };
+      source.onerror = () => { dot.className = 'dot disconnected'; };
+    }
+
+    // ─── WebSocket ───────────────────────────────
+    function connectWS() {
+      const dot = document.getElementById('ws-dot');
+      const ws = new WebSocket((BASE.replace('http', 'ws')) + '/ws');
+      ws.onopen = () => {
+        dot.className = 'dot connected';
+        addLog('ws-log', 'Connected', 'event');
+        // Subscribe to all events
+        ws.send(JSON.stringify({ type: 'subscribe', filter: {} }));
+      };
+      ws.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.type === 'welcome' || data.type === 'subscribed') {
+          addLog('ws-log', data.type + ': ' + (data.message || ''), 'event');
+          return;
+        }
+        wsCount++;
+        document.getElementById('ws-count').textContent = wsCount;
+        const payload = data.payload || data;
+        const summary = (payload.entity_type || payload.link_type || '?') + '.' + (payload.event_type || '?');
+        addLog('ws-log', summary + ' — ' + JSON.stringify(payload).substring(0, 120), 'event');
+      };
+      ws.onerror = () => { dot.className = 'dot disconnected'; };
+      ws.onclose = () => { dot.className = 'dot disconnected'; setTimeout(connectWS, 3000); };
+    }
+
+    // ─── Actions ─────────────────────────────────
+    async function createOrder() {
+      const name = 'Order-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+      try {
+        const res = await fetch(BASE + '/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, status: 'pending', owner_id: 'system', total: 99.99 })
+        });
+        const data = await res.json();
+        lastOrderId = data.id;
+        addLog('api-log', 'POST /orders → ' + data.id + ' (' + name + ')');
+        // Auto-fetch notifications after a short delay (flow processing)
+        setTimeout(fetchNotifications, 500);
+      } catch (err) {
+        addLog('api-log', 'Error: ' + err.message, 'error');
+      }
+    }
+
+    async function createInvoiceForOrder() {
+      if (!lastOrderId) {
+        addLog('api-log', 'Create an order first!', 'error');
+        return;
+      }
+      const name = 'INV-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+      try {
+        // Create invoice
+        const res = await fetch(BASE + '/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, status: 'draft', amount: 99.99 })
+        });
+        const invoice = await res.json();
+        lastInvoiceId = invoice.id;
+        addLog('api-log', 'POST /invoices → ' + invoice.id + ' (' + name + ')');
+
+        // Link invoice to order
+        const linkRes = await fetch(BASE + '/orders/' + lastOrderId + '/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_id: invoice.id })
+        });
+        const link = await linkRes.json();
+        addLog('api-log', 'POST /orders/' + lastOrderId + '/invoices → link ' + link.id);
+        setTimeout(fetchNotifications, 500);
+      } catch (err) {
+        addLog('api-log', 'Error: ' + err.message, 'error');
+      }
+    }
+
+    async function fetchNotifications() {
+      const dot = document.getElementById('notif-dot');
+      try {
+        const res = await fetch(BASE + '/notifications/system');
+        const data = await res.json();
+        dot.className = 'dot connected';
+        const notifications = data.notifications || data.items || data || [];
+        notifCount = Array.isArray(notifications) ? notifications.length : 0;
+        document.getElementById('notif-count').textContent = notifCount;
+        document.getElementById('notif-log').innerHTML = '';
+        if (Array.isArray(notifications)) {
+          notifications.forEach(n => {
+            const read = n.read ? '✓' : '•';
+            addLog('notif-log', read + ' [' + n.notification_type + '] ' + n.title + ' — ' + n.body, 'notification');
+          });
+        }
+        if (notifCount === 0) {
+          addLog('notif-log', 'No notifications yet. Create an order to trigger a flow!', '');
+        }
+      } catch (err) {
+        dot.className = 'dot disconnected';
+        addLog('notif-log', 'Error: ' + err.message, 'error');
+      }
+    }
+
+    function clearLogs() {
+      ['sse-log', 'ws-log', 'notif-log', 'api-log'].forEach(id => {
+        document.getElementById(id).innerHTML = '';
+      });
+      sseCount = wsCount = notifCount = 0;
+      ['sse-count', 'ws-count', 'notif-count'].forEach(id => {
+        document.getElementById(id).textContent = '0';
+      });
+    }
+
+    // Auto-connect on load
+    connectSSE();
+    connectWS();
+    fetchNotifications();
+  </script>
+</body>
+</html>

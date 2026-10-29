@@ -340,8 +340,11 @@ macro_rules! impl_order_backend_store {
             }
 
             async fn delete(&self, id: &Uuid) -> Result<(), OrderStoreError> {
-                self.service
-                    .delete(id)
+                // `delete` existe dans `DataService` ET dans `EntityCreator` (dont le défaut
+                // renvoie une erreur) : les deux traits viennent de `this::prelude::*`, et
+                // `ScyllaDataService` les implémente tous les deux — la résolution serait donc
+                // ambiguë, et le mauvais candidat échouerait à l'exécution. On nomme le bon.
+                DataService::delete(&*self.service, id)
                     .await
                     .map_err(|e| OrderStoreError::Other(anyhow::anyhow!(e)))
             }

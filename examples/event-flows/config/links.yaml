@@ -1,0 +1,80 @@
+# Event Flows Configuration
+#
+# This config provides ONLY the events/sinks sections.
+# Entities and links come from the BillingModule (crates/billing/config/links.yaml).
+# ServerBuilder merges both configs automatically.
+
+# ─── Sinks ─────────────────────────────────────────────────
+# Sinks define WHERE events are delivered after flow processing.
+sinks:
+  - name: in-app
+    type: in_app
+
+# ─── Events ────────────────────────────────────────────────
+# Declarative event flows: trigger → pipeline → deliver
+events:
+  backend:
+    type: memory
+
+  flows:
+    # Flow 1: Notify when a new order is created
+    - name: notify-new-order
+      description: "Send an in-app notification when an order is created"
+      trigger:
+        kind: entity.created
+        entity_type: order
+      pipeline:
+        - map:
+            template:
+              notification_type: new_order
+              title: "New order created"
+              body: "Order '{{ event.data.name | default(value='unknown') }}' has been placed"
+              data:
+                order_id: "{{ event.entity_id }}"
+        - deliver:
+            recipient: "{{ event.data.owner_id | default(value='system') }}"
+            sinks: [in-app]
+
+    # Flow 2: Notify when an invoice is linked to an order
+    - name: notify-invoice-linked
+      description: "Notify when an invoice is attached to an order"
+      trigger:
+        kind: link.created
+        link_type: has_invoice
+      pipeline:
+        - resolve:
+            from: source_id
+            as: order
+        - map:
+            template:
+              notification_type: invoice_linked
+              title: "Invoice linked"
+              body: "An invoice has been linked to order '{{ order.name | default(value='unknown') }}'"
+              data:
+                order_id: "{{ event.source_id }}"
+                invoice_id: "{{ event.target_id }}"
+        - deliver:
+            recipient: "system"
+            sinks: [in-app]
+
+    # Flow 3: Notify when a payment is linked to an invoice
+    - name: notify-payment-received
+      description: "Notify when a payment is received for an invoice"
+      trigger:
+        kind: link.created
+        link_type: payment
+      pipeline:
+        - resolve:
+            from: source_id
+            as: invoice
+        - map:
+            template:
+              notification_type: payment_received
+              title: "Payment received"
+              body: "A payment has been received for invoice '{{ invoice.name | default(value='unknown') }}'"
+              data:
+                invoice_id: "{{ event.source_id }}"
+                payment_id: "{{ event.target_id }}"
+        - deliver:
+            recipient: "system"
+            sinks: [in-app]

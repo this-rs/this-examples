@@ -12,9 +12,40 @@ use catalog::{CatalogModule, CatalogStores};
 use inventory::{InventoryModule, InventoryStores};
 use test_data::{populate_catalog_data, populate_inventory_data, populate_test_data};
 
+use this::config::LinksConfig;
+use this::core::module::Module;
+use this::core::{EntityCreator, EntityFetcher};
 use this::server::builder::ServerBuilder;
+use this::server::entity_registry::EntityRegistry;
 use this::server::{GraphQLExposure, GrpcExposure, RestExposure, WebSocketExposure};
 use this::storage::InMemoryLinkService;
+
+/// Config-only module that adds event flows and sinks to the multi-module server.
+/// Entities/links come from the domain modules (billing, catalog, inventory).
+struct EventsConfigModule;
+
+impl Module for EventsConfigModule {
+    fn name(&self) -> &str {
+        "events-config"
+    }
+    fn version(&self) -> &str {
+        "0.1.0"
+    }
+    fn entity_types(&self) -> Vec<&str> {
+        vec![]
+    }
+    fn register_entities(&self, _registry: &mut EntityRegistry) {}
+    fn links_config(&self) -> Result<LinksConfig> {
+        let config_path = concat!(env!("CARGO_MANIFEST_DIR"), "/config/events.yaml");
+        LinksConfig::from_yaml_file(config_path)
+    }
+    fn get_entity_fetcher(&self, _: &str) -> Option<Arc<dyn EntityFetcher>> {
+        None
+    }
+    fn get_entity_creator(&self, _: &str) -> Option<Arc<dyn EntityCreator>> {
+        None
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -37,8 +68,11 @@ async fn main() -> Result<()> {
     populate_inventory_data(&inventory_stores, link_service.clone()).await?;
     let inventory_module = InventoryModule::new(inventory_stores);
 
-    // Build the transport-agnostic host with all three modules
-    // CRITICAL: with_event_bus(1024) is required for WebSocket to broadcast events
+    // Build the transport-agnostic host with all modules + event config
+    //
+    // The EventsConfigModule adds events/sinks from config/events.yaml.
+    // ServerBuilder merges all configs and auto-wires the full event pipeline:
+    //   EventBus → EventLog → FlowRuntime → SinkRegistry → InAppSink
     let host = Arc::new(
         ServerBuilder::new()
             .with_link_service((*link_service).clone())
@@ -46,6 +80,7 @@ async fn main() -> Result<()> {
             .register_module(billing_module)?
             .register_module(catalog_module)?
             .register_module(inventory_module)?
+            .register_module(EventsConfigModule)?
             .build_host()?,
     );
 
@@ -70,7 +105,7 @@ async fn main() -> Result<()> {
         .fallback_service(grpc_router);
 
     println!("\n🌐 Multi-Module Server running on http://127.0.0.1:4242");
-    println!("\n📚 Endpoints disponibles:");
+    println!("\n📚 Endpoints:");
     println!("\n  REST API - Billing:");
     println!("    GET    /orders");
     println!("    GET    /invoices");
@@ -102,6 +137,13 @@ async fn main() -> Result<()> {
     println!("    GET    /stock_items/{{id}}/product");
     println!("    GET    /activities/{{id}}/usages");
     println!("    GET    /usages/{{id}}/from_activity");
+    println!("\n  Events (real-time):");
+    println!("    GET    /events/stream              (SSE)");
+    println!("    WS     /ws                         (WebSocket)");
+    println!("\n  Notifications:");
+    println!("    GET    /notifications/system");
+    println!("    GET    /notifications/system/unread-count");
+    println!("    POST   /notifications/system/read-all");
     println!("\n  GraphQL API:");
     println!("    POST   /graphql");
     println!("    GET    /graphql/playground");
@@ -109,15 +151,13 @@ async fn main() -> Result<()> {
     println!("\n  gRPC Services (HTTP/2):");
     println!("    this_grpc.EntityService  (GetEntity, ListEntities, CreateEntity, UpdateEntity, DeleteEntity)");
     println!("    this_grpc.LinkService    (CreateLink, GetLink, FindLinksBySource, FindLinksByTarget, DeleteLink)");
+    println!("    this_grpc.NotificationService (ListNotifications, MarkAsRead, GetUnreadCount)");
     println!("    GET    /grpc/proto");
-    println!("\n  WebSocket:");
-    println!("    WS     /ws");
     println!("\n  Client de test WebSocket:");
     println!("    GET    /static/ws-client.html");
-    println!("\n💡 Exemples:");
+    println!("\n💡 Quick test:");
     println!("   curl http://127.0.0.1:4242/orders");
-    println!("   curl -X POST http://127.0.0.1:4242/graphql -H 'Content-Type: application/json' -d '{{\"query\": \"{{ orders {{ id name }} }}\"}}' ");
-    println!("   curl -s http://127.0.0.1:4242/grpc/proto > /tmp/this.proto && grpcurl -plaintext -proto /tmp/this.proto 127.0.0.1:4242 this_grpc.EntityService/ListEntities");
+    println!("   curl http://127.0.0.1:4242/notifications/system");
     println!();
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:4242").await?;

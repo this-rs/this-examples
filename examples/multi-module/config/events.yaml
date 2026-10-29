@@ -1,0 +1,48 @@
+# Event configuration for multi-module example
+# This config is loaded as an additional module to add event flows to the server.
+
+sinks:
+  - name: in-app
+    type: in_app
+
+events:
+  backend:
+    type: memory
+
+  flows:
+    # Notify when any new entity is created (order, product, stock_item, etc.)
+    - name: notify-entity-created
+      description: "In-app notification for any new entity"
+      trigger:
+        kind: entity.created
+      pipeline:
+        - map:
+            template:
+              notification_type: entity_created
+              title: "New {{ event.entity_type }} created"
+              body: "{{ event.entity_type }} '{{ event.data.name | default(value='unnamed') }}' was created"
+              data:
+                entity_type: "{{ event.entity_type }}"
+                entity_id: "{{ event.entity_id }}"
+        - deliver:
+            recipient: "system"
+            sinks: [in-app]
+
+    # Notify when a link is created between entities
+    - name: notify-link-created
+      description: "In-app notification for new links"
+      trigger:
+        kind: link.created
+      pipeline:
+        - map:
+            template:
+              notification_type: link_created
+              title: "Link created"
+              body: "A '{{ event.link_type }}' link was created"
+              data:
+                link_type: "{{ event.link_type }}"
+                source_id: "{{ event.source_id }}"
+                target_id: "{{ event.target_id }}"
+        - deliver:
+            recipient: "system"
+            sinks: [in-app]

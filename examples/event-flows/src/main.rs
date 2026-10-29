@@ -138,10 +138,10 @@ async fn main() -> Result<()> {
     println!("   curl -N http://127.0.0.1:4245/events/stream");
     println!();
     println!("   # 2. Create an order (triggers notify-new-order flow):");
+    println!("   curl -X POST http://127.0.0.1:4245/orders -H 'Content-Type: application/json' \\");
     println!(
-        "   curl -X POST http://127.0.0.1:4245/orders -H 'Content-Type: application/json' \\"
+        "     -d '{{\"name\": \"Laptop Pro\", \"status\": \"pending\", \"owner_id\": \"system\"}}'"
     );
-    println!("     -d '{{\"name\": \"Laptop Pro\", \"status\": \"pending\", \"owner_id\": \"system\"}}'");
     println!();
     println!("   # 3. Check the notification was created:");
     println!("   curl http://127.0.0.1:4245/notifications/system");

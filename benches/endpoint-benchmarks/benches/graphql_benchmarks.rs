@@ -278,7 +278,7 @@ fn benchmark_graphql_load_test(c: &mut Criterion) {
             let queries = (0..10).map(|_i| {
                 let server = server.clone();
                 let query = json!({
-                    "query": format!("query {{ orders {{ id name number amount status }} }}")
+                    "query": "query { orders { id name number amount status } }"
                 });
                 tokio::spawn(async move { server.post_json("/graphql", query).await.unwrap() })
             });

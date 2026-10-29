@@ -45,9 +45,7 @@ use this::storage::InMemoryLinkService;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter("info")
-        .init();
+    tracing_subscriber::fmt().with_env_filter("info").init();
 
     let stores = BillingStores::new_in_memory();
     let billing_module = BillingModule::new(stores);
@@ -74,10 +72,7 @@ async fn main() -> Result<()> {
             .with_link_service((*link_service).clone())
             .with_default_event_bus()
             .with_default_notification_store()
-            .with_auth_config_file(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/config/auth.yaml"
-            ))?
+            .with_auth_config_file(concat!(env!("CARGO_MANIFEST_DIR"), "/config/auth.yaml"))?
             // Custom auth resolvers — reference as "resolver:name" in YAML config
             // e.g., auth: { create: "resolver:is_manager" }
             .with_auth_resolver("is_manager", |ctx, _resource_id| {

@@ -17,8 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
+      - name: Checkout this-rs/this (path dependency)
+        uses: actions/checkout@v7
+        with:
+          repository: this-rs/this
+          path: ../this
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -34,8 +39,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
+      - name: Checkout this-rs/this (path dependency)
+        uses: actions/checkout@v7
+        with:
+          repository: this-rs/this
+          path: ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -48,7 +58,7 @@ jobs:
           components: clippy
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -66,8 +76,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
+      - name: Checkout this-rs/this (path dependency)
+        uses: actions/checkout@v7
+        with:
+          repository: this-rs/this
+          path: ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -78,7 +93,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -123,14 +138,28 @@ jobs:
       - name: Build lmdb_example
         run: cargo build -p lmdb_example
 
+      - name: Build event_flows_example
+        run: cargo build -p event_flows_example
+
+      - name: Build auth_sts_example
+        run: cargo build -p auth_sts_example
+
+      - name: Build cognitive_signals_example
+        run: cargo build -p cognitive_signals_example
+
   # ── Code coverage ─────────────────────────────────────────────────
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
+      - name: Checkout this-rs/this (path dependency)
+        uses: actions/checkout@v7
+        with:
+          repository: this-rs/this
+          path: ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -144,7 +173,7 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -157,7 +186,7 @@ jobs:
         run: cargo llvm-cov --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: lcov.info
           fail_ci_if_error: true
@@ -170,8 +199,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
+      - name: Checkout this-rs/this (path dependency)
+        uses: actions/checkout@v7
+        with:
+          repository: this-rs/this
+          path: ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -182,7 +216,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -203,8 +237,13 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
+      - name: Checkout this-rs/this (path dependency)
+        uses: actions/checkout@v7
+        with:
+          repository: this-rs/this
+          path: ../this
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -215,7 +254,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry

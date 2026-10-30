@@ -4178,6 +4178,7 @@ dependencies = [
  "test-data",
  "this-rs",
  "tokio",
+ "tower",
 ]
 
 [[package]]

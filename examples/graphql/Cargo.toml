@@ -20,3 +20,6 @@ tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 graphql = ["billing/graphql"]
 
 
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }

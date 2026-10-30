@@ -7,7 +7,7 @@ use aws_sdk_dynamodb::types::{
 };
 use testcontainers::core::{IntoContainerPort, WaitFor};
 use testcontainers::runners::AsyncRunner;
-use testcontainers::{GenericImage, ImageExt};
+use testcontainers::GenericImage;
 use this::prelude::{AuthContext, Uuid};
 use tower::ServiceExt;
 

@@ -1906,8 +1906,10 @@ dependencies = [
  "billing",
  "serde",
  "serde_json",
+ "testcontainers",
  "this-rs",
  "tokio",
+ "tower",
  "tracing-subscriber",
 ]
 

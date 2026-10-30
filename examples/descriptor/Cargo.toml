@@ -1,0 +1,28 @@
+[package]
+name = "descriptor_example"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Un ModuleDescriptor déclaré une fois, servi sur REST / GraphQL / gRPC"
+
+[dependencies]
+# Pointed at the local framework checkout. The ModuleDescriptor API lives on the
+# `integ/module-descriptor` branch (not yet merged into `main`), so this example
+# only compiles against that branch, not against `main`.
+this-rs = { path = "../../../this" }
+anyhow = "1"
+async-trait = "0.1"
+axum = "0.8"
+prost-types = "0.14"
+serde_json = "1"
+serde_yaml = "0.9"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+tonic = "0.14"
+tower = { version = "0.5", features = ["util"] }
+uuid = { version = "1.10", features = ["v4", "serde"] }
+
+[features]
+# Proxy features so `cargo check -p descriptor_example --features graphql,grpc`
+# enables the framework's GraphQL and gRPC surfaces (the demo serves all three).
+graphql = ["this-rs/graphql"]
+grpc = ["this-rs/grpc"]

@@ -299,6 +299,9 @@ jobs:
       - name: Smoke — auth-sts
         run: cargo test -p auth_sts_example --test smoke
 
+      - name: Smoke — cognitive-signals
+        run: cargo test -p cognitive_signals_example --test smoke
+
   # ── Cross-platform ─────────────────────────────────────────────────
   cross-platform:
     name: Build (${{ matrix.os }})

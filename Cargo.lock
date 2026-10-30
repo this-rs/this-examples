@@ -4902,8 +4902,10 @@ dependencies = [
  "scylla",
  "serde",
  "serde_json",
+ "testcontainers",
  "this-rs",
  "tokio",
+ "tower",
  "tracing-subscriber",
 ]
 

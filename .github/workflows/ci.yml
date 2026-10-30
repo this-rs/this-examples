@@ -243,6 +243,62 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --verbose
 
+  # ── Smoke tests ──────────────────────────────────────────────────
+  smoke:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Checkout this-rs/this (path dependency)
+        uses: actions/checkout@v7
+        with:
+          repository: this-rs/this
+          path: this-dep
+
+      - name: Symlink path dependency
+        run: ln -s "$GITHUB_WORKSPACE/this-dep" "$GITHUB_WORKSPACE/../this"
+
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-smoke-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-smoke-
+
+      - name: Smoke — rest
+        run: cargo test -p rest_example --test smoke
+
+      - name: Smoke — graphql
+        run: cargo test -p graphql_example --features graphql --test smoke
+
+      - name: Smoke — grpc
+        run: cargo test -p grpc_example --test smoke
+
+      - name: Smoke — websocket
+        run: cargo test -p websocket_example --test smoke
+
+      - name: Smoke — multi-module
+        run: cargo test -p multi_module_example --test smoke
+
+      - name: Smoke — event-flows
+        run: cargo test -p event_flows_example --test smoke
+
+      - name: Smoke — auth-sts
+        run: cargo test -p auth_sts_example --test smoke
+
   # ── Cross-platform ─────────────────────────────────────────────────
   cross-platform:
     name: Build (${{ matrix.os }})

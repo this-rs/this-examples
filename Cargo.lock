@@ -248,6 +248,7 @@ dependencies = [
  "test-data",
  "this-rs",
  "tokio",
+ "tower",
  "tracing-subscriber",
  "uuid",
 ]
@@ -1855,6 +1856,7 @@ dependencies = [
  "test-data",
  "this-rs",
  "tokio",
+ "tower",
  "tower-http",
  "tracing-subscriber",
 ]
@@ -3031,6 +3033,7 @@ dependencies = [
  "serde_json",
  "this-rs",
  "tokio",
+ "tower",
  "tracing-subscriber",
 ]
 

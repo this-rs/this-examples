@@ -302,6 +302,18 @@ jobs:
       - name: Smoke — cognitive-signals
         run: cargo test -p cognitive_signals_example --test smoke
 
+      - name: Smoke — postgres (testcontainers)
+        run: cargo test -p postgres_example --test smoke -- --test-threads=1
+
+      - name: Smoke — mysql (testcontainers)
+        run: cargo test -p mysql_example --test smoke -- --test-threads=1
+
+      - name: Smoke — mongodb (testcontainers)
+        run: cargo test -p mongodb_example --test smoke -- --test-threads=1
+
+      - name: Smoke — neo4j (testcontainers)
+        run: cargo test -p neo4j_example --test smoke -- --test-threads=1
+
   # ── Cross-platform ─────────────────────────────────────────────────
   cross-platform:
     name: Build (${{ matrix.os }})

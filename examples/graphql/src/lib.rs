@@ -1,21 +1,40 @@
-use anyhow::Result;
-use axum::Router;
+// Everything in this file belongs to the GraphQL app, which is feature-gated.
+// The imports and the helper module are gated too: without the feature they
+// would be dead weight, and `clippy --all-targets -D warnings` fails on unused
+// imports rather than warning about them.
+#[cfg(feature = "graphql")]
 use std::sync::Arc;
 
+#[cfg(feature = "graphql")]
+use anyhow::Result;
+#[cfg(feature = "graphql")]
+use axum::Router;
+
+#[cfg(feature = "graphql")]
 use billing::{BillingModule, BillingStores};
+#[cfg(feature = "graphql")]
 use test_data::populate_test_data;
 
+#[cfg(feature = "graphql")]
 use this::config::LinksConfig;
+#[cfg(feature = "graphql")]
 use this::core::module::Module;
+#[cfg(feature = "graphql")]
 use this::core::{EntityCreator, EntityFetcher};
+#[cfg(feature = "graphql")]
 use this::server::builder::ServerBuilder;
+#[cfg(feature = "graphql")]
 use this::server::entity_registry::EntityRegistry;
+#[cfg(feature = "graphql")]
 use this::server::{GraphQLExposure, RestExposure};
+#[cfg(feature = "graphql")]
 use this::storage::InMemoryLinkService;
 
 /// Config-only module that adds event flows and sinks.
+#[cfg(feature = "graphql")]
 struct EventsConfigModule;
 
+#[cfg(feature = "graphql")]
 impl Module for EventsConfigModule {
     fn name(&self) -> &str {
         "events-config"

@@ -30,5 +30,5 @@ pub async fn app() -> Result<Router> {
             .build_host()?,
     );
 
-    Ok(RestExposure::build_router(host, vec![])?)
+    RestExposure::build_router(host, vec![])
 }

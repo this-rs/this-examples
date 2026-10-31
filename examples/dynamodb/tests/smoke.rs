@@ -1,10 +1,10 @@
-use axum::body::Body;
-use axum::http::{Request, StatusCode};
-use axum::Extension;
-use aws_sdk_dynamodb::Client;
 use aws_sdk_dynamodb::types::{
     AttributeDefinition, KeySchemaElement, KeyType, ProvisionedThroughput, ScalarAttributeType,
 };
+use aws_sdk_dynamodb::Client;
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
+use axum::Extension;
 use testcontainers::core::{IntoContainerPort, WaitFor};
 use testcontainers::runners::AsyncRunner;
 use testcontainers::GenericImage;
@@ -86,7 +86,12 @@ async fn dynamodb_serves_orders() {
         roles: vec![],
     }));
     let resp = app
-        .oneshot(Request::builder().uri("/orders").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/orders")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .expect("request");
     assert_eq!(resp.status(), StatusCode::OK);

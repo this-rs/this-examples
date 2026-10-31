@@ -1,6 +1,6 @@
 use anyhow::Result;
-use axum::Router;
 use aws_sdk_dynamodb::Client;
+use axum::Router;
 use std::sync::Arc;
 
 use billing::{BillingModule, BillingStores};

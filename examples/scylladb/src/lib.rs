@@ -11,12 +11,8 @@ use this::storage::ScyllaLinkService;
 
 /// Build the ScyllaDB example's router (billing backed by ScyllaDB/Cassandra).
 pub async fn app(scylla_uri: &str, keyspace: &str) -> Result<Router> {
-    let session: Arc<Session> = Arc::new(
-        SessionBuilder::new()
-            .known_node(scylla_uri)
-            .build()
-            .await?,
-    );
+    let session: Arc<Session> =
+        Arc::new(SessionBuilder::new().known_node(scylla_uri).build().await?);
 
     session
         .query_unpaged(

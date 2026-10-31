@@ -20,10 +20,10 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
-use axum::Router;
 use axum::body::Body;
 use axum::http::{HeaderMap, Method, Request, StatusCode};
-use serde_json::{Value, json};
+use axum::Router;
+use serde_json::{json, Value};
 use tower::ServiceExt;
 use uuid::Uuid;
 
@@ -38,13 +38,13 @@ use this::descriptor::{
     TransformSpec, ValidatorSpec,
 };
 use this::server::entity_registry::{EntityDescriptor, EntityRegistry};
-use this::server::exposure::GraphQLExposure;
 use this::server::exposure::grpc::entity_service::{
     EntityServiceImpl, FILTER_METADATA, SORT_METADATA,
 };
 use this::server::exposure::grpc::proto::entity_service_server::EntityService;
 use this::server::exposure::grpc::proto::{CreateEntityRequest, ListEntitiesRequest};
 use this::server::exposure::rest::RestExposure;
+use this::server::exposure::GraphQLExposure;
 use this::server::host::ServerHost;
 use this::storage::InMemoryLinkService;
 

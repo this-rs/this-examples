@@ -20,16 +20,16 @@ filter the **same rows**, and the message comes back in the **caller's language*
 ## Run / test
 
 ```sh
-cargo run  -p descriptor_example --features graphql,grpc
-cargo test -p descriptor_example --features graphql,grpc
+cargo run  -p descriptor_example
+cargo test -p descriptor_example
 ```
 
-> **Branch caveat**: the `ModuleDescriptor` API lives on the framework's
-> `integ/module-descriptor` branch (not yet merged into `main`). This example only
-> compiles against that branch. To validate it against a framework worktree:
+> **Framework version**: this example demonstrates APIs that shipped in
+> **this-rs v0.0.10** (the `ModuleDescriptor` integration, PR #71 merged into
+> `main`). It depends on the framework through the workspace's single source of
+> truth — `[workspace.dependencies] this-rs = { path = "../this" }` — so it
+> always runs against the local checkout, with no version to bump.
 >
-> ```sh
-> # point the dependency at the integ worktree, then revert before committing
-> sed -i '' 's#path = "../../../this"#path = "../../../_wt-md/integ"#' Cargo.toml
-> cargo check -p descriptor_example --features graphql,grpc
-> ```
+> GraphQL and gRPC are **default features** of the example: the demo serves all
+> three protocols at once, and an example that only builds when you remember a
+> flag is a bad example. `--no-default-features` gives a REST-only run.

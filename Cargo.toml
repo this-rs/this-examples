@@ -24,6 +24,19 @@ members = [
 ]
 resolver = "2"
 
-# Use local this-rs for development (new APIs not yet published to crates.io)
-[patch.crates-io]
+# Single source of truth for the framework: a PATH dependency, deliberately
+# with no version requirement.
+#
+# Why not the previous form (`[patch.crates-io] this-rs = { path = "../this" }`
+# plus `version = "0.0.9"` in every member): a `[patch]` only applies when the
+# version found at the path satisfies the requirement, and for 0.x ranges that
+# is an exact match (^0.0.9 means >=0.0.9, <0.0.10). The day `this` moved to
+# 0.0.10 the patch was silently ignored, cargo fell back to crates.io 0.0.9, and
+# every member failed to resolve — `auth_sts_example` asks for the `wami`
+# feature, which 0.0.9 does not have, so the error surfaced as a version
+# selection failure rather than as "your patch is ignored".
+#
+# A path dependency carries no version, so no future bump can reintroduce it.
+# Members pull it with `this-rs = { workspace = true, features = [...] }`.
+[workspace.dependencies]
 this-rs = { path = "../this" }

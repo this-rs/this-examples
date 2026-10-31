@@ -1,3 +1,5 @@
+entities: []
+links: []
 # Event configuration for multi-module example
 # This config is loaded as an additional module to add event flows to the server.
 

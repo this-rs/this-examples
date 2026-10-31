@@ -196,3 +196,19 @@ docs:
 	@echo "🌐 Online resources:"
 	@echo "  - GraphQL Playground: http://localhost:4242/graphql/playground (when running)"
 	@echo "  - DynamoDB Admin: http://localhost:8001 (when DynamoDB Local is running)"
+.PHONY: smoke
+smoke: ## Run in-process smoke tests for every example
+	cargo test -p rest_example --test smoke
+	cargo test -p graphql_example --features graphql --test smoke
+	cargo test -p grpc_example --test smoke
+	cargo test -p websocket_example --test smoke
+	cargo test -p multi_module_example --test smoke
+	cargo test -p event_flows_example --test smoke
+	cargo test -p auth_sts_example --test smoke
+	cargo test -p cognitive_signals_example --test smoke
+	cargo test -p postgres_example --test smoke -- --test-threads=1
+	cargo test -p mysql_example --test smoke -- --test-threads=1
+	cargo test -p mongodb_example --test smoke -- --test-threads=1
+	cargo test -p neo4j_example --test smoke -- --test-threads=1
+	cargo test -p scylladb_example --test smoke -- --test-threads=1
+	cargo test -p dynamodb_example --test smoke -- --test-threads=1

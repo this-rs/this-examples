@@ -3,8 +3,16 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '**/*.mmd'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '**/*.mmd'
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,14 +27,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Checkout this-rs/this (path dependency)
-        uses: actions/checkout@v7
-        with:
-          repository: this-rs/this
-          path: this-dep
-
-      - name: Symlink path dependency
-        run: ln -s "$GITHUB_WORKSPACE/this-dep" "$GITHUB_WORKSPACE/../this"
+      - name: Checkout this-rs/this and prepare its local-only deps
+        uses: ./.github/actions/this-dep
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -44,14 +46,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Checkout this-rs/this (path dependency)
-        uses: actions/checkout@v7
-        with:
-          repository: this-rs/this
-          path: this-dep
-
-      - name: Symlink path dependency
-        run: ln -s "$GITHUB_WORKSPACE/this-dep" "$GITHUB_WORKSPACE/../this"
+      - name: Checkout this-rs/this and prepare its local-only deps
+        uses: ./.github/actions/this-dep
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -84,14 +80,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Checkout this-rs/this (path dependency)
-        uses: actions/checkout@v7
-        with:
-          repository: this-rs/this
-          path: this-dep
-
-      - name: Symlink path dependency
-        run: ln -s "$GITHUB_WORKSPACE/this-dep" "$GITHUB_WORKSPACE/../this"
+      - name: Checkout this-rs/this and prepare its local-only deps
+        uses: ./.github/actions/this-dep
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -164,14 +154,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Checkout this-rs/this (path dependency)
-        uses: actions/checkout@v7
-        with:
-          repository: this-rs/this
-          path: this-dep
-
-      - name: Symlink path dependency
-        run: ln -s "$GITHUB_WORKSPACE/this-dep" "$GITHUB_WORKSPACE/../this"
+      - name: Checkout this-rs/this and prepare its local-only deps
+        uses: ./.github/actions/this-dep
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -213,14 +197,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Checkout this-rs/this (path dependency)
-        uses: actions/checkout@v7
-        with:
-          repository: this-rs/this
-          path: this-dep
-
-      - name: Symlink path dependency
-        run: ln -s "$GITHUB_WORKSPACE/this-dep" "$GITHUB_WORKSPACE/../this"
+      - name: Checkout this-rs/this and prepare its local-only deps
+        uses: ./.github/actions/this-dep
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3
@@ -331,14 +309,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Checkout this-rs/this (path dependency)
-        uses: actions/checkout@v7
-        with:
-          repository: this-rs/this
-          path: this-dep
-
-      - name: Symlink path dependency
-        run: ln -s "$GITHUB_WORKSPACE/this-dep" "$GITHUB_WORKSPACE/../this"
+      - name: Checkout this-rs/this and prepare its local-only deps
+        uses: ./.github/actions/this-dep
 
       - name: Install protoc
         uses: arduino/setup-protoc@v3

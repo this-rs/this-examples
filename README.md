@@ -317,10 +317,36 @@ cargo run -p cognitive_signals_example
 - Routes signals to SinkRegistry (webhook, in-app notification, SSE)
 - Create entities and watch cognitive signals fire in real-time
 
+### ModuleDescriptor (`descriptor_api`) — pending the `integ → main` merge
+
+A **ModuleDescriptor** demo — one declaration per module (entities, fields, validators, typed filters,
+per-operation policies, French/English messages) from which REST, GraphQL and gRPC are all derived — is
+landing with the `integ/module-descriptor` branch of [this-rs](https://github.com/this-rs/this).
+
+It is deliberately not here yet: this repository consumes the framework through
+`[patch.crates-io] this-rs = { path = "../this" }`, so it builds against whatever branch the `../this`
+checkout has. Until `integ/module-descriptor` is merged into `main`, a descriptor example in this
+repository would not compile against the framework it pulls in. In the meantime the runnable demo and its
+tests live in the framework repository, on that branch:
+
+```sh
+# in the this-rs repository, on integ/module-descriptor
+cargo run  --example descriptor_api --features graphql,grpc   # one descriptor, three protocols
+cargo test --example descriptor_api --features graphql,grpc   # same code, same status, same message
+```
+
+The example shows the point of describing a module once: an invalid payload gets the same contract code on
+REST, GraphQL and gRPC, a forbidden caller gets the same refusal, a filter the descriptor does not allow is a
+typed error, and the message follows the caller's language.
+
+Migrating these examples to that pattern — replacing each hand-written entity `descriptor.rs` with one
+`ModuleDescriptor` per module — follows the merge.
+
 ## Key concepts
 
 - **Module isolation**: keep your business logic in `crates/<module>` and expose it via one or more protocols.
 - **Uniform entity structure**: each entity directory contains `model`, `store`, `handlers`, and a `descriptor` describing the entity to the framework.
+- **ModuleDescriptor**: declare a module once (fields, validators, typed filters, policies, messages) and let REST, GraphQL, gRPC and the contracts derive from it — available in these examples once `integ/module-descriptor` reaches `main`.
 - **Transport-agnostic host**: build a host once, then compose one or many exposures (REST, GraphQL, gRPC, WebSocket) over it.
 - **Storage backends**: swap the storage layer without changing business logic. Implement `DataService` and `LinkService` for any database (9 backends included).
 - **Links/relations**: a link service manages relationships across entities, automatically generating nested routes.

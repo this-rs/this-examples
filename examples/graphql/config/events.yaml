@@ -1,3 +1,5 @@
+entities: []
+links: []
 # Event configuration for graphql example
 sinks:
   - name: in-app

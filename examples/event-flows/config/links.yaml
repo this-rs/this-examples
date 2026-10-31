@@ -1,3 +1,5 @@
+entities: []
+links: []
 # Event Flows Configuration
 #
 # This config provides ONLY the events/sinks sections.

@@ -19,3 +19,8 @@ aws-config = "1"
 [features]
 graphql = ["billing/graphql"]
 
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+testcontainers = "0.27"
+aws-config = { version = "1", features = ["behavior-version-latest"] }

@@ -14,3 +14,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 sqlx = { version = "0.9", features = ["runtime-tokio", "tls-rustls", "postgres"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+testcontainers = "0.27"
+testcontainers-modules = { version = "0.15", features = ["postgres"] }

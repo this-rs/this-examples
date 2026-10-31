@@ -1,0 +1,63 @@
+name: this-dep
+description: >-
+  Check out this-rs/this where the path dependency expects it, and make its own
+  local-only dependencies resolvable so cargo can load its manifest.
+
+# ── Why one action instead of two steps copied into six jobs ──────────────
+#
+# this-examples depends on this-rs/this by PATH (see [workspace.dependencies]),
+# so cargo must load ../this/Cargo.toml. That manifest declares the six
+# obrain-* crates (and this-vite) as optional path dependencies on
+# ../../banc-obrain-j4/crates/* and ../../vite-rs, neither of which exists on a
+# runner. Without stubs, `cargo metadata`-driven commands die on:
+#
+#   error: failed to load manifest for workspace member .../this/.
+#     failed to load manifest for dependency `obrain-adapters`
+#       failed to read .../banc-obrain-j4/crates/obrain-adapters/Cargo.toml
+#
+# ── Why a plain `git clone` at ../this, and NOT actions/checkout + symlink ─
+#
+# The two paths are not equivalent. Cargo resolves the relative dependency
+# lexically, so with the old shape (checkout into $GITHUB_WORKSPACE/this-dep,
+# symlink $GITHUB_WORKSPACE/../this -> this-dep) the dependency root is
+# $GITHUB_WORKSPACE/../../banc-obrain-j4, while this's own stub script -- run
+# from $GITHUB_WORKSPACE/this-dep -- computes its root as the parent of
+# $GITHUB_WORKSPACE/this-dep, i.e. $GITHUB_WORKSPACE/../banc-obrain-j4. The
+# stubs would land in the wrong directory. Cloning directly into
+# $GITHUB_WORKSPACE/../this makes the checkout, the stub script's computed root
+# and cargo's resolution all agree.
+# actions/checkout refuses a path outside $GITHUB_WORKSPACE, hence the clone.
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout this-rs/this at ../this
+      shell: bash
+      run: |
+        set -euo pipefail
+        DEP="$(cd "$GITHUB_WORKSPACE/.." && pwd)/this"
+        rm -rf "$DEP"
+        git clone --depth 1 https://github.com/this-rs/this.git "$DEP"
+        echo "this checked out at $DEP"
+
+    - name: Stub this-rs/this local-only dependencies
+      shell: bash
+      run: |
+        set -euo pipefail
+        DEP="$(cd "$GITHUB_WORKSPACE/.." && pwd)/this"
+        bash "$DEP/.github/create-local-dep-stubs.sh"
+
+    - name: Make the stub sources non-empty
+      shell: bash
+      run: |
+        set -euo pipefail
+        # The stub script `touch`es an empty lib.rs. `cargo fmt --all` (which
+        # walks path dependencies) then reports a spurious diff on each of them
+        # and the Rustfmt job fails on files that are not ours. One comment line
+        # makes them rustfmt-clean -- measured: 7 diffs before, 0 after.
+        DEPS="$(cd "$GITHUB_WORKSPACE/../.." && pwd)"
+        for f in "$DEPS"/banc-obrain-j4/crates/*/src/lib.rs "$DEPS"/vite-rs/src/lib.rs; do
+          if [ -f "$f" ] && [ ! -s "$f" ]; then
+            printf '// CI stub: not the real crate.\n' > "$f"
+          fi
+        done

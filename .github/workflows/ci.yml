@@ -151,6 +151,9 @@ jobs:
       - name: Build cognitive_signals_example
         run: cargo build -p cognitive_signals_example
 
+      - name: Build descriptor_example (REST + GraphQL + gRPC)
+        run: cargo build -p descriptor_example
+
   # ── Code coverage ─────────────────────────────────────────────────
   coverage:
     name: Code Coverage
@@ -225,6 +228,12 @@ jobs:
 
       - name: Run tests
         run: cargo test --workspace --verbose
+
+      # Named on purpose: this is the regression proof for the framework release
+      # (v0.0.10). `cargo test --workspace` above already runs it, but a proof
+      # that is not named in the CI log is a proof nobody reads.
+      - name: Test descriptor_example — one declaration, three protocols
+        run: cargo test -p descriptor_example --verbose
 
   # ── Smoke tests ──────────────────────────────────────────────────
   smoke:

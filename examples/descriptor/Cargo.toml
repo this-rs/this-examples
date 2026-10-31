@@ -1,0 +1,33 @@
+[package]
+name = "descriptor_example"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Un ModuleDescriptor déclaré une fois, servi sur REST / GraphQL / gRPC"
+
+[dependencies]
+# The framework, pulled from the workspace's single source of truth
+# (`[workspace.dependencies] this-rs = { path = "../this" }`). No version: a path
+# dependency carries none, so a framework bump cannot silently redirect this
+# example to a crates.io release that lacks the API it demonstrates.
+# The ModuleDescriptor API shipped in v0.0.10 (PR #71 merged into main).
+this-rs = { workspace = true }
+anyhow = "1"
+async-trait = "0.1"
+axum = "0.8"
+prost-types = "0.14"
+serde_json = "1"
+serde_yaml = "0.9"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+tonic = "0.14"
+tower = { version = "0.5", features = ["util"] }
+uuid = { version = "1.10", features = ["v4", "serde"] }
+
+[features]
+# The demo serves REST, GraphQL and gRPC at once, so both surfaces are on by
+# default: an example that only builds when you remember a flag is a bad
+# example, and `cargo build/test --workspace` must compile it as it stands.
+# The features are still declared so they can be turned off for a REST-only run.
+default = ["graphql", "grpc"]
+graphql = ["this-rs/graphql"]
+grpc = ["this-rs/grpc"]

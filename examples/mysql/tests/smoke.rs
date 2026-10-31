@@ -6,6 +6,7 @@ use testcontainers_modules::mysql::Mysql;
 use this::prelude::{AuthContext, Uuid};
 use tower::ServiceExt;
 
+#[ignore = "container-backed: needs Docker, run explicitly by the smoke CI job (--ignored)"]
 #[tokio::test]
 async fn mysql_serves_orders() {
     let container = Mysql::default()

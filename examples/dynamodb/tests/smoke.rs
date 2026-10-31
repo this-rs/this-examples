@@ -55,6 +55,7 @@ async fn create_table(client: &Client, name: &str) {
         .unwrap();
 }
 
+#[ignore = "container-backed: needs Docker, run explicitly by the smoke CI job (--ignored)"]
 #[tokio::test]
 async fn dynamodb_serves_orders() {
     let container = GenericImage::new("amazon/dynamodb-local", "latest")

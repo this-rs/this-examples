@@ -280,16 +280,16 @@ jobs:
         run: cargo test -p cognitive_signals_example --test smoke
 
       - name: Smoke — postgres (testcontainers)
-        run: cargo test -p postgres_example --test smoke -- --test-threads=1
+        run: cargo test -p postgres_example --test smoke -- --ignored --test-threads=1
 
       - name: Smoke — mysql (testcontainers)
-        run: cargo test -p mysql_example --test smoke -- --test-threads=1
+        run: cargo test -p mysql_example --test smoke -- --ignored --test-threads=1
 
       - name: Smoke — mongodb (testcontainers)
-        run: cargo test -p mongodb_example --test smoke -- --test-threads=1
+        run: cargo test -p mongodb_example --test smoke -- --ignored --test-threads=1
 
       - name: Smoke — neo4j (testcontainers)
-        run: cargo test -p neo4j_example --test smoke -- --test-threads=1
+        run: cargo test -p neo4j_example --test smoke -- --ignored --test-threads=1
 
       # --ignored on purpose: the test is `#[ignore]`d so `cargo test --workspace`
       # does not pay for a Cassandra container in four other jobs. It is run here,
@@ -299,7 +299,7 @@ jobs:
         timeout-minutes: 25
 
       - name: Smoke — dynamodb (testcontainers)
-        run: cargo test -p dynamodb_example --test smoke -- --test-threads=1
+        run: cargo test -p dynamodb_example --test smoke -- --ignored --test-threads=1
 
   # ── Cross-platform ─────────────────────────────────────────────────
   cross-platform:

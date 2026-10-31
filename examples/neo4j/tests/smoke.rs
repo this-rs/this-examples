@@ -6,6 +6,7 @@ use testcontainers_modules::neo4j::Neo4j;
 use this::prelude::{AuthContext, Uuid};
 use tower::ServiceExt;
 
+#[ignore = "container-backed: needs Docker, run explicitly by the smoke CI job (--ignored)"]
 #[tokio::test]
 async fn neo4j_serves_orders() {
     let container = Neo4j::default()

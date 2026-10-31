@@ -68,9 +68,21 @@ async fn dynamodb_serves_orders() {
     let port = container.get_host_port_ipv4(8000).await.unwrap();
     let endpoint = format!("http://{host}:{port}");
 
+    // Credentials must be supplied explicitly. DynamoDB Local accepts anything,
+    // but without them the SDK falls back to its credential chain and calls the
+    // EC2 instance-metadata endpoint, which on a GitHub runner answers
+    // `411 Length Required` and surfaces as `FailedToLoadToken` — a failure that
+    // looks like a broken table but is really a missing fake credential.
     let config = aws_config::defaults(aws_config::BehaviorVersion::latest())
         .endpoint_url(&endpoint)
         .region(aws_config::Region::new("us-east-1"))
+        .credentials_provider(aws_sdk_dynamodb::config::Credentials::new(
+            "fakeMyKeyId",
+            "fakeSecretAccessKey",
+            None,
+            None,
+            "smoke-test",
+        ))
         .load()
         .await;
     let client = Client::new(&config);

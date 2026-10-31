@@ -286,8 +286,12 @@ jobs:
       - name: Smoke — neo4j (testcontainers)
         run: cargo test -p neo4j_example --test smoke -- --test-threads=1
 
-      - name: Smoke — scylladb (testcontainers)
-        run: cargo test -p scylladb_example --test smoke -- --test-threads=1
+      # --ignored on purpose: the test is `#[ignore]`d so `cargo test --workspace`
+      # does not pay for a Cassandra container in four other jobs. It is run here,
+      # where it is named and where its 10-minute startup is acceptable.
+      - name: Smoke — scylladb (testcontainers, slow)
+        run: cargo test -p scylladb_example --test smoke -- --ignored --test-threads=1
+        timeout-minutes: 25
 
       - name: Smoke — dynamodb (testcontainers)
         run: cargo test -p dynamodb_example --test smoke -- --test-threads=1

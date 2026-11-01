@@ -317,36 +317,50 @@ cargo run -p cognitive_signals_example
 - Routes signals to SinkRegistry (webhook, in-app notification, SSE)
 - Create entities and watch cognitive signals fire in real-time
 
-### ModuleDescriptor (`descriptor_api`) — pending the `integ → main` merge
+### ModuleDescriptor (`descriptor`) — one declaration, three protocols
 
-A **ModuleDescriptor** demo — one declaration per module (entities, fields, validators, typed filters,
-per-operation policies, French/English messages) from which REST, GraphQL and gRPC are all derived — is
-landing with the `integ/module-descriptor` branch of [this-rs](https://github.com/this-rs/this).
-
-It is deliberately not here yet: this repository consumes the framework through
-`[patch.crates-io] this-rs = { path = "../this" }`, so it builds against whatever branch the `../this`
-checkout has. Until `integ/module-descriptor` is merged into `main`, a descriptor example in this
-repository would not compile against the framework it pulls in. In the meantime the runnable demo and its
-tests live in the framework repository, on that branch:
+[`examples/descriptor`](examples/descriptor) declares a `billing` module **once**: an `invoice`
+entity with validators (`number` 3..50 characters, `amount` > 0), input transforms, typed filters
+(`eq`/`gt` on `amount`, `eq` on `number`, both sortable), an `owner` link to `customer`,
+per-operation policies, and French/English messages. The same host then answers on REST, GraphQL and
+gRPC.
 
 ```sh
-# in the this-rs repository, on integ/module-descriptor
-cargo run  --example descriptor_api --features graphql,grpc   # one descriptor, three protocols
-cargo test --example descriptor_api --features graphql,grpc   # same code, same status, same message
+cargo run  -p descriptor_example    # default features: REST + GraphQL + gRPC, in one process
+cargo test -p descriptor_example    # same payload, same code, same refusal, same language
 ```
 
-The example shows the point of describing a module once: an invalid payload gets the same contract code on
-REST, GraphQL and gRPC, a forbidden caller gets the same refusal, a filter the descriptor does not allow is a
-typed error, and the message follows the caller's language.
+`main` walks the point rather than describing it: it posts an invalid payload in French and in
+English and prints the same contract code each time, then the same refusal on a `role:admin` write,
+then a filter the descriptor does not allow. `--no-default-features` gives the REST-only surface.
 
-Migrating these examples to that pattern — replacing each hand-written entity `descriptor.rs` with one
-`ModuleDescriptor` per module — follows the merge.
+The other examples still declare their entities by hand (`src/entities/<name>/descriptor.rs`);
+replacing each with one `ModuleDescriptor` per module is a follow-up, not a precondition — this
+example proves the pattern works against the framework the whole repository pulls in.
+
+## What these examples cover, and what they do not
+
+Every example is **built** in CI, and seven of them are **started and exercised** by smoke tests:
+`rest`, `graphql`, `grpc`, `websocket`, `multi_module`, `event_flows`, `auth_sts`. That is what
+"the examples build against `../this`" is meant to prove.
+
+Three capabilities shipped in 0.0.10 have **no example yet**, and this list is written down rather
+than left to be discovered:
+
+| Not demonstrated | Why it is not trivial |
+|---|---|
+| **OIDC resource server** (`provider: oidc`) | verifying tokens from an external IdP needs an IdP to talk to; a fixture JWKS server would be the honest way to show it |
+| **Soft delete** (`SoftDeleting<S>`) | the API exists and is tested in `this`, but no example wraps a store with it, so the README's soft-delete promise is only true in the framework |
+| **Module signing** (`VfsModuleStore::with_trust_anchor`) | needs a signed manifest fixture and a keypair in the example |
+
+If you are looking for one of these and find nothing, that is a gap in the examples, not a missing
+feature.
 
 ## Key concepts
 
 - **Module isolation**: keep your business logic in `crates/<module>` and expose it via one or more protocols.
 - **Uniform entity structure**: each entity directory contains `model`, `store`, `handlers`, and a `descriptor` describing the entity to the framework.
-- **ModuleDescriptor**: declare a module once (fields, validators, typed filters, policies, messages) and let REST, GraphQL, gRPC and the contracts derive from it — available in these examples once `integ/module-descriptor` reaches `main`.
+- **ModuleDescriptor**: declare a module once (fields, validators, typed filters, policies, messages) and let REST, GraphQL, gRPC and the contracts derive from it — demonstrated end to end in [`examples/descriptor`](examples/descriptor): one declaration, the same answers on the three protocols.
 - **Transport-agnostic host**: build a host once, then compose one or many exposures (REST, GraphQL, gRPC, WebSocket) over it.
 - **Storage backends**: swap the storage layer without changing business logic. Implement `DataService` and `LinkService` for any database (9 backends included).
 - **Links/relations**: a link service manages relationships across entities, automatically generating nested routes.

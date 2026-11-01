@@ -20,6 +20,7 @@ async fn lmdb_serves_orders() {
         user_id: Uuid::from_u128(1),
         tenant_id: Uuid::from_u128(9),
         roles: vec![],
+        scopes: Vec::new(),
     }));
     let resp = app
         .oneshot(

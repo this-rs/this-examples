@@ -62,24 +62,10 @@ async fn auth_sts_issues_a_token_that_opens_the_entity_surface() {
         )
         .await
         .expect("request");
-    // KNOWN DEFECT — a token the host just issued is refused by that same host, with
-    // `this.auth.unauthenticated`. The signature/claims path is where to look: `verify_token`
-    // rejects before `claims_to_context`, which is why the refusal carries no detail.
-    //
-    // The assertion is written as a refusal on purpose: it documents today's behaviour, and it
-    // fails the day the defect is fixed — forcing whoever fixes it to turn this into a 200.
     let status = resp.status();
     let bytes = axum::body::to_bytes(resp.into_body(), usize::MAX)
         .await
         .unwrap();
     let body = String::from_utf8_lossy(&bytes);
-    assert_eq!(
-        status,
-        StatusCode::UNAUTHORIZED,
-        "a token issued by this host is now accepted — turn this assertion into a 200. body: {body}"
-    );
-    assert!(
-        body.contains("this.auth.unauthenticated"),
-        "unexpected refusal: {body}"
-    );
+    assert_eq!(status, StatusCode::OK, "body: {body}");
 }

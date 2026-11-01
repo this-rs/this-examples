@@ -11,6 +11,7 @@ async fn multi_module_serves_orders_and_products() {
         user_id: Uuid::from_u128(1),
         tenant_id: Uuid::from_u128(9),
         roles: vec![],
+        scopes: Vec::new(),
     }));
 
     for uri in ["/orders", "/products", "/stores"] {

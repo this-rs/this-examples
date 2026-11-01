@@ -30,5 +30,20 @@ pub async fn app() -> Result<Router> {
             .build_host()?,
     );
 
+    // Bootstrap generates the signing key but seeds no user: without one, `/auth/token` can
+    // only answer 401 and nothing can authenticate. Register a development account here.
+    // Not `if let`: a bootstrap host without an STS is a wiring mistake, not a variant.
+    let sts = host
+        .sts_state
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("auth.provider: wami in bootstrap mode must wire an STS"))?;
+    sts.sts.register_user(
+        "admin".to_string(),
+        "admin".to_string(),
+        uuid::Uuid::from_u128(1),
+        uuid::Uuid::from_u128(9),
+        vec!["admin".to_string()],
+    );
+
     RestExposure::build_router(host, vec![])
 }

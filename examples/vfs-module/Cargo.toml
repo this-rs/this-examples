@@ -1,0 +1,11 @@
+[package]
+name = "vfs_module_example"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Charger, remplacer et décharger un module depuis un ModuleStore (in-memory puis fs)"
+
+[dependencies]
+# Single source of truth for the framework (`[workspace.dependencies] this-rs`).
+this-rs = { workspace = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

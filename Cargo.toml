@@ -23,6 +23,7 @@ members = [
   "examples/cognitive-signals",
   "examples/descriptor",
   "examples/module-signing",
+  "examples/vfs-module",
   "benches/endpoint-benchmarks",
 ]
 resolver = "2"

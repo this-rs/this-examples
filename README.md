@@ -413,23 +413,33 @@ cargo test -p module_signing_example   # the same, as assertions
 API shown (the `module-signing` feature of `this-rs`): `VfsModuleStore::with_signing_key` (publisher
 side), `VfsModuleStore::with_trust_anchor` + `TrustAnchor::insert` (host side).
 
+### VFS module lifecycle (`examples/vfs-module/`)
+
+Load, replace and unload a declarative module in a `ModuleStore` — the same cycle on an
+in-memory `Vfs` and on a local one. This example is a test crate (no server): it **measures**
+the store's contract rather than describing it.
+
+```bash
+cargo run  -p vfs_module_example    # the cycle on InMemoryVfs then LocalFsVfs, exits non-zero on any mismatch
+cargo test -p vfs_module_example    # the same steps as assertions
+```
+
+- **load** — `put("0.1.0")`, then `get(name, None)` serves `0.1.0`
+- **replace** — `put("0.2.0")`: `get(None)` serves the **highest** version, while
+  `get(name, Some("0.1.0"))` still serves the old one; `list()` shows both
+- **unload** — `remove("0.2.0")` makes `get(None)` fall back to `0.1.0`; `remove("0.1.0")`
+  makes the store answer `this.vfs.not_found` (the HTTP tombstone `this.module.not_found`
+  belongs to `ModuleRuntime`, see `hot_module` in `this`)
+
 ## What these examples cover, and what they do not
 
 Every example is **built** in CI. The Smoke Tests job **starts and exercises** fourteen of them:
 `rest`, `graphql`, `grpc`, `websocket`, `multi_module`, `event_flows`, `auth_sts`,
 `cognitive_signals`, and — against a real database started by testcontainers — `postgres`, `mysql`,
 `mongodb`, `neo4j`, `dynamodb`, with `scylladb` opt-in because it is slow. `oidc`, `soft_delete`,
-`descriptor`, `module_signing` and `lmdb` are exercised by the Test Suite (`cargo test --workspace`)
-rather than by the smoke job. That is what "the examples build against `../this`" is meant to prove.
-
-One capability shipped in 0.0.10 has **no example yet**, and it is written down rather than left to
-be discovered:
-
-| Not demonstrated | Why it is not trivial |
-|---|---|
-| **Module signing** (`VfsModuleStore::with_trust_anchor`) | needs a signed manifest fixture and a keypair in the example |
-
-If you are looking for it and find nothing, that is a gap in the examples, not a missing feature.
+`descriptor`, `module_signing`, `vfs_module` and `lmdb` are exercised by the Test Suite
+(`cargo test --workspace`) rather than by the smoke job. That is what "the examples build against
+`../this`" is meant to prove.
 
 ## Key concepts
 

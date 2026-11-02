@@ -5802,6 +5802,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "soft_delete_example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "billing",
+ "serde_json",
+ "test-data",
+ "this-rs",
+ "tokio",
+ "tower",
+ "uuid",
+]
+
+[[package]]
 name = "spin"
 version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"

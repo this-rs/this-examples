@@ -90,6 +90,24 @@ impl EntityCreator for InMemoryInvoiceStore {
         self.create(invoice.clone()).await?;
         Ok(serde_json::to_value(invoice)?)
     }
+
+    /// A full-document replacement. Soft delete relies on it to write `deleted_at` back, keeping
+    /// the rest of the row: the document it sends is the whole invoice, read first.
+    async fn update_from_json(
+        &self,
+        entity_id: &Uuid,
+        entity_data: serde_json::Value,
+    ) -> Result<serde_json::Value, anyhow::Error> {
+        let invoice: Invoice = serde_json::from_value(entity_data)?;
+        anyhow::ensure!(
+            invoice.id == *entity_id,
+            "update: id mismatch for {entity_id}"
+        );
+        let updated = InvoiceStore::update(self, invoice)
+            .await
+            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
+        Ok(serde_json::to_value(updated)?)
+    }
 }
 
 #[async_trait::async_trait]
@@ -528,3 +546,40 @@ impl InvoiceLmdbStore {
 
 #[cfg(feature = "lmdb")]
 impl_invoice_backend_store!(InvoiceLmdbStore);
+
+#[cfg(test)]
+mod update_from_json_tests {
+    use super::*;
+    use serde_json::json;
+
+    /// Soft delete writes `deleted_at` back through this path: the row must keep the mark, and an
+    /// update aimed at another id must be refused rather than written somewhere else.
+    #[tokio::test]
+    async fn update_from_json_marks_the_row_and_checks_the_id() {
+        let store = InMemoryInvoiceStore::default();
+        let created = EntityCreator::create_from_json(&store, json!({}))
+            .await
+            .unwrap();
+        let id: Uuid = serde_json::from_value(created["id"].clone()).unwrap();
+
+        let mut doc = created.clone();
+        doc["deleted_at"] = json!(chrono::Utc::now().to_rfc3339());
+        let out = EntityCreator::update_from_json(&store, &id, doc.clone())
+            .await
+            .unwrap();
+        assert!(out["deleted_at"].is_string());
+        assert!(
+            InvoiceStore::get(&store, &id)
+                .await
+                .unwrap()
+                .deleted_at
+                .is_some()
+        );
+
+        assert!(
+            EntityCreator::update_from_json(&store, &Uuid::new_v4(), doc)
+                .await
+                .is_err()
+        );
+    }
+}

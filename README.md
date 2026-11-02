@@ -393,14 +393,34 @@ cargo test -p soft_delete_example    # 4 tests, builds with the `graphql` featur
 - For the mark to be writable, each billing store implements `EntityCreator::update_from_json`; the
   framework refuses the delete (rather than erasing) when a store cannot carry the mark
 
+### Module signing (`examples/module-signing/`)
+
+A stored module is only loaded if its manifest is **signed by a key of the trust anchor**. Without an
+anchor the store checks integrity only — the files match the etags of a manifest that anyone with
+write access can rewrite. With one, an operator who can write to the store can no longer invent a
+module. This example is a test crate (no server): it **measures** the four outcomes.
+
+```bash
+cargo run  -p module_signing_example   # the four outcomes, exits non-zero on any unexpected result
+cargo test -p module_signing_example   # the same, as assertions
+```
+
+- Signed module under an anchor that knows the key → **accepted**
+- Signature forged under a known key id (the anchor holds another key) → `this.module.bad_signature`
+- Key id the anchor has never heard of → `this.module.untrusted_key`
+- Unsigned module once an anchor is declared → `this.module.unsigned`
+
+API shown (the `module-signing` feature of `this-rs`): `VfsModuleStore::with_signing_key` (publisher
+side), `VfsModuleStore::with_trust_anchor` + `TrustAnchor::insert` (host side).
+
 ## What these examples cover, and what they do not
 
 Every example is **built** in CI. The Smoke Tests job **starts and exercises** fourteen of them:
 `rest`, `graphql`, `grpc`, `websocket`, `multi_module`, `event_flows`, `auth_sts`,
 `cognitive_signals`, and — against a real database started by testcontainers — `postgres`, `mysql`,
 `mongodb`, `neo4j`, `dynamodb`, with `scylladb` opt-in because it is slow. `oidc`, `soft_delete`,
-`descriptor` and `lmdb` are exercised by the Test Suite (`cargo test --workspace`) rather than by the
-smoke job. That is what "the examples build against `../this`" is meant to prove.
+`descriptor`, `module_signing` and `lmdb` are exercised by the Test Suite (`cargo test --workspace`)
+rather than by the smoke job. That is what "the examples build against `../this`" is meant to prove.
 
 One capability shipped in 0.0.10 has **no example yet**, and it is written down rather than left to
 be discovered:

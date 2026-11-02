@@ -3743,6 +3743,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "module_signing_example"
+version = "0.1.0"
+dependencies = [
+ "ed25519-dalek",
+ "this-rs",
+ "tokio",
+]
+
+[[package]]
 name = "moka"
 version = "0.12.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"

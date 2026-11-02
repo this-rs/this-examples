@@ -1,0 +1,17 @@
+[package]
+name = "module_signing_example"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Un module stocké n'est chargé que s'il est signé par une clé de l'ancre de confiance"
+
+[dependencies]
+# The framework, pulled from the workspace's single source of truth
+# (`[workspace.dependencies] this-rs = { path = "../this" }`).
+# `module-signing` is the feature that enables `TrustAnchor`, `with_signing_key`
+# and `with_trust_anchor` — this example exists to demonstrate exactly those.
+this-rs = { workspace = true, features = ["module-signing"] }
+# Same major version as `this`'s optional ed25519-dalek dep, so `SigningKey` /
+# `VerifyingKey` unify with the store's API.
+ed25519-dalek = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

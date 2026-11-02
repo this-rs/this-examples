@@ -18,6 +18,7 @@ members = [
   "examples/event-flows",
   "examples/multi-module",
   "examples/auth-sts",
+  "examples/oidc",
   "examples/cognitive-signals",
   "examples/descriptor",
   "benches/endpoint-benchmarks",

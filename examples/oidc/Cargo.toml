@@ -1,0 +1,22 @@
+[package]
+name = "oidc_example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+billing = { path = "../../crates/billing" }
+test-data = { path = "../../crates/test-data" }
+# `oidc` verifies tokens from an external IdP; `wami` brings `StsService::jwks_response`, which the
+# mock IdP uses to publish its key in the same JWKS format a real provider serves.
+this-rs = { workspace = true, features = ["oidc", "wami"] }
+anyhow = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+axum = "0.8"
+serde_json = "1"
+jsonwebtoken = "9"
+ring = "0.17"
+base64 = "0.22"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }

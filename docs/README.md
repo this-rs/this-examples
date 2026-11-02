@@ -37,7 +37,29 @@ Complete documentation for the this-examples project.
 
 ## Examples
 
-- **[multi-module](../examples/multi-module/)** - Combines billing, catalog, and inventory in a single server with REST and GraphQL
+Every directory under `examples/` is a runnable crate with its own tests. Grouped by what each one shows:
+
+**Protocols**
+- **[rest](../examples/rest/)** - REST only, in-memory storage: the starting point
+- **[graphql](../examples/graphql/)** - REST + GraphQL (schema derived from the modules, playground)
+- **[grpc](../examples/grpc/)** - REST + gRPC on the same port, server reflection
+- **[websocket](../examples/websocket/)** - REST + real-time entity events on `/ws`
+- **[multi-module](../examples/multi-module/)** - billing, catalog and inventory in one host, all four transports, cross-module links
+
+**Storage backends** (same billing domain, store swapped)
+- **[dynamodb](../examples/dynamodb/)**, **[postgres](../examples/postgres/)**, **[mysql](../examples/mysql/)**, **[mongodb](../examples/mongodb/)**, **[neo4j](../examples/neo4j/)**, **[scylladb](../examples/scylladb/)**, **[lmdb](../examples/lmdb/)**
+
+**Events**
+- **[event-flows](../examples/event-flows/)** - YAML sinks and flows turning entity/link events into notifications, no Rust per flow
+- **[cognitive-signals](../examples/cognitive-signals/)** - CognitiveNotificationBridge: anomalies, co-change, stigmergy, scars, episodes
+
+**Authentication**
+- **[auth-sts](../examples/auth-sts/)** - embedded WAMI STS: Ed25519 bootstrap, RBAC policies, custom resolvers, multi-tenant, GDPR erasure
+- **[oidc](../examples/oidc/)** - resource server verifying tokens from an external IdP, with a mock IdP (discovery + JWKS) so it runs offline
+
+**Contracts and data**
+- **[descriptor](../examples/descriptor/)** - one `ModuleDescriptor`, the same validation, filters, policies and messages on REST, GraphQL and gRPC
+- **[soft-delete](../examples/soft-delete/)** - test crate measuring `with_soft_delete()` on the guarded path, and pinning that the application's REST handlers sit outside it
 
 ## Quick Links
 

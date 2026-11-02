@@ -22,6 +22,7 @@ members = [
   "examples/soft-delete",
   "examples/cognitive-signals",
   "examples/descriptor",
+  "examples/module-signing",
   "benches/endpoint-benchmarks",
 ]
 resolver = "2"

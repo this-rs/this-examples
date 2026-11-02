@@ -160,6 +160,9 @@ jobs:
       - name: Build descriptor_example (REST + GraphQL + gRPC)
         run: cargo build -p descriptor_example
 
+      - name: Build module_signing_example (module-signing feature)
+        run: cargo build -p module_signing_example
+
   # ── Code coverage ─────────────────────────────────────────────────
   coverage:
     name: Code Coverage

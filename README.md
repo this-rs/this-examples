@@ -302,6 +302,40 @@ cargo run -p auth_sts_example
 - Per-entity RBAC policies with custom resolvers (`resolver:is_manager`)
 - Multi-tenant isolation via `tenant_id` claim
 
+### OIDC resource server (`examples/oidc/`)
+
+`this` **verifies** tokens issued by an external identity provider (Keycloak, Auth0, Entra, Dex); it
+does not issue them. The example ships a mock IdP so the whole chain runs locally: a discovery
+document, a JWKS in the same shape a real provider serves, and Ed25519 keys **generated at
+start-up** — nothing secret is committed.
+
+```bash
+cargo run -p oidc_example     # prints a ready-to-paste curl with a freshly minted token
+cargo test -p oidc_example    # 8 tests
+```
+
+- Resource server: `http://127.0.0.1:4300` — mock IdP: `http://127.0.0.1:4301`
+- `auth.oidc.audience` is required: without it the host refuses to build
+- A token is accepted only if it is signed by the IdP's published key, names this audience and
+  issuer, is not expired, and carries a `tenant_id` claim
+- The tests separate each refusal (no token, wrong audience, wrong issuer, forged signature,
+  expired, no tenant) from the one case that must pass — so a verifier that refused everything
+  would not pass
+
+### Event Flows (`examples/event-flows/`)
+
+Declarative event pipelines: `config/links.yaml` declares an `in_app` sink and three flows that turn
+entity and link events into notifications — `new_order` when an order is created, `invoice_linked`
+on a `has_invoice` link, `payment_received` on a `payment` link — over an in-memory event log.
+
+```bash
+cargo run -p event_flows_example
+```
+
+- Server: `http://127.0.0.1:4245` — REST billing plus WebSocket (`/ws`) on the same host
+- The flows module is **config only** (`EventFlowsConfig`): no Rust code per flow
+- Create an order, link an invoice, record a payment, and read the notifications the flows produced
+
 ### Cognitive Signals (`examples/cognitive-signals/`)
 
 Cognitive NotificationBridge demo with anomaly detection and threshold-based signal routing.
@@ -338,23 +372,44 @@ The other examples still declare their entities by hand (`src/entities/<name>/de
 replacing each with one `ModuleDescriptor` per module is a follow-up, not a precondition — this
 example proves the pattern works against the framework the whole repository pulls in.
 
+### Soft delete (`examples/soft-delete/`)
+
+`ServerBuilder::with_soft_delete()` makes a deletion a mark (`deleted_at`) instead of a removal, and
+hides what is marked from reads. This example is a test crate (no binary): it **measures** that
+contract rather than describing it.
+
+```bash
+cargo test -p soft_delete_example    # 4 tests, builds with the `graphql` feature
+```
+
+- With soft delete on, a delete through the host's guarded path (the one GraphQL, gRPC and the link
+  routes take) keeps the row, writes the mark, and the guarded read no longer returns it — shown
+  for an order and an invoice
+- With soft delete off, nothing disappears silently
+- **Boundary, pinned by a test:** billing's REST handlers are the application's own and call the
+  store directly, so a REST `DELETE` still removes the row even with soft delete on. An application
+  that wants REST to soft-delete wraps its store (`SoftDeleting::new(service)`) or goes through the
+  guarded creator
+- For the mark to be writable, each billing store implements `EntityCreator::update_from_json`; the
+  framework refuses the delete (rather than erasing) when a store cannot carry the mark
+
 ## What these examples cover, and what they do not
 
-Every example is **built** in CI, and seven of them are **started and exercised** by smoke tests:
-`rest`, `graphql`, `grpc`, `websocket`, `multi_module`, `event_flows`, `auth_sts`. That is what
-"the examples build against `../this`" is meant to prove.
+Every example is **built** in CI. The Smoke Tests job **starts and exercises** fourteen of them:
+`rest`, `graphql`, `grpc`, `websocket`, `multi_module`, `event_flows`, `auth_sts`,
+`cognitive_signals`, and — against a real database started by testcontainers — `postgres`, `mysql`,
+`mongodb`, `neo4j`, `dynamodb`, with `scylladb` opt-in because it is slow. `oidc`, `soft_delete`,
+`descriptor` and `lmdb` are exercised by the Test Suite (`cargo test --workspace`) rather than by the
+smoke job. That is what "the examples build against `../this`" is meant to prove.
 
-Three capabilities shipped in 0.0.10 have **no example yet**, and this list is written down rather
-than left to be discovered:
+One capability shipped in 0.0.10 has **no example yet**, and it is written down rather than left to
+be discovered:
 
 | Not demonstrated | Why it is not trivial |
 |---|---|
-| **OIDC resource server** (`provider: oidc`) | verifying tokens from an external IdP needs an IdP to talk to; a fixture JWKS server would be the honest way to show it |
-| **Soft delete** (`SoftDeleting<S>`) | the API exists and is tested in `this`, but no example wraps a store with it, so the README's soft-delete promise is only true in the framework |
 | **Module signing** (`VfsModuleStore::with_trust_anchor`) | needs a signed manifest fixture and a keypair in the example |
 
-If you are looking for one of these and find nothing, that is a gap in the examples, not a missing
-feature.
+If you are looking for it and find nothing, that is a gap in the examples, not a missing feature.
 
 ## Key concepts
 

@@ -37,6 +37,14 @@ examples/
   scylladb/          # ScyllaDB backend example
   mysql/             # MySQL backend example
   lmdb/              # LMDB embedded backend example
+  event-flows/       # Declarative YAML event pipelines → in-app notifications (REST + WebSocket)
+  cognitive-signals/ # CognitiveNotificationBridge: anomalies, co-change, stigmergy, scars, episodes
+  auth-sts/          # WAMI STS: Ed25519 bootstrap, RBAC policies, resolvers, multi-tenant, GDPR
+  oidc/              # OIDC resource server verifying an external IdP (mock IdP included)
+  soft-delete/       # with_soft_delete() measured on the guarded path; REST boundary pinned
+  descriptor/        # ModuleDescriptor declared once, served on REST, GraphQL and gRPC
+benches/
+  endpoint-benchmarks/
 ```
 
 ## Domain modules
@@ -63,3 +71,7 @@ Multi-activity store management. A store can host multiple activities (e.g., bar
 - The **websocket** example adds real-time WebSocket events (create/update/delete broadcasts).
 - The **multi-module** example demonstrates registering all three domain modules into a single host with all four transports, including cross-module links (e.g., `stock_item → product`).
 - The **storage backend** examples (dynamodb, postgres, mongodb, neo4j, scylladb, mysql, lmdb) show the same billing domain with different databases, demonstrating the pluggable storage architecture.
+- The **event-flows** example declares event pipelines in YAML (sinks + flows) and turns entity and link events into notifications without Rust code per flow; **cognitive-signals** plugs the CognitiveNotificationBridge on the same EventBus.
+- The **auth-sts** example runs the embedded WAMI STS (the host issues and verifies its own tokens); the **oidc** example is the other posture — a resource server that only verifies tokens from an external IdP, with a mock IdP so it runs offline.
+- The **soft-delete** example is a test crate: it measures what `with_soft_delete()` guarantees on the guarded path, and pins the boundary that the application's own REST handlers sit outside of it.
+- The **descriptor** example declares a module once (`ModuleDescriptor`) and gets the same validation, filters, policies and messages on REST, GraphQL and gRPC.

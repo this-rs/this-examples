@@ -1,0 +1,136 @@
+//! Soft delete, measured through the path the framework guards: the guarded creator and fetcher
+//! that GraphQL, gRPC and the link routes use. A deletion marks the row, the store keeps it, and
+//! reads no longer return it.
+//!
+//! The billing REST routes are the application's own handlers. The framework never sees their
+//! calls, so they are outside the guard: see `rest_handlers_sit_outside_the_guard`.
+
+use this::core::auth::AuthContext;
+use this::descriptor::Operation;
+use uuid::Uuid;
+
+fn caller() -> AuthContext {
+    // Deleting an order requires the `admin` role in billing's policy.
+    AuthContext::User {
+        user_id: Uuid::from_u128(1),
+        tenant_id: Uuid::from_u128(9),
+        roles: vec!["admin".to_string()],
+        scopes: Vec::new(),
+    }
+}
+
+async fn first_order(handles: &billing::BillingStores) -> Uuid {
+    handles.orders_store.list().await.expect("list")[0].id
+}
+
+/// With soft delete on, the row is marked and kept; the guarded read hides it.
+#[tokio::test]
+async fn a_guarded_delete_marks_the_row_and_reads_hide_it() {
+    let (host, handles) = soft_delete_example::host(true).await.expect("host");
+    let id = first_order(&handles).await;
+    let ctx = caller();
+
+    host.guarded_creator("order", Operation::Delete, &ctx)
+        .expect("guarded creator")
+        .delete(&id)
+        .await
+        .expect("delete");
+
+    let row = handles
+        .orders_store
+        .get(&id)
+        .await
+        .expect("the row is kept");
+    assert!(row.deleted_at.is_some(), "the mark is written on the row");
+
+    let hidden = host
+        .guarded_fetcher("order", Operation::Get, &ctx)
+        .expect("guarded fetcher")
+        .fetch_as_json(&id)
+        .await;
+    assert!(hidden.is_err(), "a marked order is not returned by reads");
+}
+
+/// Without soft delete, the guarded path refuses the delete and the row stays exactly as it was:
+/// nothing disappears silently.
+#[tokio::test]
+async fn without_soft_delete_nothing_disappears_silently() {
+    let (host, handles) = soft_delete_example::host(false).await.expect("host");
+    let id = first_order(&handles).await;
+    let ctx = caller();
+
+    let result = host
+        .guarded_creator("order", Operation::Delete, &ctx)
+        .expect("guarded creator")
+        .delete(&id)
+        .await;
+    assert!(result.is_err(), "billing has no hard delete on this path");
+
+    let row = handles.orders_store.get(&id).await.expect("row untouched");
+    assert!(row.deleted_at.is_none());
+}
+
+/// The REST routes are billing's own handlers, which call the store directly. Soft delete on the
+/// host does not reach them: a REST `DELETE` still removes the row. This test pins that boundary
+/// so it is known, not discovered. An application that wants REST to soft-delete wraps its store.
+#[tokio::test]
+async fn rest_handlers_sit_outside_the_guard() {
+    use axum::body::Body;
+    use axum::http::Request;
+    use tower::ServiceExt;
+
+    let (router, handles) = soft_delete_example::app(true).await.expect("app");
+    let id = first_order(&handles).await;
+
+    let del = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri(format!("/orders/{id}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .expect("request");
+    assert_eq!(del.status(), 200);
+    assert!(
+        handles.orders_store.get(&id).await.is_err(),
+        "REST DELETE removes the row even with soft delete on: outside the guard"
+    );
+}
+
+/// Invoices follow the same contract: the mark is written, and the guarded read hides them.
+#[tokio::test]
+async fn an_invoice_is_marked_and_hidden_the_same_way() {
+    let (host, handles) = soft_delete_example::host(true).await.expect("host");
+    let id = handles.invoices_store.list().await.expect("list")[0].id;
+    // Invoices are `admin_only` in billing's policy: that is the `Admin` context, not a role.
+    let ctx = AuthContext::Admin {
+        admin_id: Uuid::from_u128(2),
+    };
+
+    host.guarded_creator("invoice", Operation::Delete, &ctx)
+        .expect("guarded creator")
+        .delete(&id)
+        .await
+        .expect("delete");
+
+    let row = handles
+        .invoices_store
+        .get(&id)
+        .await
+        .expect("the row is kept");
+    assert!(
+        row.deleted_at.is_some(),
+        "the mark is written on the invoice"
+    );
+    assert!(
+        host.guarded_fetcher("invoice", Operation::Get, &ctx)
+            .expect("guarded fetcher")
+            .fetch_as_json(&id)
+            .await
+            .is_err(),
+        "a marked invoice is not returned by reads"
+    );
+}

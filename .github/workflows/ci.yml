@@ -151,6 +151,9 @@ jobs:
       - name: Build oidc_example
         run: cargo build -p oidc_example
 
+      - name: Build soft_delete_example
+        run: cargo build -p soft_delete_example
+
       - name: Build cognitive_signals_example
         run: cargo build -p cognitive_signals_example
 

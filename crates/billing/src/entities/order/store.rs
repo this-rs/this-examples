@@ -87,6 +87,24 @@ impl EntityCreator for InMemoryOrderStore {
         self.create(order.clone()).await?;
         Ok(serde_json::to_value(order)?)
     }
+
+    /// A full-document replacement. Soft delete relies on it to write `deleted_at` back, and it
+    /// must keep the rest of the row: the document it sends is the whole order, read first.
+    async fn update_from_json(
+        &self,
+        entity_id: &Uuid,
+        entity_data: serde_json::Value,
+    ) -> Result<serde_json::Value, anyhow::Error> {
+        let order: Order = serde_json::from_value(entity_data)?;
+        anyhow::ensure!(
+            order.id == *entity_id,
+            "update: id mismatch for {entity_id}"
+        );
+        let updated = OrderStore::update(self, order)
+            .await
+            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
+        Ok(serde_json::to_value(updated)?)
+    }
 }
 
 #[async_trait::async_trait]

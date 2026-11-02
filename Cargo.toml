@@ -19,6 +19,7 @@ members = [
   "examples/multi-module",
   "examples/auth-sts",
   "examples/oidc",
+  "examples/soft-delete",
   "examples/cognitive-signals",
   "examples/descriptor",
   "benches/endpoint-benchmarks",

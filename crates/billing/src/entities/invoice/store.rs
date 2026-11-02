@@ -90,6 +90,24 @@ impl EntityCreator for InMemoryInvoiceStore {
         self.create(invoice.clone()).await?;
         Ok(serde_json::to_value(invoice)?)
     }
+
+    /// A full-document replacement. Soft delete relies on it to write `deleted_at` back, keeping
+    /// the rest of the row: the document it sends is the whole invoice, read first.
+    async fn update_from_json(
+        &self,
+        entity_id: &Uuid,
+        entity_data: serde_json::Value,
+    ) -> Result<serde_json::Value, anyhow::Error> {
+        let invoice: Invoice = serde_json::from_value(entity_data)?;
+        anyhow::ensure!(
+            invoice.id == *entity_id,
+            "update: id mismatch for {entity_id}"
+        );
+        let updated = InvoiceStore::update(self, invoice)
+            .await
+            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
+        Ok(serde_json::to_value(updated)?)
+    }
 }
 
 #[async_trait::async_trait]

@@ -200,9 +200,11 @@ impl BillingStores {
     #[cfg(feature = "lmdb")]
     /// Create stores with LMDB implementations
     pub fn new_lmdb(path: impl AsRef<std::path::Path>) -> anyhow::Result<Self> {
-        let orders = Arc::new(OrderLmdbStore::open(path.as_ref())?);
-        let invoices = Arc::new(InvoiceLmdbStore::open(path.as_ref())?);
-        let payments = Arc::new(PaymentLmdbStore::open(path.as_ref())?);
+        // heed refuses a second `open` of the same path in one process, so each
+        // entity store gets its own LMDB environment in a sub-directory.
+        let orders = Arc::new(OrderLmdbStore::open(path.as_ref().join("orders"))?);
+        let invoices = Arc::new(InvoiceLmdbStore::open(path.as_ref().join("invoices"))?);
+        let payments = Arc::new(PaymentLmdbStore::open(path.as_ref().join("payments"))?);
 
         Ok(Self {
             orders_store: orders.clone(),

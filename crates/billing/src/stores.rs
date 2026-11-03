@@ -216,3 +216,20 @@ impl BillingStores {
         })
     }
 }
+
+#[cfg(all(test, feature = "lmdb"))]
+mod lmdb_tests {
+    use super::*;
+
+    #[test]
+    fn new_lmdb_creates_one_env_per_entity() {
+        let base = std::env::temp_dir().join(format!("billing-lmdb-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        let stores = BillingStores::new_lmdb(&base).expect("open lmdb stores");
+        assert!(base.join("orders").exists());
+        assert!(base.join("invoices").exists());
+        assert!(base.join("payments").exists());
+        drop(stores);
+        let _ = std::fs::remove_dir_all(&base);
+    }
+}

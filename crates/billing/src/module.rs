@@ -5,11 +5,8 @@ use this::prelude::{EntityCreator, EntityFetcher};
 use this::server::entity_registry::EntityRegistry;
 
 use crate::entities::invoice::InvoiceStore;
-use crate::entities::invoice::descriptor::InvoiceDescriptor;
 use crate::entities::order::OrderStore;
-use crate::entities::order::descriptor::OrderDescriptor;
 use crate::entities::payment::PaymentStore;
-use crate::entities::payment::descriptor::PaymentDescriptor;
 
 // Combined trait for entity stores
 pub trait EntityStore: EntityFetcher + EntityCreator + Send + Sync {}
@@ -72,20 +69,9 @@ impl Module for BillingModule {
         }
     }
 
-    fn register_entities(&self, registry: &mut EntityRegistry) {
-        registry.register(Box::new(OrderDescriptor::new_with_creator(
-            self.stores.orders_store.clone(),
-            self.stores.orders_entity.clone(),
-        )));
-        registry.register(Box::new(InvoiceDescriptor::new_with_creator(
-            self.stores.invoices_store.clone(),
-            self.stores.invoices_entity.clone(),
-        )));
-        registry.register(Box::new(PaymentDescriptor::new_with_creator(
-            self.stores.payments_store.clone(),
-            self.stores.payments_entity.clone(),
-        )));
-    }
+    // Descriptor-only: build_host serves these from the descriptor (`DescriptorEntity`),
+    // whose host-aware routes go through the common guard (SurfaceGuard).
+    fn register_entities(&self, _registry: &mut EntityRegistry) {}
 
     /// Descriptor of the module, declared once (RFC « descriptor-only »). ADDITIVE: the
     /// hand-written `register_entities` and `links_config` stay, so the routes are unchanged;

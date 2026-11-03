@@ -87,4 +87,44 @@ impl Module for CatalogModule {
             self.stores.tags_entity.clone(),
         )));
     }
+
+    /// Descriptor of the module, declared once (RFC « descriptor-only »). ADDITIVE.
+    fn descriptor(&self) -> Option<this::descriptor::ModuleDescriptor> {
+        let mut d = this::descriptor::ModuleDescriptor::new(self.name(), self.version());
+        d.entities
+            .push(crate::entities::product::Product::descriptor().clone());
+        d.entities
+            .push(crate::entities::category::Category::descriptor().clone());
+        d.entities
+            .push(crate::entities::tag::Tag::descriptor().clone());
+        Some(d)
+    }
+}
+
+#[cfg(test)]
+mod descriptor_host {
+    //! P4 (additive): catalog declares its descriptor once; build_host validates it.
+    use super::*;
+    use this::core::module::Module;
+    use this::prelude::{InMemoryLinkService, ServerBuilder};
+
+    #[test]
+    fn catalog_descriptor_is_coherent_and_builds_a_host() {
+        let module = CatalogModule::new(crate::CatalogStores::new_in_memory());
+        let names: Vec<String> = module
+            .descriptor()
+            .expect("catalog descriptor")
+            .entities
+            .iter()
+            .map(|e| e.name.clone())
+            .collect();
+        assert_eq!(names, vec!["product", "category", "tag"]);
+
+        ServerBuilder::new()
+            .with_link_service(InMemoryLinkService::new())
+            .register_module(module)
+            .expect("register")
+            .build_host()
+            .expect("build_host accepts the catalog descriptor");
+    }
 }

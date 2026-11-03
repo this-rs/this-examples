@@ -3291,6 +3291,7 @@ dependencies = [
  "aws-config",
  "aws-sdk-dynamodb",
  "axum",
+ "catalog",
  "chrono",
  "serde",
  "serde_json",

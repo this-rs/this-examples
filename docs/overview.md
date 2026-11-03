@@ -41,7 +41,7 @@ examples/
   cognitive-signals/ # CognitiveNotificationBridge: anomalies, co-change, stigmergy, scars, episodes
   auth-sts/          # WAMI STS: Ed25519 bootstrap, RBAC policies, resolvers, multi-tenant, GDPR
   oidc/              # OIDC resource server verifying an external IdP (mock IdP included)
-  soft-delete/       # with_soft_delete() measured on the guarded path; REST boundary pinned
+  soft-delete/       # with_soft_delete() measured on REST and the guarded path; contract per backend
   descriptor/        # ModuleDescriptor declared once, served on REST, GraphQL and gRPC
   module-signing/    # A stored module loads only if signed by a key of the trust anchor (test crate)
   vfs-module/        # Load, replace, unload a declarative module in a ModuleStore (test crate)
@@ -75,6 +75,6 @@ Multi-activity store management. A store can host multiple activities (e.g., bar
 - The **storage backend** examples (dynamodb, postgres, mongodb, neo4j, scylladb, mysql, lmdb) show the same billing domain with different databases, demonstrating the pluggable storage architecture.
 - The **event-flows** example declares event pipelines in YAML (sinks + flows) and turns entity and link events into notifications without Rust code per flow; **cognitive-signals** plugs the CognitiveNotificationBridge on the same EventBus.
 - The **auth-sts** example runs the embedded WAMI STS (the host issues and verifies its own tokens); the **oidc** example is the other posture — a resource server that only verifies tokens from an external IdP, with a mock IdP so it runs offline.
-- The **soft-delete** example is a test crate: it measures what `with_soft_delete()` guarantees on the guarded path, and pins the boundary that the application's own REST handlers sit outside of it.
+- The **soft-delete** example is a test crate: it measures what `with_soft_delete()` guarantees — a REST `DELETE` and a guarded delete both mark the row and hide it from reads — and holds every billing backend to the same contract (`soft_delete_example::contract`).
 - The **descriptor** example declares a module once (`ModuleDescriptor`) and gets the same validation, filters, policies and messages on REST, GraphQL and gRPC.
 - The **module-signing** example measures the four outcomes of module signing (accepted, bad signature, untrusted key, unsigned once an anchor exists); the **vfs-module** example walks the load / replace / unload cycle of a declarative module on an in-memory and a local `Vfs`. Both are test crates: no server, the store's contract is what they assert.

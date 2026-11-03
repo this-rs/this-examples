@@ -386,10 +386,9 @@ cargo test -p soft_delete_example    # 4 tests, builds with the `graphql` featur
   routes take) keeps the row, writes the mark, and the guarded read no longer returns it — shown
   for an order and an invoice
 - With soft delete off, nothing disappears silently
-- **Boundary, pinned by a test:** billing's REST handlers are the application's own and call the
-  store directly, so a REST `DELETE` still removes the row even with soft delete on. An application
-  that wants REST to soft-delete wraps its store (`SoftDeleting::new(service)`) or goes through the
-  guarded creator
+- **REST included:** billing is served by descriptor-generated routes that go through the same
+  guard as GraphQL and gRPC, so a REST `DELETE` marks the row too (`204`, row kept with
+  `deleted_at`) — `rest_respects_soft_delete` measures it
 - For the mark to be writable, each billing store implements `EntityCreator::update_from_json`; the
   framework refuses the delete (rather than erasing) when a store cannot carry the mark
 - **The same contract runs on every billing backend** (`soft_delete_example::contract`): create an

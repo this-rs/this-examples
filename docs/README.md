@@ -59,7 +59,7 @@ Every directory under `examples/` is a runnable crate with its own tests. Groupe
 
 **Contracts and data**
 - **[descriptor](../examples/descriptor/)** - one `ModuleDescriptor`, the same validation, filters, policies and messages on REST, GraphQL and gRPC
-- **[soft-delete](../examples/soft-delete/)** - test crate measuring `with_soft_delete()` on the guarded path, and pinning that the application's REST handlers sit outside it
+- **[soft-delete](../examples/soft-delete/)** - test crate measuring `with_soft_delete()` on REST and on the guarded path, with one contract run on every billing backend
 
 **Modules**
 - **[module-signing](../examples/module-signing/)** - a stored module loads only if its manifest is signed by a key of the trust anchor; the four outcomes measured, no server

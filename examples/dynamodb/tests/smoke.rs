@@ -11,28 +11,17 @@ use testcontainers::GenericImage;
 use this::prelude::{AuthContext, Uuid};
 use tower::ServiceExt;
 
+/// The table layout `setup.sh` creates: a single `id` hash key (no `tenant_id`), which is what the
+/// billing stores write. The smoke test's fixture uses a `tenant_id` + `id` key; billing never writes
+/// `tenant_id`, so that layout cannot store an order.
 async fn create_table(client: &Client, name: &str) {
     client
         .create_table()
         .table_name(name)
         .key_schema(
             KeySchemaElement::builder()
-                .attribute_name("tenant_id")
-                .key_type(KeyType::Hash)
-                .build()
-                .unwrap(),
-        )
-        .key_schema(
-            KeySchemaElement::builder()
                 .attribute_name("id")
-                .key_type(KeyType::Range)
-                .build()
-                .unwrap(),
-        )
-        .attribute_definitions(
-            AttributeDefinition::builder()
-                .attribute_name("tenant_id")
-                .attribute_type(ScalarAttributeType::S)
+                .key_type(KeyType::Hash)
                 .build()
                 .unwrap(),
         )

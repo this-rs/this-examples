@@ -98,15 +98,7 @@ impl EntityCreator for InMemoryInvoiceStore {
         entity_id: &Uuid,
         entity_data: serde_json::Value,
     ) -> Result<serde_json::Value, anyhow::Error> {
-        let invoice: Invoice = serde_json::from_value(entity_data)?;
-        anyhow::ensure!(
-            invoice.id == *entity_id,
-            "update: id mismatch for {entity_id}"
-        );
-        let updated = InvoiceStore::update(self, invoice)
-            .await
-            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
-        Ok(serde_json::to_value(updated)?)
+        replace_invoice_from_json(self, entity_id, entity_data).await
     }
 }
 
@@ -235,6 +227,15 @@ impl EntityCreator for InvoiceDynamoDBStore {
         self.create(invoice.clone()).await?;
         Ok(serde_json::to_value(invoice)?)
     }
+    /// A full-document replacement. Soft delete relies on it to write `deleted_at` back, keeping
+    /// the rest of the row: the document it sends is the whole Invoice, read first.
+    async fn update_from_json(
+        &self,
+        entity_id: &Uuid,
+        entity_data: serde_json::Value,
+    ) -> Result<serde_json::Value, anyhow::Error> {
+        replace_invoice_from_json(self, entity_id, entity_data).await
+    }
 }
 
 #[cfg(feature = "dynamodb")]
@@ -340,6 +341,15 @@ macro_rules! impl_invoice_backend_store {
                 );
                 self.create(invoice.clone()).await?;
                 Ok(serde_json::to_value(invoice)?)
+            }
+            /// A full-document replacement. Soft delete relies on it to write `deleted_at` back, keeping
+            /// the rest of the row: the document it sends is the whole Invoice, read first.
+            async fn update_from_json(
+                &self,
+                entity_id: &Uuid,
+                entity_data: serde_json::Value,
+            ) -> Result<serde_json::Value, anyhow::Error> {
+                replace_invoice_from_json(self, entity_id, entity_data).await
             }
         }
 
@@ -546,6 +556,26 @@ impl InvoiceLmdbStore {
 
 #[cfg(feature = "lmdb")]
 impl_invoice_backend_store!(InvoiceLmdbStore);
+
+/// The JSON replacement every Invoice store shares: the whole document, its id checked. Soft delete writes
+/// `deleted_at` back through it, so it must keep the rest of the row. Written once here, so the
+/// logic is tested in memory; each store only forwards to it.
+async fn replace_invoice_from_json<S: InvoiceStore + ?Sized>(
+    store: &S,
+    entity_id: &Uuid,
+    entity_data: serde_json::Value,
+) -> Result<serde_json::Value, anyhow::Error> {
+    let invoice: Invoice = serde_json::from_value(entity_data)?;
+    anyhow::ensure!(
+        invoice.id == *entity_id,
+        "update: id mismatch for {entity_id}"
+    );
+    let updated = store
+        .update(invoice)
+        .await
+        .map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    Ok(serde_json::to_value(updated)?)
+}
 
 #[cfg(test)]
 mod update_from_json_tests {

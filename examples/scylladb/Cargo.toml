@@ -16,5 +16,6 @@ tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 scylla = "1.4"
 
 [dev-dependencies]
+soft_delete_example = { path = "../soft-delete" }
 tower = { version = "0.5", features = ["util"] }
 testcontainers = "0.27"

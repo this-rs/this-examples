@@ -24,3 +24,14 @@ pub async fn app(mongodb_uri: &str, database_name: &str) -> Result<Router> {
 
     Ok(Router::new().merge(RestExposure::build_router(host.clone(), vec![])?))
 }
+
+/// The billing stores on their own, for the soft-delete contract test (which needs stores, not a router).
+pub async fn billing_stores(
+    mongodb_uri: &str,
+    database_name: &str,
+) -> anyhow::Result<billing::BillingStores> {
+    let client = mongodb::Client::with_uri_str(mongodb_uri).await?;
+    Ok(billing::BillingStores::new_mongodb(
+        client.database(database_name),
+    ))
+}

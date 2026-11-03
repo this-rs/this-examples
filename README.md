@@ -392,6 +392,24 @@ cargo test -p soft_delete_example    # 4 tests, builds with the `graphql` featur
   guarded creator
 - For the mark to be writable, each billing store implements `EntityCreator::update_from_json`; the
   framework refuses the delete (rather than erasing) when a store cannot carry the mark
+- **The same contract runs on every billing backend** (`soft_delete_example::contract`): create an
+  order and an invoice, soft-delete them through the guarded creator, check the row is kept with
+  `deleted_at` and the guarded read hides it. Measured against real containers on 2026-11-02:
+
+  | Backend | Result | How it runs |
+  |---|---|---|
+  | in-memory | passes | `cargo test -p soft_delete_example` |
+  | LMDB | passes | `cargo test -p lmdb_example --test soft_delete` (embedded) |
+  | PostgreSQL | passes | `--test soft_delete -- --ignored` (testcontainers) |
+  | MySQL | passes | same |
+  | MongoDB | passes | same |
+  | Neo4j | passes | same |
+  | DynamoDB Local | passes | same, with the table layout of `setup.sh` (`id` hash key) |
+  | ScyllaDB | **not measured** — fails with `CQL not ready` in the Cassandra stand-in, as its smoke test does; opt-in in CI | `--test soft_delete -- --ignored` |
+  | Obrain | not measured — no billing example | — |
+
+  The DynamoDB smoke test creates its tables with a `tenant_id` + `id` key, which billing never
+  writes: that fixture can list but cannot store an order. The contract test uses `setup.sh`'s layout.
 
 ### Module signing (`examples/module-signing/`)
 

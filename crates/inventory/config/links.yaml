@@ -153,7 +153,8 @@ links:
     source_type: usage
     target_type: activity
     forward_route_name: from_activity
-    reverse_route_name: usages
+    # Distinct from has_usage's forward `usages` (same /activity/{id}/usages route otherwise):
+    reverse_route_name: usages_via_from_activity
     description: "Usage from activity (for refacturation)"
     auth:
       list: authenticated

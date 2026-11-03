@@ -124,4 +124,58 @@ impl Module for InventoryModule {
             self.stores.usages_entity.clone(),
         )));
     }
+
+    /// Descriptor of the module, declared once (RFC « descriptor-only »). ADDITIVE.
+    /// `requires: catalog` because `stock_item` links to `product` (cross-module).
+    fn descriptor(&self) -> Option<this::descriptor::ModuleDescriptor> {
+        let mut d = this::descriptor::ModuleDescriptor::new(self.name(), self.version());
+        d.entities
+            .push(crate::entities::store::Store::descriptor().clone());
+        d.entities
+            .push(crate::entities::activity::Activity::descriptor().clone());
+        d.entities
+            .push(crate::entities::warehouse::Warehouse::descriptor().clone());
+        d.entities
+            .push(crate::entities::stock_item::StockItem::descriptor().clone());
+        d.entities
+            .push(crate::entities::stock_movement::StockMovement::descriptor().clone());
+        d.entities
+            .push(crate::entities::usage::Usage::descriptor().clone());
+        d.requires.push(this::descriptor::ModuleReq {
+            name: "catalog".into(),
+            version: "^0.1".into(),
+            optional: false,
+        });
+        Some(d)
+    }
+}
+
+#[cfg(test)]
+mod descriptor_host {
+    use super::*;
+    use this::core::module::Module;
+    use this::prelude::{InMemoryLinkService, ServerBuilder};
+
+    #[test]
+    fn inventory_descriptor_resolves_catalog_and_builds_a_host() {
+        let module = InventoryModule::new(crate::InventoryStores::new_in_memory());
+        assert_eq!(
+            module
+                .descriptor()
+                .expect("inventory descriptor")
+                .entities
+                .len(),
+            6
+        );
+        ServerBuilder::new()
+            .with_link_service(InMemoryLinkService::new())
+            .register_module(catalog::CatalogModule::new(
+                catalog::CatalogStores::new_in_memory(),
+            ))
+            .expect("catalog")
+            .register_module(module)
+            .expect("inventory")
+            .build_host()
+            .expect("build_host resolves catalog for inventory");
+    }
 }

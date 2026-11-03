@@ -14,18 +14,48 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - '**/*.mmd'
 
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
 
 jobs:
+  # ── Documentation-only changes ─────────────────────────────────────────────
+  # Every other job needs `code == 'true'`. `paths-ignore` used to live on
+  # `pull_request` too: a docs-only PR then had NO check at all, and a required
+  # status check that never reports blocks the merge forever. Computing it here
+  # instead keeps a docs-only PR at a few seconds and gives the required
+  # `CI gate` check something to report on every single PR.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Did anything other than documentation change?
+        id: filter
+        run: |
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "no base commit to diff against: assume code changed"
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$base" "$GITHUB_SHA" || true)
+          echo "changed files:"; printf '%s\n' "$changed"
+          code=$(printf '%s\n' "$changed" | grep -vE '(\.md$|\.mmd$|^docs/)' | grep -c . || true)
+          echo "code files: $code"
+          if [ "$code" -gt 0 ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
+
   # ── Formatting ─────────────────────────────────────────────────────
   fmt:
+    # Skipped when the change is documentation-only (see `changes`).
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
@@ -45,6 +75,9 @@ jobs:
 
   # ── Linting ────────────────────────────────────────────────────────
   clippy:
+    # Skipped when the change is documentation-only (see `changes`).
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Clippy
     runs-on: ubuntu-latest
     steps:
@@ -79,6 +112,9 @@ jobs:
 
   # ── Build each example individually ────────────────────────────────
   build-examples:
+    # Skipped when the change is documentation-only (see `changes`).
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Build Examples
     runs-on: ubuntu-latest
     steps:
@@ -168,6 +204,9 @@ jobs:
 
   # ── Code coverage ─────────────────────────────────────────────────
   coverage:
+    # Skipped when the change is documentation-only (see `changes`).
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Code Coverage
     runs-on: ubuntu-latest
     steps:
@@ -213,6 +252,9 @@ jobs:
 
   # ── Tests ──────────────────────────────────────────────────────────
   test:
+    # Skipped when the change is documentation-only (see `changes`).
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Test Suite
     runs-on: ubuntu-latest
     steps:
@@ -251,6 +293,9 @@ jobs:
 
   # ── Smoke tests ──────────────────────────────────────────────────
   smoke:
+    # Skipped when the change is documentation-only (see `changes`).
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Smoke Tests
     runs-on: ubuntu-latest
     steps:
@@ -355,6 +400,9 @@ jobs:
 
   # ── Cross-platform ─────────────────────────────────────────────────
   cross-platform:
+    # Skipped when the change is documentation-only (see `changes`).
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -390,3 +438,26 @@ jobs:
 
       - name: Run tests
         run: cargo test --workspace
+
+  # ── The one check a branch protection rule should require ──────────────────
+  # `if: always()` makes it report even when a dependency failed, which is the
+  # whole point: a red CI must be able to block a merge. A skipped job counts as
+  # fine here, and that is honest — a docs-only PR genuinely had nothing to check.
+  gate:
+    name: CI gate
+    if: always()
+    needs: [changes, fmt, clippy, build-examples, coverage, test, smoke, cross-platform]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Nothing failed, nothing was cancelled
+        run: |
+          results="${{ join(needs.*.result, ',') }}"
+          echo "job results: $results"
+          case ",$results," in
+            *,failure,*|*,cancelled,*)
+              echo "::error::at least one CI job failed or was cancelled"
+              exit 1
+              ;;
+          esac
+          echo "all jobs passed, or were skipped by design (documentation-only change)"
+

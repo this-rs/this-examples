@@ -86,4 +86,51 @@ impl Module for BillingModule {
             self.stores.payments_entity.clone(),
         )));
     }
+
+    /// Descriptor of the module, declared once (RFC « descriptor-only »). ADDITIVE: the
+    /// hand-written `register_entities` and `links_config` stay, so the routes are unchanged;
+    /// the descriptor feeds schemas, contracts, policies. Remove `register_entities` to let
+    /// `build_host` serve the entities from the descriptor (`DescriptorEntity`).
+    fn descriptor(&self) -> Option<this::descriptor::ModuleDescriptor> {
+        let mut d = this::descriptor::ModuleDescriptor::new(self.name(), self.version());
+        d.entities
+            .push(crate::entities::order::Order::descriptor().clone());
+        d.entities
+            .push(crate::entities::invoice::Invoice::descriptor().clone());
+        d.entities
+            .push(crate::entities::payment::Payment::descriptor().clone());
+        Some(d)
+    }
+}
+
+#[cfg(test)]
+mod descriptor_host {
+    //! P4 of the descriptor-only RFC, on billing: adding `descriptor()` is ADDITIVE. The
+    //! descriptor is coherent (identity, plural, check) and `build_host` accepts it, while
+    //! the hand-written routes stay (legacy) because `register_entities` still yields entities.
+    use super::*;
+    use this::core::module::Module;
+    use this::prelude::{InMemoryLinkService, ServerBuilder};
+
+    #[test]
+    fn billing_descriptor_is_coherent_and_builds_a_host() {
+        let module = BillingModule::new(crate::BillingStores::new_in_memory());
+
+        let names: Vec<String> = module
+            .descriptor()
+            .expect("billing declares a descriptor")
+            .entities
+            .iter()
+            .map(|e| e.name.clone())
+            .collect();
+        assert_eq!(names, vec!["order", "invoice", "payment"]);
+
+        // The real proof: build_host runs identity/plural/check on the descriptor.
+        ServerBuilder::new()
+            .with_link_service(InMemoryLinkService::new())
+            .register_module(module)
+            .expect("register")
+            .build_host()
+            .expect("build_host accepts the billing descriptor");
+    }
 }

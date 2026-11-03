@@ -1,3 +1,4 @@
+pub mod contract;
 use anyhow::Result;
 use axum::Router;
 use std::sync::Arc;

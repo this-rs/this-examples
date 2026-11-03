@@ -21,6 +21,7 @@ graphql = ["billing/graphql"]
 
 
 [dev-dependencies]
+soft_delete_example = { path = "../soft-delete" }
 tower = { version = "0.5", features = ["util"] }
 testcontainers = "0.27"
 aws-config = { version = "1", features = ["behavior-version-latest"] }

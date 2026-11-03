@@ -9,6 +9,7 @@ test-data = { path = "../../crates/test-data" }
 # `graphql` exposes the guarded fetcher/creator accessors that soft delete is enforced through.
 this-rs = { workspace = true, features = ["graphql"] }
 anyhow = "1"
+serde_json = "1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 axum = "0.8"
 uuid = { version = "1", features = ["v4"] }

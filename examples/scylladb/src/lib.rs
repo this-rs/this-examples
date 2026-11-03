@@ -36,3 +36,18 @@ pub async fn app(scylla_uri: &str, keyspace: &str) -> Result<Router> {
 
     Ok(Router::new().merge(RestExposure::build_router(host.clone(), vec![])?))
 }
+
+/// The billing stores on their own, for the soft-delete contract test. Creates the keyspace as `app` does.
+pub async fn billing_stores(scylla_uri: &str, keyspace: &str) -> Result<BillingStores> {
+    let session: Arc<Session> =
+        Arc::new(SessionBuilder::new().known_node(scylla_uri).build().await?);
+    session
+        .query_unpaged(
+            format!(
+                "CREATE KEYSPACE IF NOT EXISTS {keyspace} WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}"
+            ),
+            &[],
+        )
+        .await?;
+    Ok(BillingStores::new_scylladb(session, keyspace.to_string()))
+}

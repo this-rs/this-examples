@@ -241,6 +241,23 @@ impl EntityCreator for PaymentDynamoDBStore {
         self.create(payment.clone()).await?;
         Ok(serde_json::to_value(payment)?)
     }
+    /// A full-document replacement. Soft delete relies on it to write `deleted_at` back, keeping
+    /// the rest of the row: the document it sends is the whole Payment, read first.
+    async fn update_from_json(
+        &self,
+        entity_id: &Uuid,
+        entity_data: serde_json::Value,
+    ) -> Result<serde_json::Value, anyhow::Error> {
+        let payment: Payment = serde_json::from_value(entity_data)?;
+        anyhow::ensure!(
+            payment.id == *entity_id,
+            "update: id mismatch for {entity_id}"
+        );
+        let updated = PaymentStore::update(self, payment)
+            .await
+            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
+        Ok(serde_json::to_value(updated)?)
+    }
 }
 
 #[cfg(feature = "dynamodb")]
@@ -349,6 +366,23 @@ macro_rules! impl_payment_backend_store {
                 );
                 self.create(payment.clone()).await?;
                 Ok(serde_json::to_value(payment)?)
+            }
+            /// A full-document replacement. Soft delete relies on it to write `deleted_at` back, keeping
+            /// the rest of the row: the document it sends is the whole Payment, read first.
+            async fn update_from_json(
+                &self,
+                entity_id: &Uuid,
+                entity_data: serde_json::Value,
+            ) -> Result<serde_json::Value, anyhow::Error> {
+                let payment: Payment = serde_json::from_value(entity_data)?;
+                anyhow::ensure!(
+                    payment.id == *entity_id,
+                    "update: id mismatch for {entity_id}"
+                );
+                let updated = PaymentStore::update(self, payment)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("{e:?}"))?;
+                Ok(serde_json::to_value(updated)?)
             }
         }
 

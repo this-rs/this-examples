@@ -23,3 +23,13 @@ pub async fn app(uri: &str, user: &str, password: &str) -> Result<Router> {
 
     Ok(Router::new().merge(RestExposure::build_router(host.clone(), vec![])?))
 }
+
+/// The billing stores on their own, for the soft-delete contract test (which needs stores, not a router).
+pub async fn billing_stores(
+    uri: &str,
+    user: &str,
+    password: &str,
+) -> anyhow::Result<billing::BillingStores> {
+    let graph = neo4rs::Graph::new(uri, user, password).await?;
+    Ok(billing::BillingStores::new_neo4j(graph))
+}

@@ -101,15 +101,7 @@ impl EntityCreator for InMemoryPaymentStore {
         entity_id: &Uuid,
         entity_data: serde_json::Value,
     ) -> Result<serde_json::Value, anyhow::Error> {
-        let payment: Payment = serde_json::from_value(entity_data)?;
-        anyhow::ensure!(
-            payment.id == *entity_id,
-            "update: id mismatch for {entity_id}"
-        );
-        let updated = PaymentStore::update(self, payment)
-            .await
-            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
-        Ok(serde_json::to_value(updated)?)
+        replace_payment_from_json(self, entity_id, entity_data).await
     }
 }
 
@@ -248,15 +240,7 @@ impl EntityCreator for PaymentDynamoDBStore {
         entity_id: &Uuid,
         entity_data: serde_json::Value,
     ) -> Result<serde_json::Value, anyhow::Error> {
-        let payment: Payment = serde_json::from_value(entity_data)?;
-        anyhow::ensure!(
-            payment.id == *entity_id,
-            "update: id mismatch for {entity_id}"
-        );
-        let updated = PaymentStore::update(self, payment)
-            .await
-            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
-        Ok(serde_json::to_value(updated)?)
+        replace_payment_from_json(self, entity_id, entity_data).await
     }
 }
 
@@ -374,15 +358,7 @@ macro_rules! impl_payment_backend_store {
                 entity_id: &Uuid,
                 entity_data: serde_json::Value,
             ) -> Result<serde_json::Value, anyhow::Error> {
-                let payment: Payment = serde_json::from_value(entity_data)?;
-                anyhow::ensure!(
-                    payment.id == *entity_id,
-                    "update: id mismatch for {entity_id}"
-                );
-                let updated = PaymentStore::update(self, payment)
-                    .await
-                    .map_err(|e| anyhow::anyhow!("{e:?}"))?;
-                Ok(serde_json::to_value(updated)?)
+                replace_payment_from_json(self, entity_id, entity_data).await
             }
         }
 
@@ -589,6 +565,26 @@ impl PaymentLmdbStore {
 
 #[cfg(feature = "lmdb")]
 impl_payment_backend_store!(PaymentLmdbStore);
+
+/// The JSON replacement every Payment store shares: the whole document, its id checked. Soft delete writes
+/// `deleted_at` back through it, so it must keep the rest of the row. Written once here, so the
+/// logic is tested in memory; each store only forwards to it.
+async fn replace_payment_from_json<S: PaymentStore + ?Sized>(
+    store: &S,
+    entity_id: &Uuid,
+    entity_data: serde_json::Value,
+) -> Result<serde_json::Value, anyhow::Error> {
+    let payment: Payment = serde_json::from_value(entity_data)?;
+    anyhow::ensure!(
+        payment.id == *entity_id,
+        "update: id mismatch for {entity_id}"
+    );
+    let updated = store
+        .update(payment)
+        .await
+        .map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    Ok(serde_json::to_value(updated)?)
+}
 
 #[cfg(test)]
 mod update_from_json_tests {

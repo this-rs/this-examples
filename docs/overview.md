@@ -43,6 +43,8 @@ examples/
   oidc/              # OIDC resource server verifying an external IdP (mock IdP included)
   soft-delete/       # with_soft_delete() measured on the guarded path; REST boundary pinned
   descriptor/        # ModuleDescriptor declared once, served on REST, GraphQL and gRPC
+  module-signing/    # A stored module loads only if signed by a key of the trust anchor (test crate)
+  vfs-module/        # Load, replace, unload a declarative module in a ModuleStore (test crate)
 benches/
   endpoint-benchmarks/
 ```
@@ -75,3 +77,4 @@ Multi-activity store management. A store can host multiple activities (e.g., bar
 - The **auth-sts** example runs the embedded WAMI STS (the host issues and verifies its own tokens); the **oidc** example is the other posture — a resource server that only verifies tokens from an external IdP, with a mock IdP so it runs offline.
 - The **soft-delete** example is a test crate: it measures what `with_soft_delete()` guarantees on the guarded path, and pins the boundary that the application's own REST handlers sit outside of it.
 - The **descriptor** example declares a module once (`ModuleDescriptor`) and gets the same validation, filters, policies and messages on REST, GraphQL and gRPC.
+- The **module-signing** example measures the four outcomes of module signing (accepted, bad signature, untrusted key, unsigned once an anchor exists); the **vfs-module** example walks the load / replace / unload cycle of a declarative module on an in-memory and a local `Vfs`. Both are test crates: no server, the store's contract is what they assert.

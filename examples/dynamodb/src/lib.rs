@@ -13,6 +13,15 @@ pub async fn app(endpoint_url: &str) -> Result<Router> {
     let config = aws_config::defaults(aws_config::BehaviorVersion::latest())
         .endpoint_url(endpoint_url)
         .region(aws_config::Region::new("us-east-1"))
+        // DynamoDB Local accepts any credentials, but without some the SDK walks its
+        // credential chain (IMDS...) and a scan fails as `dispatch failure`.
+        .credentials_provider(aws_sdk_dynamodb::config::Credentials::new(
+            "fakeMyKeyId",
+            "fakeSecretAccessKey",
+            None,
+            None,
+            "dynamodb-example",
+        ))
         .load()
         .await;
     let client = Client::new(&config);

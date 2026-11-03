@@ -199,12 +199,14 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-coverage-
 
       - name: Generate code coverage
-        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
+        run: |
+          cargo llvm-cov --workspace --lcov --output-path lcov.info
+          cargo llvm-cov -p billing --features lmdb --lcov --output-path lcov.lmdb.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
-          files: lcov.info
+          files: lcov.info,lcov.lmdb.info
           fail_ci_if_error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

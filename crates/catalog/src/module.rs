@@ -5,11 +5,8 @@ use this::prelude::{EntityCreator, EntityFetcher};
 use this::server::entity_registry::EntityRegistry;
 
 use crate::entities::category::CategoryStore;
-use crate::entities::category::descriptor::CategoryDescriptor;
 use crate::entities::product::ProductStore;
-use crate::entities::product::descriptor::ProductDescriptor;
 use crate::entities::tag::TagStore;
-use crate::entities::tag::descriptor::TagDescriptor;
 
 // Combined trait for entity stores
 pub trait EntityStore: EntityFetcher + EntityCreator + Send + Sync {}
@@ -73,20 +70,9 @@ impl Module for CatalogModule {
         }
     }
 
-    fn register_entities(&self, registry: &mut EntityRegistry) {
-        registry.register(Box::new(ProductDescriptor::new_with_creator(
-            self.stores.products_store.clone(),
-            self.stores.products_entity.clone(),
-        )));
-        registry.register(Box::new(CategoryDescriptor::new_with_creator(
-            self.stores.categories_store.clone(),
-            self.stores.categories_entity.clone(),
-        )));
-        registry.register(Box::new(TagDescriptor::new_with_creator(
-            self.stores.tags_store.clone(),
-            self.stores.tags_entity.clone(),
-        )));
-    }
+    // Descriptor-only: build_host serves these from the descriptor (`DescriptorEntity`),
+    // whose host-aware routes go through the common guard (SurfaceGuard).
+    fn register_entities(&self, _registry: &mut EntityRegistry) {}
 
     /// Descriptor of the module, declared once (RFC « descriptor-only »). ADDITIVE.
     fn descriptor(&self) -> Option<this::descriptor::ModuleDescriptor> {

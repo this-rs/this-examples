@@ -200,9 +200,11 @@ impl BillingStores {
     #[cfg(feature = "lmdb")]
     /// Create stores with LMDB implementations
     pub fn new_lmdb(path: impl AsRef<std::path::Path>) -> anyhow::Result<Self> {
-        let orders = Arc::new(OrderLmdbStore::open(path.as_ref())?);
-        let invoices = Arc::new(InvoiceLmdbStore::open(path.as_ref())?);
-        let payments = Arc::new(PaymentLmdbStore::open(path.as_ref())?);
+        // heed refuses a second `open` of the same path in one process, so each
+        // entity store gets its own LMDB environment in a sub-directory.
+        let orders = Arc::new(OrderLmdbStore::open(path.as_ref().join("orders"))?);
+        let invoices = Arc::new(InvoiceLmdbStore::open(path.as_ref().join("invoices"))?);
+        let payments = Arc::new(PaymentLmdbStore::open(path.as_ref().join("payments"))?);
 
         Ok(Self {
             orders_store: orders.clone(),
@@ -212,5 +214,22 @@ impl BillingStores {
             payments_store: payments.clone(),
             payments_entity: payments,
         })
+    }
+}
+
+#[cfg(all(test, feature = "lmdb"))]
+mod lmdb_tests {
+    use super::*;
+
+    #[test]
+    fn new_lmdb_creates_one_env_per_entity() {
+        let base = std::env::temp_dir().join(format!("billing-lmdb-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        let stores = BillingStores::new_lmdb(&base).expect("open lmdb stores");
+        assert!(base.join("orders").exists());
+        assert!(base.join("invoices").exists());
+        assert!(base.join("payments").exists());
+        drop(stores);
+        let _ = std::fs::remove_dir_all(&base);
     }
 }

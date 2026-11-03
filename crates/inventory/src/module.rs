@@ -5,17 +5,11 @@ use this::prelude::{EntityCreator, EntityFetcher};
 use this::server::entity_registry::EntityRegistry;
 
 use crate::entities::activity::ActivityStore;
-use crate::entities::activity::descriptor::ActivityDescriptor;
 use crate::entities::stock_item::StockItemStore;
-use crate::entities::stock_item::descriptor::StockItemDescriptor;
 use crate::entities::stock_movement::StockMovementStore;
-use crate::entities::stock_movement::descriptor::StockMovementDescriptor;
 use crate::entities::store::StoreStore;
-use crate::entities::store::descriptor::StoreDescriptor;
 use crate::entities::usage::UsageStore;
-use crate::entities::usage::descriptor::UsageDescriptor;
 use crate::entities::warehouse::WarehouseStore;
-use crate::entities::warehouse::descriptor::WarehouseDescriptor;
 
 // Combined trait for entity stores
 pub trait EntityStore: EntityFetcher + EntityCreator + Send + Sync {}
@@ -98,32 +92,9 @@ impl Module for InventoryModule {
         }
     }
 
-    fn register_entities(&self, registry: &mut EntityRegistry) {
-        registry.register(Box::new(StoreDescriptor::new_with_creator(
-            self.stores.stores_store.clone(),
-            self.stores.stores_entity.clone(),
-        )));
-        registry.register(Box::new(ActivityDescriptor::new_with_creator(
-            self.stores.activities_store.clone(),
-            self.stores.activities_entity.clone(),
-        )));
-        registry.register(Box::new(WarehouseDescriptor::new_with_creator(
-            self.stores.warehouses_store.clone(),
-            self.stores.warehouses_entity.clone(),
-        )));
-        registry.register(Box::new(StockItemDescriptor::new_with_creator(
-            self.stores.stock_items_store.clone(),
-            self.stores.stock_items_entity.clone(),
-        )));
-        registry.register(Box::new(StockMovementDescriptor::new_with_creator(
-            self.stores.stock_movements_store.clone(),
-            self.stores.stock_movements_entity.clone(),
-        )));
-        registry.register(Box::new(UsageDescriptor::new_with_creator(
-            self.stores.usages_store.clone(),
-            self.stores.usages_entity.clone(),
-        )));
-    }
+    // Descriptor-only: build_host serves these from the descriptor (`DescriptorEntity`),
+    // whose host-aware routes go through the common guard (SurfaceGuard).
+    fn register_entities(&self, _registry: &mut EntityRegistry) {}
 
     /// Descriptor of the module, declared once (RFC « descriptor-only »). ADDITIVE.
     /// `requires: catalog` because `stock_item` links to `product` (cross-module).

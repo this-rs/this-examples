@@ -24,6 +24,10 @@ members = [
   "examples/descriptor",
   "examples/module-signing",
   "examples/vfs-module",
+  "examples/desktop-modules/src-tauri",
+  "examples/desktop-modules/shop-core",
+  "examples/desktop-modules/app-kit",
+  "examples/desktop-modules/server",
   "benches/endpoint-benchmarks",
 ]
 resolver = "2"

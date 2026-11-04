@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <!-- viewport-fit=cover : les marges de sécurité (encoche) sont gérées en CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f3f5f8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0d12" media="(prefers-color-scheme: dark)" />
+    <title>Boutique · module shop</title>
+    <!-- installable : ajoutée à l'écran d'accueil, elle s'ouvre en plein écran, sans navigateur -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Boutique" />
+    
+    
+    
+    
+    <link rel="stylesheet" href="/style-00689c6dc0fdf7ad.css" integrity="sha384-QVlFSdFDQOR8kYVPVZpfzME5DAxBEiI9Y1BUOrHXh7fNMTOhBkSfBpKlVD7D42w8"/>
+    
+<script type="module">
+import init, * as bindings from '/desktop_modules_ui-1dc54c501412213e.js';
+const wasm = await init({ module_or_path: '/desktop_modules_ui-a954ea44d52d9632_bg.wasm' });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script>
+  <link rel="modulepreload" href="/desktop_modules_ui-1dc54c501412213e.js" crossorigin="anonymous" integrity="sha384-01p0bx5S7/cH6ANwNKV8YtrdCtFNu6r91bXLeDk93yzBYzrOEINOJ1AH0Z6krpz1"><link rel="preload" href="/desktop_modules_ui-a954ea44d52d9632_bg.wasm" crossorigin="anonymous" integrity="sha384-syUVJn8+E/4UzI4HtMVJ57yWyfEBHbZHziVpAC2s+3iMsLh7vp/yQNUbIxO+9HuI" as="fetch" type="application/wasm"></head>
+  <body></body>
+</html>

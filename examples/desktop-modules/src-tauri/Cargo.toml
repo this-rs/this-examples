@@ -18,8 +18,15 @@ name = "desktop_modules_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
+# Coquille Tauri de la plateforme : fenêtre, Dock, habillage, reprise (crate du framework).
+this-shell-tauri = { package = "tauri-plugin-this-shell", path = "../../../../this/crates/this-shell-tauri" }
 # Le domaine, partagé avec l'adaptateur HTTP et testé sans Tauri.
 shop-core = { path = "../shop-core" }
+# Le modèle de l'habillage (barre de titre, découpe) : la coquille le remplit, le front le lit.
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[target.'cfg(target_os = "ios")'.dependencies]
+# `uname` : l'identifiant machine distingue Dynamic Island, encoche et écran entier.
+# Régler la vue de défilement de la WKWebView (marges de sécurité appliquées une seule fois).

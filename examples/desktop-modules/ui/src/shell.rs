@@ -18,6 +18,9 @@ use crate::format::entity_label;
 use crate::icons;
 use crate::views;
 
+/// Au-delà de ce délai sans synchronisation, un retour recharge les données.
+const RESUME_STALE_MS: u64 = 30_000;
+
 #[derive(Clone, PartialEq)]
 pub enum Page {
     Dashboard,
@@ -62,6 +65,9 @@ pub struct Ctx {
     /// Les avis à l'écran (toasts), bornés et regroupés par clé.
     pub notices: RwSignal<Notices>,
     pub refresh: Callback<()>,
+    /// Date (ms) de la dernière synchronisation réussie, écrite par le chargement initial et
+    /// par chaque rafraîchissement : la décision de reprise s'en sert.
+    pub synced: StoredValue<Option<u64>>,
 }
 
 fn ctx_names(desc: RwSignal<Option<Module>>) -> Vec<String> {
@@ -196,6 +202,7 @@ async fn boot_sequence(ctx: Ctx, boot: RwSignal<Boot>) -> Result<(), String> {
     });
     let snapshot = fetch_all(Some(desc)).await?;
     ctx.store.with_value(|store| store.load(&snapshot));
+    ctx.synced.set_value(Some(now_ms()));
     boot.update(|b| {
         b.ready();
     });
@@ -232,7 +239,11 @@ fn hide_when_ready(boot: RwSignal<Boot>, splash: RwSignal<bool>) {
 ///
 /// Tout vient du contrat : la session est transmise par la surface, les capacités sont
 /// calculées depuis les politiques du descripteur. Rien n'est codé en dur ici.
-fn settings_facts(ctx: Ctx, surface: Surface) -> Vec<(String, String)> {
+fn settings_facts(
+    ctx: Ctx,
+    surface: Surface,
+    chrome: RwSignal<app_kit::ChromeLayout>,
+) -> Vec<(String, String)> {
     let session = ctx.session.get();
     let caps = ctx.caps.get();
     let list = |names: Vec<&str>| {
@@ -245,6 +256,7 @@ fn settings_facts(ctx: Ctx, surface: Surface) -> Vec<(String, String)> {
 
     let mut facts = vec![
         ("Surface".to_string(), surface.id().to_string()),
+        ("Habillage".to_string(), chrome.get_untracked().summary()),
         ("Transport".to_string(), surface.transport().to_string()),
         ("Session".to_string(), session.label().to_string()),
         (
@@ -312,6 +324,7 @@ pub fn App() -> impl IntoView {
     let store = StoredValue::new(Store::of(&Module::default()));
     let msg = RwSignal::new(None::<(bool, String)>);
     let locales = RwSignal::new(Vec::<String>::new());
+    let synced = StoredValue::new(None::<u64>);
     let refresh = Callback::new(move |_: ()| {
         let names = ctx_names(desc);
         spawn_local(async move {
@@ -328,6 +341,7 @@ pub fn App() -> impl IntoView {
                 }
             }
             store.with_value(|store| store.load(&out));
+            synced.set_value(Some(now_ms()));
         });
     });
 
@@ -345,11 +359,16 @@ pub fn App() -> impl IntoView {
         store,
         notices: RwSignal::new(Notices::default()),
         refresh,
+        synced,
     };
 
     let surface = api::platform();
     // Coquille native : pas de zoom, pas de sélection accidentelle. Le site n'est pas touché.
     ui_shell::behave_like_app(surface);
+    // Habillage système : feux macOS, plein écran, encoche, île, barre d'accueil. Le kit
+    // mesure et décide ; le style lit `--chrome-*`, l'en-tête reçoit la poignée de fenêtre.
+    let chrome = ui_shell::install_chrome();
+    let drag = ui_shell::drag_region(chrome);
 
     // Réglages : lus depuis `localStorage`, appliqués au document, réécrits à chaque changement.
     let settings = RwSignal::new(Settings::load(&LocalStorage));
@@ -384,16 +403,38 @@ pub fn App() -> impl IntoView {
     let retry = Callback::new(move |_| start());
 
     // Le temps réel : chaque écriture du domaine corrige le magasin, sans redemander.
-    api::subscribe(
-        move |change| ctx.apply_local(change),
-        move |error| {
-            // un flux interrompu n'est pas silencieux : le magasin cesse de se corriger
-            ctx.notice(
-                app_kit::Notice::new("realtime", "Temps réel interrompu", error)
-                    .with_tone(app_kit::Tone::Warn),
-            );
-        },
-    );
+    // Rappelable : au retour de l'arrière-plan, le flux web a pu mourir avec la connexion.
+    let live = move || {
+        api::subscribe(
+            move |change| ctx.apply_local(change),
+            move |error| {
+                // un flux interrompu n'est pas silencieux : le magasin cesse de se corriger
+                ctx.notice(
+                    app_kit::Notice::new("realtime", "Temps réel interrompu", error)
+                        .with_tone(app_kit::Tone::Warn),
+                );
+            },
+        );
+    };
+    live();
+
+    // Retour au premier plan, ou réseau revenu : `resume_plan` décide, l'app exécute.
+    ui_shell::on_resume(move || {
+        let plan = ui_shell::platform::resume_plan(
+            synced.get_value(),
+            now_ms(),
+            RESUME_STALE_MS,
+            ui_shell::is_online(),
+        );
+        if plan.resync {
+            refresh.run(());
+        }
+        // Sous Tauri, les changements viennent du Rust et survivent à la suspension : y
+        // réinscrire doublerait les écouteurs. Sur le web, le flux est rouvert.
+        if plan.reconnect && api::platform() == Surface::Web {
+            live();
+        }
+    });
 
     let settings_open = RwSignal::new(false);
 
@@ -414,8 +455,8 @@ pub fn App() -> impl IntoView {
 
     view! {
         <div class="shell">
-            <aside class="sidebar">
-                <div class="brand">
+            <aside class="sidebar" data-tauri-drag-region=drag>
+                <div class="brand" data-tauri-drag-region=drag>
                     <span class="brand-mark" inner_html=icons::MODULE></span>
                     <span class="brand-text">
                         <strong>"Boutique"</strong>
@@ -503,8 +544,8 @@ pub fn App() -> impl IntoView {
             </aside>
 
             <div class="content">
-                <header class="topbar">
-                    <nav class="crumbs" aria-label="Fil d'Ariane">
+                <header class="topbar" data-tauri-drag-region=drag>
+                    <nav class="crumbs" aria-label="Fil d'Ariane" data-tauri-drag-region=drag>
                         <span class="crumb-root">"shop"</span>
                         <span class="crumb-sep" inner_html=icons::ARROW></span>
                         <span class="crumb">{move || ctx.page.get().title()}</span>
@@ -646,7 +687,7 @@ pub fn App() -> impl IntoView {
                 view! {
                     <SettingsPanel
                         settings=settings
-                        facts=settings_facts(ctx, surface)
+                        facts=settings_facts(ctx, surface, chrome)
                         on_close=Callback::new(move |_| settings_open.set(false))
                     />
                 }

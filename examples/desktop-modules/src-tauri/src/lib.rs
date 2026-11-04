@@ -16,6 +16,7 @@ use shop_core::{
 };
 use tauri::{Emitter, Manager, State};
 
+
 // ---- Commandes : une par opération de la surface commune -----------------------------
 
 #[tauri::command]
@@ -115,7 +116,10 @@ async fn place_order_cmd(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // Fenêtre, Dock, habillage et reprise : la coquille est un plugin, une ligne.
+        .plugin(this_shell_tauri::init(this_shell_tauri::ShellConfig::default()))
         .setup(|app| {
+
             let dir = app.path().app_data_dir()?;
             let data = Data::open(dir).map_err(|e| e.to_string())?;
             // Les changements du domaine deviennent des événements de la coquille : le front

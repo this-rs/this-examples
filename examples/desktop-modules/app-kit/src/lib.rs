@@ -14,6 +14,8 @@
 //!   le kit **demande**, chaque coquille répond.
 //! - [`notices`] — la file d'avis : une clé, une borne, une horloge passée par l'appelant.
 //! - [`surface`] — où tourne l'app (desktop, mobile, web) et par quel transport.
+//! - [`chrome`] — ce que le système pose sur la fenêtre (feux macOS, contrôles Windows,
+//!   encoche, Dynamic Island, barre d'accueil) et ce que l'interface doit leur réserver.
 //!
 //! **Ce qui n'est plus ici** : la politique d'accès. Elle appartient au contrat du module
 //! — `this_descriptor::Capabilities` — et se calcule depuis le descripteur et la session.
@@ -21,6 +23,7 @@
 
 pub mod boot;
 pub mod change;
+pub mod chrome;
 pub mod device;
 pub mod notices;
 pub mod settings;
@@ -28,6 +31,10 @@ pub mod surface;
 
 pub use boot::{Boot, BootState};
 pub use change::{Change, ChangeOp};
+pub use chrome::{
+    layout as chrome_layout, ChromeEnv, ChromeLayout, Cutout, CutoutSource, Insets, Platform,
+    TitleBar, WindowState,
+};
 pub use device::{Capability, Device, NoDevice, Notice, PermissionState, Tone};
 pub use notices::{Live, Notices, DEFAULT_MAX, DEFAULT_TTL_MS};
 pub use settings::{MemoryStore, Settings, Store, Theme};

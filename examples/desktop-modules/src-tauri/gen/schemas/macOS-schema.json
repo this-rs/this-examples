@@ -2215,6 +2215,36 @@
           "type": "string",
           "const": "core:window:deny-unminimize",
           "markdownDescription": "Denies the unminimize command without any pre-configured scope."
+        },
+        {
+          "description": "Lets the app read its window chrome and quit through this-shell.\n#### This default permission set includes:\n\n- `allow-env`\n- `allow-quit`",
+          "type": "string",
+          "const": "this-shell:default",
+          "markdownDescription": "Lets the app read its window chrome and quit through this-shell.\n#### This default permission set includes:\n\n- `allow-env`\n- `allow-quit`"
+        },
+        {
+          "description": "Enables the env command without any pre-configured scope.",
+          "type": "string",
+          "const": "this-shell:allow-env",
+          "markdownDescription": "Enables the env command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the quit command without any pre-configured scope.",
+          "type": "string",
+          "const": "this-shell:allow-quit",
+          "markdownDescription": "Enables the quit command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the env command without any pre-configured scope.",
+          "type": "string",
+          "const": "this-shell:deny-env",
+          "markdownDescription": "Denies the env command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the quit command without any pre-configured scope.",
+          "type": "string",
+          "const": "this-shell:deny-quit",
+          "markdownDescription": "Denies the quit command without any pre-configured scope."
         }
       ]
     },

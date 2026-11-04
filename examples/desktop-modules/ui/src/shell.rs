@@ -10,8 +10,8 @@ use std::collections::BTreeMap;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
-use app_kit::{Boot, BootState, Settings};
-use ui_shell::{now_ms, LocalStorage, SettingsPanel, Splash, Store};
+use app_kit::{Boot, BootState, Device, Notice, Notices, Settings};
+use ui_shell::{now_ms, BrowserDevice, LocalStorage, SettingsPanel, Splash, Store, ToastHost};
 
 use crate::api::{self, Capabilities, Module, ModuleDescriptor, Session, Snapshot, Surface};
 use crate::format::entity_label;
@@ -59,6 +59,8 @@ pub struct Ctx {
     pub module: RwSignal<Option<ModuleDescriptor>>,
     /// Les enregistrements, une piste réactive par entité.
     pub store: StoredValue<Store>,
+    /// Les avis à l'écran (toasts), bornés et regroupés par clé.
+    pub notices: RwSignal<Notices>,
     pub refresh: Callback<()>,
 }
 
@@ -119,6 +121,28 @@ impl Ctx {
 
     pub fn record_count(&self, entity: &str) -> usize {
         self.store.with_value(|store| store.count(entity))
+    }
+
+    /// Pousse un avis : toast ici, notification système si la coquille y est autorisée.
+    ///
+    /// L'expiration est programmée à l'échéance calculée par la file, pas scrutée.
+    pub fn notice(&self, notice: Notice) {
+        let ttl = app_kit::DEFAULT_TTL_MS;
+        self.notices.update(|notices| {
+            notices.push_for(notice.clone(), now_ms(), ttl);
+        });
+        // la coquille native relaie vers l'OS **si** l'utilisateur a accordé la permission ;
+        // sinon `BrowserDevice` ne fait rien et le toast reste la seule trace
+        BrowserDevice.notify(&notice);
+        let notices = self.notices;
+        set_timeout(
+            move || {
+                notices.update(|notices| {
+                    notices.expire(now_ms());
+                });
+            },
+            std::time::Duration::from_millis(ttl + 60),
+        );
     }
 
     /// Applique un changement localement : pas de rechargement, l'enregistrement suffit.
@@ -319,6 +343,7 @@ pub fn App() -> impl IntoView {
         caps: RwSignal::new(Capabilities::default()),
         module: RwSignal::new(None),
         store,
+        notices: RwSignal::new(Notices::default()),
         refresh,
     };
 
@@ -573,6 +598,15 @@ pub fn App() -> impl IntoView {
             <Show when=move || ctx.editing.get().is_some()>
                 {move || views::panel(ctx)}
             </Show>
+
+            <ToastHost
+                notices=ctx.notices
+                on_dismiss=Callback::new(move |key: String| {
+                    ctx.notices.update(|notices| {
+                        notices.dismiss(&key);
+                    });
+                })
+            />
 
             {move || {
                 if !splash.get() {

@@ -10,6 +10,9 @@
 //!   un fichier ou un store natif.
 //! - [`change`] — le fil de changements : ce que le domaine publie après une écriture,
 //!   ce qu'une interface applique pour corriger un enregistrement sans tout recharger.
+//! - [`device`] — ce que la coquille sait faire (capacités, permissions système, avis) ;
+//!   le kit **demande**, chaque coquille répond.
+//! - [`notices`] — la file d'avis : une clé, une borne, une horloge passée par l'appelant.
 //! - [`surface`] — où tourne l'app (desktop, mobile, web) et par quel transport.
 //!
 //! **Ce qui n'est plus ici** : la politique d'accès. Elle appartient au contrat du module
@@ -18,10 +21,14 @@
 
 pub mod boot;
 pub mod change;
+pub mod device;
+pub mod notices;
 pub mod settings;
 pub mod surface;
 
 pub use boot::{Boot, BootState};
 pub use change::{Change, ChangeOp};
+pub use device::{Capability, Device, NoDevice, Notice, PermissionState, Tone};
+pub use notices::{Live, Notices, DEFAULT_MAX, DEFAULT_TTL_MS};
 pub use settings::{MemoryStore, Settings, Store, Theme};
 pub use surface::Surface;

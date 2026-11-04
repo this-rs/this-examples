@@ -10,6 +10,8 @@
 //! - [`design`] — les primitives du design system (ton, pastille, jauge, tuile, vide).
 //! - [`browser`] — le tableau d'entités : le kit décide comment, l'app décide quoi.
 //! - [`model`] — le modèle d'affichage d'un module, dérivé du descripteur typé.
+//! - [`device`] — la coquille web : capacités, permissions système, notifications.
+//! - [`toasts`] — le rendu de la file d'avis.
 //! - [`store`] — le magasin d'enregistrements, une piste réactive par entité.
 //! - [`Panel`] — la coquille d'un panneau latéral (voile, en-tête, corps, fermeture).
 //! - [`SettingsPanel`] — apparence (thème, mouvement) + faits d'accès fournis par l'app.
@@ -18,6 +20,7 @@
 pub mod app_mode;
 pub mod browser;
 pub mod design;
+pub mod device;
 pub mod model;
 pub mod panel;
 pub mod settings_panel;
@@ -25,10 +28,12 @@ pub mod splash;
 pub mod storage;
 pub mod store;
 pub mod theme;
+pub mod toasts;
 
 pub use app_mode::behave_like_app;
 pub use browser::{Cell, Column, EntityTable, Row};
 pub use design::{badge, empty, kpi, meter, Tone};
+pub use device::BrowserDevice;
 pub use model::{count, money_f, Entity, Field, Kind, Link, Module};
 pub use panel::Panel;
 pub use settings_panel::SettingsPanel;
@@ -36,3 +41,4 @@ pub use splash::Splash;
 pub use storage::LocalStorage;
 pub use store::Store;
 pub use theme::{apply_settings, now_ms};
+pub use toasts::ToastHost;

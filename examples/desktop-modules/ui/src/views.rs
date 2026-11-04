@@ -86,7 +86,15 @@ fn request_access(
             Ok(outcome) => {
                 let granted = outcome.decision.granted();
                 crate::shell::apply_session(ctx, outcome.session);
-                ctx.msg.set(Some((granted, outcome.message)));
+                ctx.notice(
+                    app_kit::Notice::new("permission", "Autorisation", outcome.message).with_tone(
+                        if granted {
+                            app_kit::Tone::Ok
+                        } else {
+                            app_kit::Tone::Danger
+                        },
+                    ),
+                );
             }
             Err(e) => ctx.msg.set(Some((false, e))),
         }

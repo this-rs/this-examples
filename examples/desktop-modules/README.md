@@ -106,6 +106,40 @@ pub async fn save(entity: &str, id: Option<String>, data: Value) -> Result<Value
 Un seul point de dispatch (`send`) dans tout le front. Ajouter une opération = une ligne ;
 impossible d'en oublier une des deux moitiés.
 
+## Appareil, permissions système, avis
+
+Le kit distingue deux autorisations qu'on confond souvent :
+
+| | Qui décide | Où c'est défini |
+|---|---|---|
+| **Capacités sur les données** | le module (politiques du descripteur) | `this_descriptor::Capabilities` |
+| **Permissions système** (notifications, caméra…) | l'OS | `app_kit::Device` |
+
+`app_kit::Device` est un trait : le kit **demande**, chaque coquille répond. `BrowserDevice`
+(`ui-shell`) branche les notifications du navigateur et répond « non supporté » pour caméra,
+micro, localisation et partage — plutôt que de proposer un bouton inerte. Les implémentations
+natives viendront derrière le même trait, sans toucher au kit ni à l'app.
+
+La demande est **asynchrone par contrat** (`on_result`) : une permission système passe par
+une boîte de dialogue, un retour synchrone serait un mensonge.
+
+`app_kit::Notices` tient la file d'avis sous trois règles : une clé = un avis (dix erreurs
+identiques ne font pas dix toasts, la dernière remplace), au plus `max` vivants (le plus
+ancien cède), expiration par l'**horloge de l'appelant** — donc testable à la milliseconde,
+sans `sleep`. `ui_shell::ToastHost` la rend ; sans permission de notification, la coquille
+dégrade vers le toast et ne perd pas le message.
+
+Mesuré : demande d'accès → toast « Autorisation accordée : crm.delete. », disparu seul au
+bout de six secondes (0 toast restant).
+
+### Décidé, pas encore fait
+
+- **gRPC par défaut**, côté front **et** templates : il faut `tonic-web` côté serveur et un
+  client grpc-web en wasm (framing 5 octets + trailers à la main), le pincement d'`EventSource`.
+- **QUIC / HTTP/3** : transport à ajouter côté serveur (`quinn` + `h3`), en plus de HTTP/1.1
+  et HTTP/2 — c'est un protocole de transport, pas un protocole applicatif : il ne change rien
+  au contrat, seulement la façon dont les octets passent.
+
 ## Lancer
 
 ### Desktop (Tauri)

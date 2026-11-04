@@ -329,13 +329,22 @@ pub async fn session() -> Result<Session, String> {
     send(Call::get("app_session", "/session", json!({}))).await
 }
 
+/// Les enregistrements d'une entité.
+///
+/// **gRPC-Web par défaut sur le web** : le navigateur appelle le même service `Data` que le
+/// client natif, seul le transport diffère (gRPC-Web au lieu de HTTP/JSON). La coquille
+/// native garde `invoke`, puisqu'elle n'a pas de serveur HTTP.
 pub async fn records(entity: &str) -> Result<Vec<Value>, String> {
-    send(Call::get(
-        "list_records",
-        &format!("/records/{entity}"),
-        json!({ "entity": entity }),
-    ))
-    .await
+    if is_tauri() {
+        send(Call::get(
+            "list_records",
+            &format!("/records/{entity}"),
+            json!({ "entity": entity }),
+        ))
+        .await
+    } else {
+        crate::grpc_web::list("/shop.data.v1.Data/List", entity).await
+    }
 }
 
 pub async fn save(entity: &str, id: Option<String>, data: Value) -> Result<Value, String> {

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package shop.data.v1;
+
+// Le sous-ensemble de l'API exposé en gRPC (et en gRPC-Web pour le navigateur).
+// Les enregistrements voyagent en JSON : le proto ne recopie pas le schéma des entités,
+// qui appartient au module et peut changer sans casser les clients.
+service Data {
+  rpc List(ListRequest) returns (ListReply);
+}
+
+message ListRequest {
+  string entity = 1;
+}
+
+message ListReply {
+  repeated string records_json = 1;
+}

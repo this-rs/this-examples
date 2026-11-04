@@ -6,6 +6,7 @@
 
 mod api;
 mod format;
+mod grpc_web;
 mod icons;
 mod shell;
 mod views;

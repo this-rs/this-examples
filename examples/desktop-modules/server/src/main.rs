@@ -44,6 +44,13 @@ pub mod events {
     tonic::include_proto!("shop.events.v1");
 }
 
+pub mod data {
+    //! Types générés depuis `proto/data.proto`.
+    tonic::include_proto!("shop.data.v1");
+}
+
+use data::data_server::{Data as DataApi, DataServer};
+
 use events::events_server::{Events, EventsServer};
 use events::{Change as ProtoChange, Op, SubscribeRequest};
 
@@ -282,6 +289,29 @@ fn into_proto(change: shop_core::Change) -> ProtoChange {
     }
 }
 
+/// L'API de données en gRPC / gRPC-Web.
+///
+/// Un navigateur ne parle pas gRPC (HTTP/2 binaire) : `tonic-web` traduit le gRPC-Web
+/// (HTTP/1.1) vers le même service. Le service est donc le même que pour un client natif —
+/// seul le transport change.
+struct DataService {
+    data: Arc<Data>,
+}
+
+#[tonic::async_trait]
+impl DataApi for DataService {
+    async fn list(
+        &self,
+        request: tonic::Request<data::ListRequest>,
+    ) -> Result<tonic::Response<data::ListReply>, tonic::Status> {
+        let entity = request.into_inner().entity;
+        let records = shop_core::list_records(&self.data, &entity);
+        Ok(tonic::Response::new(data::ListReply {
+            records_json: records.iter().map(|record| record.to_string()).collect(),
+        }))
+    }
+}
+
 /// Une demande d'autorisation venue de l'interface.
 ///
 /// Le domaine décide (il ne peut accorder que ce que la politique de l'opération nomme) ;
@@ -327,6 +357,8 @@ async fn main() -> Result<(), String> {
         data: Arc::new(data),
         sessions: Arc::new(sessions),
     };
+    // le service gRPC partage le même domaine que l'API REST
+    let data_for_grpc = state.data.clone();
 
     // gRPC : même flux, autre protocole. Port séparé, et désactivable (`SHOP_GRPC_ADDR=off`).
     let grpc = std::env::var("SHOP_GRPC_ADDR").unwrap_or_else(|_| "127.0.0.1:50051".into());
@@ -361,8 +393,20 @@ async fn main() -> Result<(), String> {
         .route("/api/permissions/request", post(api_permission_request))
         .route("/api/events", get(api_events))
         .route("/api/ws", get(api_ws))
-        .fallback_service(ServeDir::new(&dist).not_found_service(ServeFile::new(&index)))
         .with_state(state);
+
+    // gRPC et gRPC-Web sur le **même port** qu'axum : même origine, pas de CORS.
+    // `tonic-web` est une couche : elle traduit le gRPC-Web (HTTP/1.1) vers le même service,
+    // donc un navigateur et un client natif appellent exactement la même implémentation.
+    let grpc = tonic::service::Routes::new(DataServer::new(DataService {
+        data: data_for_grpc,
+    }))
+    .into_axum_router()
+    .layer(tonic_web::GrpcWebLayer::new());
+
+    let app = app
+        .merge(grpc)
+        .fallback_service(ServeDir::new(&dist).not_found_service(ServeFile::new(&index)));
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await

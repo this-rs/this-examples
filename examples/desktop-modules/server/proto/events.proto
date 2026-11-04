@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package shop.events.v1;
+
+// Le fil de changements du module, pour les clients qui ne parlent ni HTTP ni WebSocket
+// (un service interne, un autre langage, un outil de supervision).
+service Events {
+  // Un message par écriture, jusqu'à fermeture du flux.
+  rpc Subscribe(SubscribeRequest) returns (stream Change);
+}
+
+message SubscribeRequest {
+  // Filtre optionnel : ne recevoir qu'une entité. Vide = toutes.
+  string entity = 1;
+}
+
+message Change {
+  string entity = 1;
+  string id = 2;
+  Op op = 3;
+  // L'enregistrement après écriture, en JSON : le proto ne recopie pas le schéma des
+  // entités, qui appartient au module et peut changer sans casser les clients.
+  string record_json = 4;
+}
+
+enum Op {
+  OP_UNSPECIFIED = 0;
+  CREATED = 1;
+  UPDATED = 2;
+  DELETED = 3;
+}

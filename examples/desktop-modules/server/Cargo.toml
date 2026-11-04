@@ -1,0 +1,26 @@
+[package]
+name = "shop_server"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Adaptateur HTTP (axum) : l'API du domaine shop-core + le bundle Leptos servi sur la même origine"
+
+[dependencies]
+shop-core = { path = "../shop-core" }
+axum = { version = "0.8", features = ["ws"] }
+tower-http = { version = "0.7", features = ["fs", "trace"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time"] }
+tokio-stream = { version = "0.1", features = ["sync", "net"] }
+# gRPC : le même flux de changements, autre protocole
+tonic = "0.14"
+tonic-prost = "0.14"
+# gRPC-Web : parler gRPC depuis un navigateur, sur HTTP/1.1
+tonic-web = "0.14"
+prost = "0.14"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[build-dependencies]
+tonic-prost-build = "0.14"

@@ -21,11 +21,16 @@ Billing API using Neo4j as the storage backend.
 
 ## Configuration
 
-| Variable         | Default                    |
-|------------------|----------------------------|
-| `NEO4J_URI`      | `bolt://localhost:7687`    |
-| `NEO4J_USER`     | `neo4j`                    |
-| `NEO4J_PASSWORD` | `billing123`               |
+| Variable         | Value                                   |
+|------------------|-----------------------------------------|
+| `NEO4J_URI`      | `bolt://localhost:7687` (default)       |
+| `NEO4J_USER`     | `neo4j` (default)                       |
+| `NEO4J_PASSWORD` | **Required**: the password of the Neo4j instance |
+
+`docker-compose.yml` publishes ports 7474 and 7687 on `127.0.0.1` only. Its
+password is a local-development default (`billing123`); to change it, set
+`NEO4J_PASSWORD` before `docker-compose up` and export the same value when
+running the example.
 
 ## Neo4j Browser
 

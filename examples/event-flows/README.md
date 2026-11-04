@@ -34,6 +34,14 @@ cargo run -p event_flows_example
 
 Open http://127.0.0.1:4245/static/index.html for the interactive test client.
 
+## Scope
+
+The framework has 8 flow operators: `map`, `resolve`, `deliver`, `filter`, `batch`, `deduplicate`, `fan_out`, `rate_limit`.
+
+This demo exercises **3 of 8**: `map`, `resolve` and `deliver`, used by the three flows in `config/links.yaml`. Step 2 of the Quick Test triggers `notify-new-order`; step 4 triggers `notify-invoice-linked`. It does not exercise `filter`, `batch`, `deduplicate`, `fan_out` or `rate_limit`, and does not claim to.
+
+`cargo test -p event_flows_example` checks the order API (create, then list with the seeded data). It does not assert that the flows deliver notifications: `/notifications/*` is refused by this demo's auth policy, so the inbox cannot be read back over REST.
+
 ## Quick Test (curl)
 
 ```bash
@@ -43,7 +51,7 @@ curl -N http://127.0.0.1:4245/events/stream
 # 2. Create an order (triggers notify-new-order flow)
 curl -X POST http://127.0.0.1:4245/orders \
   -H 'Content-Type: application/json' \
-  -d '{"name": "Laptop Pro", "status": "pending", "owner_id": "system"}'
+  -d '{"name": "Laptop Pro", "number": "ORD-100", "amount": 1299.0, "status": "pending"}'
 
 # 3. Check notifications
 curl http://127.0.0.1:4245/notifications/system
@@ -74,6 +82,6 @@ The event system is configured in `config/links.yaml`:
 
 - **`sinks:`** — Define delivery destinations (in_app, webhook, push, websocket, counter)
 - **`events.backend:`** — Event storage backend (memory, nats, kafka, redis)
-- **`events.flows:`** — Declarative pipelines with trigger, filter, map, resolve, deliver operators
+- **`events.flows:`** — Declarative pipelines (trigger, then `map`, `resolve`, `deliver`; see Scope)
 
 See `config/links.yaml` for the full configuration.

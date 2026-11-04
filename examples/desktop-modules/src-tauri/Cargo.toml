@@ -8,6 +8,10 @@ description = "Adaptateur desktop (Tauri 2) : expose le domaine shop-core à un 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+# Coquille de plateforme : elle n'appartient pas au workspace portable de `this-examples`
+# (sur Linux, Tauri exige GTK/WebKit). Elle a donc son propre workspace.
+[workspace]
+
 [lib]
 # Tauri mobile construit la cible lib pour iOS/Android ; le binaire desktop reste `main.rs`.
 name = "desktop_modules_lib"

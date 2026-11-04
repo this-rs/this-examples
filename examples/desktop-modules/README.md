@@ -174,8 +174,13 @@ serveur HTTP à joindre.
 ```sh
 cd src-tauri
 cargo tauri dev                            # trunk serve + fenêtre
-cargo tauri build --debug --no-bundle      # binaire autonome
+cargo tauri build --debug --no-bundle      # binaire autonome → src-tauri/target/debug/
 ```
+
+La coquille a **son propre workspace** : elle est exclue de `this-examples` parce que Tauri
+exige GTK/WebKit sous Linux, ce qui ferait échouer `cargo build --workspace` en CI pour tout
+le dépôt. Le domaine (`shop-core`), les contrats (`app-kit`) et le serveur restent, eux,
+membres du workspace portable.
 
 > Un binaire produit par `cargo build` **seul** reste en mode dev : Tauri charge `devUrl`
 > (localhost:1420) et la fenêtre est blanche si `trunk serve` ne tourne pas.

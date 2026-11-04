@@ -24,12 +24,15 @@ members = [
   "examples/descriptor",
   "examples/module-signing",
   "examples/vfs-module",
-  "examples/desktop-modules/src-tauri",
   "examples/desktop-modules/shop-core",
   "examples/desktop-modules/app-kit",
   "examples/desktop-modules/server",
   "benches/endpoint-benchmarks",
 ]
+# La coquille Tauri n'est **pas** un membre : c'est un binaire de plateforme, et sur Linux
+# il exige GTK/WebKit (`glib-2.0.pc`), ce qui ferait échouer `cargo build --workspace` en CI
+# pour tout le dépôt. Elle se construit depuis son répertoire, comme `ui` et `ui-shell`.
+exclude = ["examples/desktop-modules/src-tauri"]
 resolver = "2"
 
 # Single source of truth for the framework: a PATH dependency, deliberately

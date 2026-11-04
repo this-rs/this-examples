@@ -140,6 +140,33 @@ bout de six secondes (0 toast restant).
   et HTTP/2 — c'est un protocole de transport, pas un protocole applicatif : il ne change rien
   au contrat, seulement la façon dont les octets passent.
 
+## Transports
+
+Le **front web** ne parle plus que gRPC-Web : les neuf opérations de `shop.data.v1.Data`
+et le flux `shop.events.v1.Events/Subscribe`. Le serveur, lui, expose la même chose sur
+cinq surfaces, pour les autres clients :
+
+| Surface | Chemin | Pour qui |
+|---|---|---|
+| gRPC-Web | `/shop.data.v1.Data/*` · `/shop.events.v1.Events/Subscribe` | le front (même port qu'axum, donc pas de CORS) |
+| REST | `/api/*` | scripts, curl, intégrations |
+| SSE | `/api/events` | clients sans gRPC-Web |
+| WebSocket | `/api/ws` | clients qui préfèrent un flux symétrique |
+| gRPC | `:50051` | services internes |
+
+La coquille native (desktop / iOS) garde `invoke` et les événements Tauri : elle n'a pas de
+serveur HTTP à joindre.
+
+**Deux pièges mesurés**, tous les deux invisibles à la compilation :
+
+1. `tonic-web` répond à une erreur en *trailers-only* — `HTTP 200`, `grpc-status` dans les
+   **en-têtes**, corps vide. Un client qui ne lit que les trailers du corps rapporte un
+   succès sur un refus (l'interface affichait « Enregistrement supprimé » sans rien
+   supprimer). Les deux emplacements doivent être lus.
+2. Un RPC de streaming répond dans un **corps HTTP unique** : il faut lire le
+   `ReadableStream` et découper les trames au fur et à mesure. Attendre la fin du corps,
+   c'est attendre la fin d'un flux qui ne finit pas.
+
 ## Lancer
 
 ### Desktop (Tauri)

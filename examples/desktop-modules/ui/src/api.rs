@@ -247,30 +247,14 @@ fn api(path: &str) -> String {
 
 /// S'abonne aux écritures du module : `EventSource` sur `/events` côté web, événement
 /// `module://change` côté coquille native. L'appelant applique, le kit stocke.
-pub fn subscribe(on_change: impl Fn(Change) + 'static) {
+pub fn subscribe(on_change: impl Fn(Change) + 'static, on_error: impl Fn(String) + 'static) {
     if is_tauri() {
         subscribe_tauri(on_change);
     } else {
-        subscribe_sse(on_change);
+        // même service `Events.Subscribe` qu'un client natif, en gRPC-Web
+        let path = "/shop.events.v1.Events/Subscribe";
+        crate::grpc_web::subscribe(path, Vec::new(), on_change, on_error);
     }
-}
-
-fn subscribe_sse(on_change: impl Fn(Change) + 'static) {
-    let Ok(source) = web_sys::EventSource::new(&api("/events")) else {
-        return;
-    };
-    let handler =
-        Closure::<dyn FnMut(web_sys::MessageEvent)>::new(move |event: web_sys::MessageEvent| {
-            let Some(text) = event.data().as_string() else {
-                return;
-            };
-            if let Ok(change) = serde_json::from_str::<Change>(&text) {
-                on_change(change);
-            }
-        });
-    source.set_onmessage(Some(handler.as_ref().unchecked_ref()));
-    // l'abonnement vit aussi longtemps que la page
-    handler.forget();
 }
 
 fn subscribe_tauri(on_change: impl Fn(Change) + 'static) {

@@ -505,6 +505,7 @@ async fn main() -> Result<(), String> {
     // le service gRPC partage le même domaine que l'API REST
     let data_for_grpc = state.data.clone();
     let sessions_for_grpc = state.sessions.clone();
+    let data_for_events = state.data.clone();
 
     // gRPC : même flux, autre protocole. Port séparé, et désactivable (`SHOP_GRPC_ADDR=off`).
     let grpc = std::env::var("SHOP_GRPC_ADDR").unwrap_or_else(|_| "127.0.0.1:50051".into());
@@ -547,6 +548,10 @@ async fn main() -> Result<(), String> {
     let grpc = tonic::service::Routes::new(DataServer::new(DataService {
         data: data_for_grpc,
         sessions: sessions_for_grpc,
+    }))
+    // le flux d'événements passe par la même route : gRPC-Web sait faire le streaming
+    .add_service(EventsServer::new(EventsService {
+        data: data_for_events,
     }))
     .into_axum_router()
     .layer(tonic_web::GrpcWebLayer::new());

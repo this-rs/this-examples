@@ -384,7 +384,16 @@ pub fn App() -> impl IntoView {
     let retry = Callback::new(move |_| start());
 
     // Le temps réel : chaque écriture du domaine corrige le magasin, sans redemander.
-    api::subscribe(move |change| ctx.apply_local(change));
+    api::subscribe(
+        move |change| ctx.apply_local(change),
+        move |error| {
+            // un flux interrompu n'est pas silencieux : le magasin cesse de se corriger
+            ctx.notice(
+                app_kit::Notice::new("realtime", "Temps réel interrompu", error)
+                    .with_tone(app_kit::Tone::Warn),
+            );
+        },
+    );
 
     let settings_open = RwSignal::new(false);
 

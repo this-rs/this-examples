@@ -12,7 +12,10 @@
 //! messages du service `Data`, et c'est ce qui permet de vérifier que le transport marche
 //! avant de généraliser.
 
+use app_kit::{Change, ChangeOp};
 use gloo_net::http::Request;
+use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::spawn_local;
 
 /// Encode un varint (comme le fait protobuf pour les longueurs).
 fn varint(mut value: usize, out: &mut Vec<u8>) {
@@ -336,4 +339,144 @@ pub async fn list(path: &str, entity: &str) -> Result<Vec<serde_json::Value>, St
         .iter()
         .map(|raw| serde_json::from_str(raw).map_err(|e| e.to_string()))
         .collect()
+}
+
+// ---- Flux : gRPC-Web server streaming ------------------------------------------------
+
+/// Décode un `Change` (entity, id, op, record_json).
+fn decode_change(message: &[u8]) -> Option<Change> {
+    let mut entity = String::new();
+    let mut id = String::new();
+    let mut op = 0usize;
+    let mut record = None;
+    let mut at = 0;
+    while at < message.len() {
+        let (tag, tag_len) = read_varint(message, at)?;
+        at += tag_len;
+        let field = tag >> 3;
+        match tag & 0x07 {
+            2 => {
+                let (len, len_len) = read_varint(message, at)?;
+                at += len_len;
+                let end = at + len;
+                if end > message.len() {
+                    return None;
+                }
+                let text = std::str::from_utf8(&message[at..end]).ok()?.to_string();
+                match field {
+                    1 => entity = text,
+                    2 => id = text,
+                    4 => record = Some(text),
+                    _ => {}
+                }
+                at = end;
+            }
+            0 => {
+                let (value, n) = read_varint(message, at)?;
+                at += n;
+                if field == 3 {
+                    op = value;
+                }
+            }
+            _ => return None,
+        }
+    }
+    let op = match op {
+        1 => ChangeOp::Created,
+        2 => ChangeOp::Updated,
+        3 => ChangeOp::Deleted,
+        // un op inconnu vaut mieux traité comme une mise à jour que perdu
+        _ => ChangeOp::Updated,
+    };
+    Some(Change {
+        entity,
+        id,
+        op,
+        record: record.and_then(|raw| serde_json::from_str(&raw).ok()),
+    })
+}
+
+/// S'abonne au flux d'événements du module en gRPC-Web.
+///
+/// `tonic-web` répond à un RPC de streaming par un corps HTTP unique : on lit le
+/// `ReadableStream` et on découpe les trames au fur et à mesure, sans attendre la fin —
+/// qui n'arrive jamais sur un flux vivant.
+pub fn subscribe(
+    path: &str,
+    request: Vec<u8>,
+    on_change: impl Fn(Change) + 'static,
+    on_error: impl Fn(String) + 'static,
+) {
+    let path = path.to_string();
+    spawn_local(async move {
+        if let Err(error) = stream(&path, request, &on_change).await {
+            on_error(error);
+        }
+    });
+}
+
+async fn stream(path: &str, request: Vec<u8>, on_change: &impl Fn(Change)) -> Result<(), String> {
+    let response = Request::post(path)
+        .header("content-type", "application/grpc-web+proto")
+        .header("x-grpc-web", "1")
+        .body(frame(&request))
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !(200..300).contains(&response.status()) {
+        return Err(format!("flux gRPC-Web : HTTP {}", response.status()));
+    }
+    let body = response
+        .body()
+        .ok_or("flux gRPC-Web : réponse sans corps")?;
+    let reader = body
+        .get_reader()
+        .dyn_into::<web_sys::ReadableStreamDefaultReader>()
+        .map_err(|_| "flux gRPC-Web : lecteur indisponible".to_string())?;
+
+    let mut buffer: Vec<u8> = Vec::new();
+    loop {
+        let chunk = wasm_bindgen_futures::JsFuture::from(reader.read())
+            .await
+            .map_err(|e| format!("flux gRPC-Web : lecture interrompue : {e:?}"))?;
+        let done = js_sys::Reflect::get(&chunk, &wasm_bindgen::JsValue::from_str("done"))
+            .ok()
+            .and_then(|value| value.as_bool())
+            .unwrap_or(false);
+
+        if let Ok(value) = js_sys::Reflect::get(&chunk, &wasm_bindgen::JsValue::from_str("value")) {
+            if !value.is_undefined() {
+                buffer.extend_from_slice(&js_sys::Uint8Array::new(&value).to_vec());
+            }
+        }
+
+        // on consomme toutes les trames complètes déjà reçues
+        while buffer.len() >= 5 {
+            let flags = buffer[0];
+            let len = u32::from_be_bytes([buffer[1], buffer[2], buffer[3], buffer[4]]) as usize;
+            if buffer.len() < 5 + len {
+                break;
+            }
+            let payload = buffer[5..5 + len].to_vec();
+            buffer.drain(..5 + len);
+
+            if flags & 0x80 != 0 {
+                // cadre de trailers : fin de flux ou erreur
+                let (status, message) = parse_trailers(&String::from_utf8_lossy(&payload));
+                if let Some(refusal) = refusal_from_parts(&status, message) {
+                    return Err(refusal);
+                }
+                continue;
+            }
+            if let Some(change) = decode_change(&payload) {
+                on_change(change);
+            }
+        }
+
+        if done {
+            return Ok(());
+        }
+    }
 }

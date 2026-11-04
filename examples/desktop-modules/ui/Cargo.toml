@@ -19,4 +19,4 @@ app-kit = { path = "../app-kit" }
 this-descriptor = { path = "../../../../this/crates/this-descriptor" }
 ui-shell = { path = "../ui-shell" }
 gloo-net = { version = "0.6", features = ["http", "json"] }
-web-sys = { version = "0.3", features = ["Window", "Document", "Element", "Storage", "Navigator", "EventSource", "MessageEvent"] }
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "Storage", "Navigator", "ReadableStream", "ReadableStreamDefaultReader"] }

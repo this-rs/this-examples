@@ -396,6 +396,16 @@ fn decode_change(message: &[u8]) -> Option<Change> {
     })
 }
 
+thread_local! {
+    /// Génération du flux courant. Un nouvel abonnement incrémente la génération : l'ancien
+    /// flux s'arrête à son prochain fragment, au lieu de doubler les événements.
+    static GENERATION: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+    /// Lecteur du flux courant : un flux vivant ne produit pas de fragment, sa lecture reste
+    /// en attente. Pour le libérer, il faut l'annuler au moment de l'abonnement suivant.
+    static LIVE_READER: std::cell::RefCell<Option<web_sys::ReadableStreamDefaultReader>> =
+        const { std::cell::RefCell::new(None) };
+}
+
 /// S'abonne au flux d'événements du module en gRPC-Web.
 ///
 /// `tonic-web` répond à un RPC de streaming par un corps HTTP unique : on lit le
@@ -407,15 +417,34 @@ pub fn subscribe(
     on_change: impl Fn(Change) + 'static,
     on_error: impl Fn(String) + 'static,
 ) {
+    let mine = GENERATION.with(|g| {
+        let next = g.get() + 1;
+        g.set(next);
+        next
+    });
+    // l'ancien flux est fermé tout de suite, sans attendre un événement qui ne viendra peut-être pas
+    LIVE_READER.with(|r| {
+        if let Some(previous) = r.borrow_mut().take() {
+            let _ = previous.cancel();
+        }
+    });
     let path = path.to_string();
     spawn_local(async move {
-        if let Err(error) = stream(&path, request, &on_change).await {
-            on_error(error);
+        if let Err(error) = stream(&path, request, mine, &on_change).await {
+            // une erreur d'un flux remplacé n'est pas une panne : on ne la signale pas
+            if GENERATION.with(|g| g.get()) == mine {
+                on_error(error);
+            }
         }
     });
 }
 
-async fn stream(path: &str, request: Vec<u8>, on_change: &impl Fn(Change)) -> Result<(), String> {
+async fn stream(
+    path: &str,
+    request: Vec<u8>,
+    mine: u64,
+    on_change: &impl Fn(Change),
+) -> Result<(), String> {
     let response = Request::post(path)
         .header("content-type", "application/grpc-web+proto")
         .header("x-grpc-web", "1")
@@ -435,9 +464,15 @@ async fn stream(path: &str, request: Vec<u8>, on_change: &impl Fn(Change)) -> Re
         .get_reader()
         .dyn_into::<web_sys::ReadableStreamDefaultReader>()
         .map_err(|_| "flux gRPC-Web : lecteur indisponible".to_string())?;
+    LIVE_READER.with(|r| *r.borrow_mut() = Some(reader.clone()));
 
     let mut buffer: Vec<u8> = Vec::new();
     loop {
+        if GENERATION.with(|g| g.get()) != mine {
+            // un abonnement plus récent a pris la suite : on libère ce flux et on s'arrête
+            let _ = reader.cancel();
+            return Ok(());
+        }
         let chunk = wasm_bindgen_futures::JsFuture::from(reader.read())
             .await
             .map_err(|e| format!("flux gRPC-Web : lecture interrompue : {e:?}"))?;

@@ -5,6 +5,8 @@
 //!
 //! - [`Splash`] — l'écran de démarrage : ce qui se charge, ce qui a échoué, un bouton
 //!   pour réessayer. Présentation pure : la temporisation vit dans `app_kit::Boot`.
+//! - [`install_chrome`] — l'habillage système (feux macOS, plein écran, encoche, Dynamic
+//!   Island, barre d'accueil) traduit en variables CSS `--chrome-*` et attributs `data-*`.
 //! - [`behave_like_app`] — la coquille se comporte comme une app (pas de zoom, pas de
 //!   sélection accidentelle, pas de rebond) ; le site, lui, reste une page.
 //! - [`design`] — les primitives du design system (ton, pastille, jauge, tuile, vide).
@@ -19,8 +21,10 @@
 
 pub mod app_mode;
 pub mod browser;
+pub mod chrome;
 pub mod design;
 pub mod device;
+pub mod lifecycle;
 pub mod model;
 pub mod panel;
 pub mod settings_panel;
@@ -32,6 +36,9 @@ pub mod toasts;
 
 pub use app_mode::behave_like_app;
 pub use browser::{Cell, Column, EntityTable, Row};
+pub use this_platform as platform;
+pub use lifecycle::{is_online, on_resume};
+pub use chrome::{drag_region, install_chrome, use_chrome};
 pub use design::{badge, empty, kpi, meter, Tone};
 pub use device::BrowserDevice;
 pub use model::{count, money_f, Entity, Field, Kind, Link, Module};

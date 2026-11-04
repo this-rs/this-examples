@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 /// Une capacité liée à l'appareil, pas au module.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum Capability {
     /// Notifications (locales ou poussées).
     Notifications,
@@ -21,6 +21,10 @@ pub enum Capability {
     Clipboard,
     /// Partage système (feuille de partage, AirDrop, Quick Share…).
     Share,
+    /// Une activité en direct : un état qui vit hors de l'app (Dynamic Island et écran
+    /// verrouillé sur iPhone, notification persistante ailleurs). Exige un module natif ;
+    /// une coquille qui ne l'a pas répond « non supportée ».
+    LiveActivity,
 }
 
 impl Capability {
@@ -32,6 +36,7 @@ impl Capability {
             Capability::Location => "Localisation",
             Capability::Clipboard => "Presse-papiers",
             Capability::Share => "Partage",
+            Capability::LiveActivity => "Activité en direct",
         }
     }
 }

@@ -28,6 +28,17 @@
 :root {
   color-scheme: light;
 
+  /* Habillage système : écrit par `ui_shell::install_chrome` (app_kit::chrome).
+     Barre de titre intégrée, feux macOS, contrôles Windows, encoche, île, barre
+     d'accueil — l'app ne lit que ces variables, jamais env(safe-area-*). */
+  --chrome-top: 0px;
+  --chrome-right: 0px;
+  --chrome-bottom: 0px;
+  --chrome-left: 0px;
+  --chrome-header-min: 0px;
+  --chrome-lead: 0px;
+  --chrome-trail: 0px;
+
   /* Surfaces et texte */
   --bg: #f3f5f8;
   --surface: #ffffff;
@@ -210,6 +221,12 @@ code {
 
 /* ---------------------------------------------------------------- shell */
 
+/* Fenêtre sans focus : macOS grise ses feux, l'en-tête suit. */
+:root[data-focused="false"] .crumbs,
+:root[data-focused="false"] .brand {
+  opacity: 0.55;
+}
+
 .shell {
   display: grid;
   grid-template-columns: 264px minmax(0, 1fr);
@@ -223,7 +240,8 @@ code {
   display: flex;
   flex-direction: column;
   gap: var(--s5);
-  padding: var(--s5) var(--s4);
+  /* sous les feux quand la barre de titre est intégrée ; rien à réserver sinon */
+  padding: max(var(--s5), var(--chrome-header-min)) var(--s4) var(--s5);
   background: var(--surface);
   border-right: 1px solid var(--line);
   overflow-y: auto;
@@ -392,7 +410,10 @@ code {
   align-items: center;
   justify-content: space-between;
   gap: var(--s4);
-  padding: max(10px, env(safe-area-inset-top)) var(--s5) 10px;
+  /* hauteur des feux, marge du haut (barre d'état, découpe), contrôles à droite (Windows) */
+  min-height: var(--chrome-header-min);
+  padding: max(10px, var(--chrome-top))
+    calc(var(--s5) + var(--chrome-trail) + var(--chrome-right)) 10px var(--s5);
   background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
@@ -1352,13 +1373,15 @@ table.mini thead th {
     display: none;
   }
 
+  /* plus de barre latérale : l'en-tête touche le bord, il évite les feux lui-même */
   .topbar {
-    padding-left: var(--s4);
-    padding-right: var(--s4);
+    padding-left: calc(var(--s4) + var(--chrome-lead) + var(--chrome-left));
+    padding-right: calc(var(--s4) + var(--chrome-trail) + var(--chrome-right));
   }
 
   .main {
-    padding: var(--s4) var(--s4) calc(88px + env(safe-area-inset-bottom));
+    padding: var(--s4) calc(var(--s4) + var(--chrome-right)) calc(88px + var(--chrome-bottom))
+      calc(var(--s4) + var(--chrome-left));
   }
 
   .tabbar {
@@ -1370,7 +1393,8 @@ table.mini thead th {
     display: flex;
     align-items: stretch;
     gap: 2px;
-    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    padding: 6px calc(6px + var(--chrome-right)) calc(6px + var(--chrome-bottom))
+      calc(6px + var(--chrome-left));
     background: var(--surface);
     border-top: 1px solid var(--line);
   }
@@ -2000,7 +2024,7 @@ a {
 @media (max-width: 820px) {
   /* au-dessus de la barre d'onglets, jamais derrière */
   .toasts {
-    bottom: calc(84px + env(safe-area-inset-bottom));
+    bottom: calc(84px + var(--chrome-bottom));
     right: var(--s3);
     left: var(--s3);
     width: auto;

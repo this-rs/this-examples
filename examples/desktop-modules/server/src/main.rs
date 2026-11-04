@@ -296,10 +296,69 @@ fn into_proto(change: shop_core::Change) -> ProtoChange {
 /// seul le transport change.
 struct DataService {
     data: Arc<Data>,
+    sessions: Arc<Sessions>,
+}
+
+/// Une erreur du domaine devient un statut gRPC portant **le même JSON** que la surface
+/// REST : le front n'a qu'un format d'erreur à connaître, quel que soit le transport.
+fn to_status(error: shop_core::AppError) -> tonic::Status {
+    let code = match error.code.as_str() {
+        code if code.ends_with("not_found") => tonic::Code::NotFound,
+        "this.policy.denied" => tonic::Code::PermissionDenied,
+        _ => tonic::Code::InvalidArgument,
+    };
+    let payload = serde_json::to_string(&error).unwrap_or_else(|_| error.message.clone());
+    tonic::Status::new(code, payload)
+}
+
+fn json_status(error: serde_json::Error) -> tonic::Status {
+    tonic::Status::invalid_argument(error.to_string())
 }
 
 #[tonic::async_trait]
 impl DataApi for DataService {
+    async fn status(
+        &self,
+        _: tonic::Request<data::Empty>,
+    ) -> Result<tonic::Response<data::JsonReply>, tonic::Status> {
+        let status = shop_core::status(&self.data).await;
+        Ok(tonic::Response::new(data::JsonReply {
+            json: serde_json::to_string(&status).map_err(json_status)?,
+        }))
+    }
+
+    async fn load(
+        &self,
+        _: tonic::Request<data::Empty>,
+    ) -> Result<tonic::Response<data::JsonReply>, tonic::Status> {
+        let status = shop_core::load_and_report(&self.data)
+            .await
+            .map_err(to_status)?;
+        Ok(tonic::Response::new(data::JsonReply {
+            json: serde_json::to_string(&status).map_err(json_status)?,
+        }))
+    }
+
+    async fn interface(
+        &self,
+        _: tonic::Request<data::Empty>,
+    ) -> Result<tonic::Response<data::JsonReply>, tonic::Status> {
+        let interface = shop_core::interface(&self.data).await.map_err(to_status)?;
+        Ok(tonic::Response::new(data::JsonReply {
+            json: serde_json::to_string(&interface).map_err(json_status)?,
+        }))
+    }
+
+    async fn session(
+        &self,
+        _: tonic::Request<data::Empty>,
+    ) -> Result<tonic::Response<data::JsonReply>, tonic::Status> {
+        let session = self.sessions.session();
+        Ok(tonic::Response::new(data::JsonReply {
+            json: serde_json::to_string(&session).map_err(json_status)?,
+        }))
+    }
+
     async fn list(
         &self,
         request: tonic::Request<data::ListRequest>,
@@ -308,6 +367,92 @@ impl DataApi for DataService {
         let records = shop_core::list_records(&self.data, &entity);
         Ok(tonic::Response::new(data::ListReply {
             records_json: records.iter().map(|record| record.to_string()).collect(),
+        }))
+    }
+
+    async fn save(
+        &self,
+        request: tonic::Request<data::SaveRequest>,
+    ) -> Result<tonic::Response<data::JsonReply>, tonic::Status> {
+        let request = request.into_inner();
+        let data: Value = serde_json::from_str(&request.data_json).map_err(json_status)?;
+        let id = (!request.id.is_empty()).then_some(request.id);
+        let op = if id.is_some() {
+            Operation::Update
+        } else {
+            Operation::Create
+        };
+        shop_core::guard(&self.data, &self.sessions.session(), &request.entity, op)
+            .await
+            .map_err(to_status)?;
+        let saved = shop_core::save(&self.data, &request.entity, id, data)
+            .await
+            .map_err(to_status)?;
+        Ok(tonic::Response::new(data::JsonReply {
+            json: saved.to_string(),
+        }))
+    }
+
+    async fn remove(
+        &self,
+        request: tonic::Request<data::RemoveRequest>,
+    ) -> Result<tonic::Response<data::Empty>, tonic::Status> {
+        let request = request.into_inner();
+        shop_core::guard(
+            &self.data,
+            &self.sessions.session(),
+            &request.entity,
+            Operation::Delete,
+        )
+        .await
+        .map_err(to_status)?;
+        shop_core::remove(&self.data, &request.entity, &request.id)
+            .await
+            .map_err(to_status)?;
+        Ok(tonic::Response::new(data::Empty {}))
+    }
+
+    async fn place_order(
+        &self,
+        request: tonic::Request<data::PlaceOrderRequest>,
+    ) -> Result<tonic::Response<data::JsonReply>, tonic::Status> {
+        let request = request.into_inner();
+        let lines: Vec<LineIn> = serde_json::from_str(&request.lines_json).map_err(json_status)?;
+        shop_core::guard(
+            &self.data,
+            &self.sessions.session(),
+            "order",
+            Operation::Create,
+        )
+        .await
+        .map_err(to_status)?;
+        let order =
+            shop_core::place_order(&self.data, &request.customer_id, &lines, &request.state)
+                .await
+                .map_err(to_status)?;
+        Ok(tonic::Response::new(data::JsonReply {
+            json: order.to_string(),
+        }))
+    }
+
+    async fn request_permission(
+        &self,
+        request: tonic::Request<data::PermissionJson>,
+    ) -> Result<tonic::Response<data::JsonReply>, tonic::Status> {
+        let request: PermissionRequest =
+            serde_json::from_str(&request.into_inner().request_json).map_err(json_status)?;
+        let (decision, message) = self
+            .sessions
+            .request(&self.data, &request)
+            .await
+            .map_err(to_status)?;
+        let outcome = serde_json::json!({
+            "decision": decision,
+            "session": self.sessions.session(),
+            "message": message,
+        });
+        Ok(tonic::Response::new(data::JsonReply {
+            json: outcome.to_string(),
         }))
     }
 }
@@ -359,6 +504,7 @@ async fn main() -> Result<(), String> {
     };
     // le service gRPC partage le même domaine que l'API REST
     let data_for_grpc = state.data.clone();
+    let sessions_for_grpc = state.sessions.clone();
 
     // gRPC : même flux, autre protocole. Port séparé, et désactivable (`SHOP_GRPC_ADDR=off`).
     let grpc = std::env::var("SHOP_GRPC_ADDR").unwrap_or_else(|_| "127.0.0.1:50051".into());
@@ -400,6 +546,7 @@ async fn main() -> Result<(), String> {
     // donc un navigateur et un client natif appellent exactement la même implémentation.
     let grpc = tonic::service::Routes::new(DataServer::new(DataService {
         data: data_for_grpc,
+        sessions: sessions_for_grpc,
     }))
     .into_axum_router()
     .layer(tonic_web::GrpcWebLayer::new());

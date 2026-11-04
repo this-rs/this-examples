@@ -336,6 +336,13 @@ function __wbg_get_imports() {
             const ret = Reflect.get(arg0, arg1);
             return ret;
         }, arguments); },
+        __wbg_get_556f1c9a5c587e8c: function() { return handleError(function (arg0, arg1, arg2, arg3) {
+            const ret = arg1.get(getStringFromWasm0(arg2, arg3));
+            var ptr1 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            var len1 = WASM_VECTOR_LEN;
+            getDataViewMemory0().setInt32((arg0 >>> 0) + 4 * 1, len1, true);
+            getDataViewMemory0().setInt32((arg0 >>> 0) + 4 * 0, ptr1, true);
+        }, arguments); },
         __wbg_get_635eea311fa1a291: function() { return handleError(function (arg0, arg1) {
             const ret = Reflect.get(arg0, arg1);
             return ret;
@@ -350,6 +357,10 @@ function __wbg_get_imports() {
         },
         __wbg_get_with_ref_key_fc601247060b7204: function(arg0, arg1) {
             const ret = arg0[arg1];
+            return ret;
+        },
+        __wbg_headers_5fc0106c076eb731: function(arg0) {
+            const ret = arg0.headers;
             return ret;
         },
         __wbg_host_64d73c152c626ec8: function(arg0) {

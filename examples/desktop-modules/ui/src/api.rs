@@ -304,6 +304,11 @@ fn subscribe_tauri(on_change: impl Fn(Change) + 'static) {
 
 // ---- Opérations : une ligne par opération, les deux surfaces côte à côte ----------
 
+/// Le chemin gRPC-Web d'une méthode du service `Data`.
+fn rpc(method: &str) -> String {
+    format!("/shop.data.v1.Data/{method}")
+}
+
 /// La réponse à une demande d'autorisation : décision **et** session à jour.
 #[derive(Clone, Debug, Deserialize)]
 pub struct RequestOutcome {
@@ -313,20 +318,36 @@ pub struct RequestOutcome {
 }
 
 pub async fn status() -> Result<Status, String> {
-    send(Call::get("module_status", "/status", json!({}))).await
+    if is_tauri() {
+        return send(Call::get("module_status", "/status", json!({}))).await;
+    }
+    let raw = crate::grpc_web::call(&rpc("Status"), Vec::new()).await?;
+    serde_json::from_str(&raw).map_err(|e| e.to_string())
 }
 
 pub async fn load() -> Result<Status, String> {
-    send(Call::post("module_load", "/load", json!({}), json!({}))).await
+    if is_tauri() {
+        return send(Call::post("module_load", "/load", json!({}), json!({}))).await;
+    }
+    let raw = crate::grpc_web::call(&rpc("Load"), Vec::new()).await?;
+    serde_json::from_str(&raw).map_err(|e| e.to_string())
 }
 
 pub async fn interface() -> Result<Interface, String> {
-    send(Call::get("module_interface", "/interface", json!({}))).await
+    if is_tauri() {
+        return send(Call::get("module_interface", "/interface", json!({}))).await;
+    }
+    let raw = crate::grpc_web::call(&rpc("Interface"), Vec::new()).await?;
+    serde_json::from_str(&raw).map_err(|e| e.to_string())
 }
 
 /// La session de la surface. Le front ne décide pas qui il est : il le demande.
 pub async fn session() -> Result<Session, String> {
-    send(Call::get("app_session", "/session", json!({}))).await
+    if is_tauri() {
+        return send(Call::get("app_session", "/session", json!({}))).await;
+    }
+    let raw = crate::grpc_web::call(&rpc("Session"), Vec::new()).await?;
+    serde_json::from_str(&raw).map_err(|e| e.to_string())
 }
 
 /// Les enregistrements d'une entité.
@@ -343,27 +364,45 @@ pub async fn records(entity: &str) -> Result<Vec<Value>, String> {
         ))
         .await
     } else {
-        crate::grpc_web::list("/shop.data.v1.Data/List", entity).await
+        crate::grpc_web::list(&rpc("List"), entity).await
     }
 }
 
 pub async fn save(entity: &str, id: Option<String>, data: Value) -> Result<Value, String> {
-    send(Call::post(
-        "save_record",
-        &format!("/records/{entity}"),
-        json!({ "entity": entity, "id": id, "data": data }),
-        json!({ "id": id, "data": data }),
-    ))
-    .await
+    if is_tauri() {
+        return send(Call::post(
+            "save_record",
+            &format!("/records/{entity}"),
+            json!({ "entity": entity, "id": id, "data": data }),
+            json!({ "id": id, "data": data }),
+        ))
+        .await;
+    }
+    let request = crate::grpc_web::Message::new()
+        .string(1, entity)
+        .string(2, id.as_deref().unwrap_or_default())
+        .string(3, &data.to_string())
+        .finish();
+    let raw = crate::grpc_web::call(&rpc("Save"), request).await?;
+    serde_json::from_str(&raw).map_err(|e| e.to_string())
 }
 
 pub async fn delete(entity: &str, id: &str) -> Result<(), String> {
-    send_empty(Call::delete(
-        "delete_record",
-        &format!("/records/{entity}/{id}"),
-        json!({ "entity": entity, "id": id }),
-    ))
-    .await
+    if is_tauri() {
+        return send_empty(Call::delete(
+            "delete_record",
+            &format!("/records/{entity}/{id}"),
+            json!({ "entity": entity, "id": id }),
+        ))
+        .await;
+    }
+    let request = crate::grpc_web::Message::new()
+        .string(1, entity)
+        .string(2, id)
+        .finish();
+    crate::grpc_web::call(&rpc("Remove"), request)
+        .await
+        .map(|_| ())
 }
 
 pub async fn place_order(
@@ -371,13 +410,25 @@ pub async fn place_order(
     lines: Vec<LineIn>,
     state: &str,
 ) -> Result<Value, String> {
-    send(Call::post(
-        "place_order_cmd",
-        "/orders",
-        json!({ "customerId": customer_id, "lines": lines, "state": state }),
-        json!({ "customerId": customer_id, "lines": lines, "state": state }),
-    ))
-    .await
+    if is_tauri() {
+        return send(Call::post(
+            "place_order_cmd",
+            "/orders",
+            json!({ "customerId": customer_id, "lines": lines, "state": state }),
+            json!({ "customerId": customer_id, "lines": lines, "state": state }),
+        ))
+        .await;
+    }
+    let request = crate::grpc_web::Message::new()
+        .string(1, customer_id)
+        .string(
+            2,
+            &serde_json::to_string(&lines).map_err(|e| e.to_string())?,
+        )
+        .string(3, state)
+        .finish();
+    let raw = crate::grpc_web::call(&rpc("PlaceOrder"), request).await?;
+    serde_json::from_str(&raw).map_err(|e| e.to_string())
 }
 
 /// Demande une autorisation à la surface. Le front ne s'accorde rien : il demande.
@@ -393,11 +444,18 @@ pub async fn request_permission(
         "requirement": requirement,
         "reason": reason,
     });
-    send(Call::post(
-        "permission_request",
-        "/permissions/request",
-        json!({ "req": payload }),
-        payload,
-    ))
-    .await
+    if is_tauri() {
+        return send(Call::post(
+            "permission_request",
+            "/permissions/request",
+            json!({ "req": payload }),
+            payload,
+        ))
+        .await;
+    }
+    let request = crate::grpc_web::Message::new()
+        .string(1, &payload.to_string())
+        .finish();
+    let raw = crate::grpc_web::call(&rpc("RequestPermission"), request).await?;
+    serde_json::from_str(&raw).map_err(|e| e.to_string())
 }

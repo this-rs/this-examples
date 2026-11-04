@@ -2,11 +2,27 @@ syntax = "proto3";
 
 package shop.data.v1;
 
-// Le sous-ensemble de l'API exposé en gRPC (et en gRPC-Web pour le navigateur).
-// Les enregistrements voyagent en JSON : le proto ne recopie pas le schéma des entités,
-// qui appartient au module et peut changer sans casser les clients.
+// Les opérations du module en gRPC — donc aussi en gRPC-Web pour le navigateur.
+//
+// Les charges utiles voyagent en JSON : le proto ne recopie pas le schéma des entités, qui
+// appartient au module et peut changer sans casser les clients. Ce que le proto fige, c'est
+// le **vocabulaire des opérations**, pas la forme des données.
 service Data {
+  rpc Status(Empty) returns (JsonReply);
+  rpc Load(Empty) returns (JsonReply);
+  rpc Interface(Empty) returns (JsonReply);
+  rpc Session(Empty) returns (JsonReply);
   rpc List(ListRequest) returns (ListReply);
+  rpc Save(SaveRequest) returns (JsonReply);
+  rpc Remove(RemoveRequest) returns (Empty);
+  rpc PlaceOrder(PlaceOrderRequest) returns (JsonReply);
+  rpc RequestPermission(PermissionJson) returns (JsonReply);
+}
+
+message Empty {}
+
+message JsonReply {
+  string json = 1;
 }
 
 message ListRequest {
@@ -15,4 +31,28 @@ message ListRequest {
 
 message ListReply {
   repeated string records_json = 1;
+}
+
+message SaveRequest {
+  string entity = 1;
+  // vide = création
+  string id = 2;
+  string data_json = 3;
+}
+
+message RemoveRequest {
+  string entity = 1;
+  string id = 2;
+}
+
+message PlaceOrderRequest {
+  string customer_id = 1;
+  // [{ "productId": …, "qty": … }]
+  string lines_json = 2;
+  string state = 3;
+}
+
+message PermissionJson {
+  // { entity, op, requirement, reason }
+  string request_json = 1;
 }

@@ -21,6 +21,10 @@ Billing API using PostgreSQL as the storage backend.
 
 ## Configuration
 
-| Variable       | Default                                          |
-|----------------|--------------------------------------------------|
-| `DATABASE_URL` | `postgres://billing:billing@localhost:5432/billing` |
+| Variable       | Value                                                |
+|----------------|------------------------------------------------------|
+| `DATABASE_URL` | **Required**, e.g. `postgres://billing:<password>@127.0.0.1:5432/billing` |
+
+`docker-compose.yml` publishes port 5432 on `127.0.0.1` only. Its password is a
+local-development default (`billing`); to change it, set `POSTGRES_PASSWORD`
+before `docker-compose up` and use the same value in `DATABASE_URL`.

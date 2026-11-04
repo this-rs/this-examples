@@ -3,7 +3,7 @@
 [![CI](https://github.com/this-rs/this-examples/actions/workflows/ci.yml/badge.svg)](https://github.com/this-rs/this-examples/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/this-rs/this-examples/graph/badge.svg)](https://codecov.io/gh/this-rs/this-examples)
 
-A collection of runnable examples demonstrating how to build modular, protocol-agnostic backends with the [this-rs](https://crates.io/crates/this-rs) framework (v0.0.9).
+A collection of runnable examples demonstrating how to build modular, protocol-agnostic backends with the [this-rs](https://crates.io/crates/this-rs) framework (v0.0.10; the examples build against the local `this` checkout, and the latest crates.io release is 0.0.9).
 
 - Domain modules are isolated as Rust crates under `crates/` for clean boundaries and data isolation.
 - Each entity follows the same file nomenclature to keep development consistent and predictable (`model.rs`, `store.rs`, `handlers.rs`, `descriptor.rs`).
@@ -105,11 +105,11 @@ cargo run -p dynamodb_example
 cargo run -p multi_module_example
 
 # Storage backends
-cargo run -p postgres_example     # PostgreSQL
+cargo run -p postgres_example     # PostgreSQL (needs DATABASE_URL)
 cargo run -p mongodb_example      # MongoDB
-cargo run -p neo4j_example        # Neo4j
+cargo run -p neo4j_example        # Neo4j (needs NEO4J_PASSWORD)
 cargo run -p scylladb_example     # ScyllaDB
-cargo run -p mysql_example        # MySQL
+cargo run -p mysql_example        # MySQL (needs DATABASE_URL)
 cargo run -p lmdb_example         # LMDB (embedded, no server needed)
 
 # Auth & Cognitive
@@ -225,11 +225,12 @@ Each backend example uses the **billing** module with the same REST API but swap
 #### PostgreSQL (`examples/postgres/`)
 
 ```bash
-# Start PostgreSQL
-docker run -d --name this-postgres -p 5432:5432 -e POSTGRES_PASSWORD=password postgres:16
+# Start PostgreSQL on loopback only. Choose the password yourself (no default).
+export POSTGRES_PASSWORD='<your-password>'
+docker run -d --name this-postgres -p 127.0.0.1:5432:5432 -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" postgres:16
 
-# Run the example
-cargo run -p postgres_example
+# Run the example (DATABASE_URL is required)
+DATABASE_URL="postgres://postgres:$POSTGRES_PASSWORD@127.0.0.1:5432/postgres" cargo run -p postgres_example
 ```
 
 #### MongoDB (`examples/mongodb/`)
@@ -245,11 +246,12 @@ cargo run -p mongodb_example
 #### Neo4j (`examples/neo4j/`)
 
 ```bash
-# Start Neo4j
-docker run -d --name this-neo4j -p 7687:7687 -e NEO4J_AUTH=neo4j/password neo4j:5
+# Start Neo4j on loopback only. Choose the password yourself (no default).
+export NEO4J_PASSWORD='<your-password>'
+docker run -d --name this-neo4j -p 127.0.0.1:7474:7474 -p 127.0.0.1:7687:7687 -e NEO4J_AUTH="neo4j/$NEO4J_PASSWORD" neo4j:5
 
-# Run the example
-cargo run -p neo4j_example
+# Run the example (NEO4J_PASSWORD is required)
+NEO4J_PASSWORD="$NEO4J_PASSWORD" cargo run -p neo4j_example
 ```
 
 #### ScyllaDB (`examples/scylladb/`)
@@ -265,11 +267,12 @@ cargo run -p scylladb_example
 #### MySQL (`examples/mysql/`)
 
 ```bash
-# Start MySQL
-docker run -d --name this-mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=this mysql:8
+# Start MySQL on loopback only. Choose the root password yourself (no default).
+export MYSQL_ROOT_PASSWORD='<your-root-password>'
+docker run -d --name this-mysql -p 127.0.0.1:3306:3306 -e MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" -e MYSQL_DATABASE=this mysql:8
 
-# Run the example
-cargo run -p mysql_example
+# Run the example (DATABASE_URL is required; this uses the root account for the demo)
+DATABASE_URL="mysql://root:$MYSQL_ROOT_PASSWORD@127.0.0.1:3306/this" cargo run -p mysql_example
 ```
 
 #### LMDB (`examples/lmdb/`)

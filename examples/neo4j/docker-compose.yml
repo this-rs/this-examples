@@ -2,10 +2,12 @@ services:
   neo4j:
     image: neo4j:5
     environment:
-      NEO4J_AUTH: neo4j/billing123
+      # Local-development default only; set NEO4J_PASSWORD to override it
+      # and export the same value when running the example.
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-billing123}
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
     volumes:
       - neo4j_data:/data
 

@@ -2,12 +2,14 @@ services:
   mysql:
     image: mysql:8
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      # Local-development defaults only; override with the environment variables
+      # and use the same MYSQL_PASSWORD value in DATABASE_URL.
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       MYSQL_DATABASE: billing
       MYSQL_USER: billing
-      MYSQL_PASSWORD: billing
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-billing}
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 

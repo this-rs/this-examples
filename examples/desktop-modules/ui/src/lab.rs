@@ -35,7 +35,18 @@ use this_vfs_web::IndexedDbVfs;
 /// Le programme proposé : un paramètre, un opérateur, un effet.
 const START: &str = "fn run(a: Int) -> Int {\n    emit(\"bonjour depuis la page\");\n    a + 1\n}";
 const NAME: &str = "lab";
-const VERSION: &str = "0.1.0";
+
+/// La version qui suit la plus haute rangée : `0.1.3` → `0.1.4`.
+///
+/// Incrémentée à chaque compilation, jamais écrasée : on peut revenir sur ce qui
+/// marchait. Écraser serait plus simple, et rendrait le retour arrière impossible.
+fn next_version(latest: Option<&str>) -> String {
+    let patch = latest
+        .and_then(|v| v.rsplit('.').next())
+        .and_then(|p| p.parse::<u64>().ok())
+        .unwrap_or(0);
+    format!("0.1.{}", patch + 1)
+}
 
 struct Recorder {
     now: i64,
@@ -62,6 +73,7 @@ impl Host for Recorder {
 enum Report {
     Refused(String),
     Ran {
+        version: String,
         stored: usize,
         etag: String,
         reference: Outcome,
@@ -76,14 +88,14 @@ enum Report {
 /// Relit l'artefact **sans recompiler** et l'exécute. C'est ce geste qui montre
 /// que le VFS compte : si la compilation seule suffisait, il n'y aurait rien à
 /// ranger.
-async fn reload_and_run(arg: i64) -> Report {
+async fn reload_and_run(arg: i64, version: String) -> Report {
     let now = js_sys::Date::now() as i64;
     let vfs = match IndexedDbVfs::open("this-lab").await {
         Ok(vfs) => vfs,
         Err(error) => return Report::Refused(format!("VFS : {error}")),
     };
     let harness = Harness::new(&vfs);
-    let program = match harness.load(NAME, VERSION).await {
+    let program = match harness.load(NAME, &version).await {
         Ok(program) => program,
         Err(error) => return Report::Refused(format!("rien en store : {error}")),
     };
@@ -92,6 +104,7 @@ async fn reload_and_run(arg: i64) -> Report {
         Err(error) => return Report::Refused(format!("exécution : {error}")),
     };
     Report::Ran {
+        version,
         stored: program.len(),
         etag: this_vfs::etag_of(&program),
         // Sans compilation, il n'y a pas d'interpréteur à comparer : la référence
@@ -103,7 +116,7 @@ async fn reload_and_run(arg: i64) -> Report {
     }
 }
 
-async fn evaluate(source: String, arg: i64) -> Report {
+async fn evaluate(source: String, arg: i64, version: String) -> Report {
     // L'horloge est figée une fois, pour que les deux exécutions soient comparables.
     let now = js_sys::Date::now() as i64;
 
@@ -127,11 +140,11 @@ async fn evaluate(source: String, arg: i64) -> Report {
     };
     let harness = Harness::new(&vfs);
 
-    let artifact = match harness.compile(NAME, VERSION, &source).await {
+    let artifact = match harness.compile(NAME, &version, &source).await {
         Ok(artifact) => artifact,
         Err(error) => return Report::Refused(format!("compilation : {error}")),
     };
-    let program = match harness.load(NAME, VERSION).await {
+    let program = match harness.load(NAME, &version).await {
         Ok(program) => program,
         Err(error) => return Report::Refused(format!("relecture : {error}")),
     };
@@ -145,6 +158,7 @@ async fn evaluate(source: String, arg: i64) -> Report {
 
     let agree = executed == reference;
     Report::Ran {
+        version,
         stored: artifact.bytes,
         etag: artifact.etag,
         reference,
@@ -160,13 +174,35 @@ pub fn page() -> AnyView {
     let argument = RwSignal::new("1".to_string());
     let report = RwSignal::new(None::<Report>);
     let busy = RwSignal::new(false);
+    let versions = RwSignal::new(Vec::<String>::new());
+    let selected = RwSignal::new(None::<String>);
+
+    // Ce qui est déjà rangé se lit au montage, pas seulement après une compilation.
+    spawn_local(async move {
+        if let Ok(vfs) = IndexedDbVfs::open("this-lab").await {
+            let harness = Harness::new(&vfs);
+            if let Ok(list) = harness.versions(NAME).await {
+                selected.set(list.last().cloned());
+                versions.set(list);
+            }
+        }
+    });
 
     let execute = move |_| {
         let text = source.get_untracked();
         let arg = argument.get_untracked().trim().parse().unwrap_or(0);
+        // Une nouvelle version à chaque compilation : la précédente reste lisible.
+        let version = next_version(versions.get_untracked().last().map(String::as_str));
         busy.set(true);
         spawn_local(async move {
-            report.set(Some(evaluate(text, arg).await));
+            report.set(Some(evaluate(text, arg, version.clone()).await));
+            if let Ok(vfs) = IndexedDbVfs::open("this-lab").await {
+                let harness = Harness::new(&vfs);
+                if let Ok(list) = harness.versions(NAME).await {
+                    selected.set(Some(version));
+                    versions.set(list);
+                }
+            }
             busy.set(false);
         });
     };
@@ -213,17 +249,40 @@ pub fn page() -> AnyView {
                     <button class="btn primary" on:click=execute disabled=move || busy.get()>
                         <span>"Compiler, ranger et exécuter"</span>
                     </button>
+                    <label class="lab-arg">
+                        <span class="muted small">"version"</span>
+                        <select
+                            prop:value=move || selected.get().unwrap_or_default()
+                            on:change=move |ev| selected.set(Some(event_target_value(&ev)))
+                            disabled=move || versions.get().is_empty()
+                        >
+                            {move || versions.get().into_iter().map(|version| {
+                                let label = version.clone();
+                                view! { <option value=version>{label}</option> }
+                            }).collect_view()}
+                        </select>
+                    </label>
                     <button
                         class="btn"
                         on:click=move |_| {
                             let arg = argument.get_untracked().trim().parse().unwrap_or(0);
+                            let version = selected
+                                .get_untracked()
+                                .or_else(|| versions.get_untracked().last().cloned());
                             busy.set(true);
                             spawn_local(async move {
-                                report.set(Some(reload_and_run(arg).await));
+                                match version {
+                                    Some(version) => {
+                                        report.set(Some(reload_and_run(arg, version).await))
+                                    }
+                                    None => report.set(Some(Report::Refused(
+                                        "aucune version rangée : compile d'abord".to_string(),
+                                    ))),
+                                }
                                 busy.set(false);
                             });
                         }
-                        disabled=move || busy.get()
+                        disabled=move || busy.get() || versions.get().is_empty()
                     >
                         "Relire depuis le VFS"
                     </button>
@@ -247,16 +306,16 @@ pub fn page() -> AnyView {
                             <pre>{error}</pre>
                         </div>
                     }.into_any(),
-                    Some(Report::Ran { stored, etag, reference, executed, agree, reloaded }) => {
+                    Some(Report::Ran { version, stored, etag, reference, executed, agree, reloaded }) => {
                         let (reference_value, reference_effects) = flatten(&reference);
                         let (emitted_value, emitted_effects) = flatten(&executed);
                         let short_etag = etag.chars().take(12).collect::<String>();
                         view! {
                             <div class="lab-verdict" class:ok=move || agree class:ko=move || !agree>
                                 {if reloaded {
-                                    format!("Relu du VFS sans recompiler ({stored} octets, etag {short_etag}) puis exécuté")
+                                    format!("v{version} — relu du VFS sans recompiler ({stored} octets, etag {short_etag}) puis exécuté")
                                 } else if agree {
-                                    format!("Rangé ({stored} octets, etag {short_etag}), relu du VFS, exécuté — les deux moteurs sont d'accord")
+                                    format!("v{version} — rangé ({stored} octets, etag {short_etag}), relu du VFS, exécuté ; les deux moteurs sont d'accord")
                                 } else {
                                     "DIVERGENCE : l'interpréteur et le module wasm ne disent pas la même chose".to_string()
                                 }}

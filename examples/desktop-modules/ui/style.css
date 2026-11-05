@@ -2355,7 +2355,22 @@ a {
   border-radius: var(--r-sm);
 }
 
-.lab-arg input:focus-visible {
+.lab-arg input:focus-visible,
+.lab-arg select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.lab-arg select {
+  padding: 6px var(--s2);
+  font-family: var(--mono);
+  font-size: 13px;
+  color: inherit;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+
+.lab-arg select:disabled {
+  opacity: 0.5;
 }

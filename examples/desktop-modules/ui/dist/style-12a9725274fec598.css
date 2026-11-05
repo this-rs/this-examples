@@ -233,18 +233,6 @@ code {
   min-height: 100vh;
 }
 
-/* Fenêtre sans cadre : le rayon est celui de l'app, donc la page doit être
-   transparente hors du rayon. `clip` et non `hidden` : `hidden` créerait un
-   conteneur de défilement et casserait le `position: sticky` de la barre. */
-[data-titlebar="hidden"] body {
-  background: transparent;
-}
-
-[data-titlebar="hidden"] .shell {
-  background: var(--bg);
-  border-radius: 10px;
-  overflow: clip;
-}
 
 .sidebar {
   position: sticky;
@@ -449,18 +437,39 @@ code {
   gap: 8px;
 }
 
+/* Overlay : la fenêtre est décorée (l'OS arrondit selon sa norme) mais ses feux
+   sont poussés hors du cadre — donc c'est l'app qui les dessine.
+   Hidden : aucune décoration du tout, même conclusion. */
+[data-titlebar="overlay"] .win-controls,
 [data-titlebar="hidden"] .win-controls {
   display: flex;
 }
 
 /* L'app dessine ses contrôles au-dessus de la barre latérale : on leur fait de
    la place, et l'en-tête n'a plus de bande à réserver. */
-[data-titlebar="hidden"] .topbar {
+[data-titlebar="hidden"] .topbar,
+[data-titlebar="overlay"] .topbar {
   padding-left: var(--s3);
 }
 
-[data-titlebar="hidden"] .sidebar {
+[data-titlebar="hidden"] .sidebar,
+[data-titlebar="overlay"] .sidebar {
   padding-top: calc(var(--s5) + 18px);
+}
+
+/* Plein écran : macOS fait glisser sa barre de menus par-dessus le haut de
+   l'écran dès que le pointeur y monte. Nos boutons seraient recouverts et
+   inutiles — la sortie du plein écran appartient alors à l'OS. */
+[data-fullscreen="true"] .win-controls {
+  display: none;
+}
+
+[data-fullscreen="true"] .topbar {
+  padding-left: var(--s5);
+}
+
+[data-fullscreen="true"] .sidebar {
+  padding-top: var(--s5);
 }
 
 .win-btn {

@@ -1,6 +1,6 @@
 //! # La coquille web : ce qu'un navigateur ou un webview sait faire
 //!
-//! Implémentation de [`app_kit::Device`] au-dessus des API du navigateur. Elle est
+//! Implémentation de [`this_app::Device`] au-dessus des API du navigateur. Elle est
 //! volontairement **honnête sur ses limites** : seules les notifications sont branchées
 //! aujourd'hui ; caméra, micro, localisation et partage répondent « non supporté » plutôt
 //! que de prétendre le contraire.
@@ -8,7 +8,7 @@
 //! Les implémentations natives (APNs, permissions iOS, feuille de partage) viendront
 //! derrière le même trait, sans toucher au kit ni à l'application.
 
-use app_kit::{Capability, Device, Notice, PermissionState};
+use this_app::{Capability, Device, Notice, PermissionState};
 use wasm_bindgen::prelude::*;
 
 /// L'API `Notification` du navigateur, si elle existe.

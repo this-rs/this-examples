@@ -87,11 +87,11 @@ fn request_access(
                 let granted = outcome.decision.granted();
                 crate::shell::apply_session(ctx, outcome.session);
                 ctx.notice(
-                    app_kit::Notice::new("permission", "Autorisation", outcome.message).with_tone(
+                    this_app::Notice::new("permission", "Autorisation", outcome.message).with_tone(
                         if granted {
-                            app_kit::Tone::Ok
+                            this_app::Tone::Ok
                         } else {
-                            app_kit::Tone::Danger
+                            this_app::Tone::Danger
                         },
                     ),
                 );
@@ -771,7 +771,7 @@ fn save(ctx: Ctx, entity: String, id: Option<String>) {
                     id: rid,
                 }));
                 // le magasin se corrige tout seul : un enregistrement, zéro requête
-                ctx.apply_local(app_kit::Change::updated(entity, rec));
+                ctx.apply_local(this_app::Change::updated(entity, rec));
             }
             Err(e) => ctx.msg.set(Some((false, e))),
         }
@@ -784,7 +784,7 @@ fn delete(ctx: Ctx, entity: String, id: String) {
             Ok(()) => {
                 ctx.msg.set(Some((true, "Enregistrement supprimé.".into())));
                 ctx.editing.set(None);
-                ctx.apply_local(app_kit::Change::deleted(entity, id));
+                ctx.apply_local(this_app::Change::deleted(entity, id));
             }
             Err(e) => ctx.msg.set(Some((false, e))),
         }

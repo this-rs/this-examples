@@ -1,10 +1,10 @@
 //! # Les avis à l'écran
 //!
-//! Rendu de la file [`app_kit::Notices`] : une pile de toasts, chacun avec sa clé (donc
+//! Rendu de la file [`this_app::Notices`] : une pile de toasts, chacun avec sa clé (donc
 //! son bouton de fermeture) et son ton. Le composant ne décide **pas** quand un avis
 //! disparaît — c'est l'horloge de l'application, comme partout dans le kit.
 
-use app_kit::{Notices, Tone};
+use this_app::{Notices, Tone};
 use leptos::prelude::*;
 
 const CLOSE: &str = r#"<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>"#;

@@ -25,8 +25,7 @@ members = [
   "examples/module-signing",
   "examples/vfs-module",
   "examples/desktop-modules/shop-core",
-  "examples/desktop-modules/app-kit",
-  "examples/desktop-modules/server",
+   "examples/desktop-modules/server",
   "benches/endpoint-benchmarks",
 ]
 # La coquille Tauri n'est **pas** un membre : c'est un binaire de plateforme, et sur Linux

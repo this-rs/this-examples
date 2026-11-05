@@ -1,10 +1,10 @@
 //! # `ui-shell` — les composants que toute app this-rs en Leptos refait
 //!
-//! Ils ne connaissent ni la boutique, ni le module : uniquement `app-kit` (les contrats
+//! Ils ne connaissent ni la boutique, ni le module : uniquement `this-app` (les contrats
 //! purs) et le DOM.
 //!
 //! - [`Splash`] — l'écran de démarrage : ce qui se charge, ce qui a échoué, un bouton
-//!   pour réessayer. Présentation pure : la temporisation vit dans `app_kit::Boot`.
+//!   pour réessayer. Présentation pure : la temporisation vit dans `this_app::Boot`.
 //! - [`install_chrome`] — l'habillage système (feux macOS, plein écran, encoche, Dynamic
 //!   Island, barre d'accueil) traduit en variables CSS `--chrome-*` et attributs `data-*`.
 //! - [`behave_like_app`] — la coquille se comporte comme une app (pas de zoom, pas de

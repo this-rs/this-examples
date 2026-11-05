@@ -3,7 +3,7 @@
 //! Les deux contrôles sont réels et persistés ; les faits d'accès sont en lecture seule,
 //! parce qu'ils décrivent la surface, ils ne la changent pas.
 
-use app_kit::{Settings, Theme};
+use this_app::{Settings, Theme};
 use leptos::prelude::*;
 
 use crate::panel::Panel;

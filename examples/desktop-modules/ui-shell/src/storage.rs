@@ -1,9 +1,9 @@
 //! Persistance des réglages dans `localStorage`.
 //!
-//! `app-kit` définit le trait [`app_kit::Store`] ; c'est ici, et seulement ici, qu'on
+//! `this-app` définit le trait [`this_app::Store`] ; c'est ici, et seulement ici, qu'on
 //! décide que le navigateur/webview est le stockage.
 
-use app_kit::Store;
+use this_app::Store;
 
 fn handle() -> Option<web_sys::Storage> {
     web_sys::window()?.local_storage().ok().flatten()
@@ -23,7 +23,7 @@ impl Store for LocalStorage {
     }
 }
 
-/// L'horloge monotone de l'app, en millisecondes (pour `app_kit::Boot`).
+/// L'horloge monotone de l'app, en millisecondes (pour `this_app::Boot`).
 pub fn now_ms() -> u64 {
     js_sys::Date::now() as u64
 }

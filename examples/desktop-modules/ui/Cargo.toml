@@ -15,7 +15,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde-wasm-bindgen = "0.6"
 js-sys = "0.3"
-app-kit = { path = "../app-kit" }
+this-app = { path = "../../../../this/crates/this-app" }
 this-descriptor = { path = "../../../../this/crates/this-descriptor" }
 ui-shell = { path = "../ui-shell" }
 gloo-net = { version = "0.6", features = ["http", "json"] }

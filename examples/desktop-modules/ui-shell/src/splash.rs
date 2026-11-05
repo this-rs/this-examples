@@ -1,6 +1,6 @@
 //! L'écran de démarrage.
 //!
-//! Présentation pure : il ne décide pas quand disparaître (c'est `app_kit::Boot`, piloté
+//! Présentation pure : il ne décide pas quand disparaître (c'est `this_app::Boot`, piloté
 //! par l'app). Il raconte : les étapes franchies, celle en cours, et l'échec éventuel
 //! avec un bouton pour réessayer.
 

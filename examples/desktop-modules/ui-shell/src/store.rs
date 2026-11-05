@@ -16,7 +16,7 @@
 
 use std::collections::BTreeMap;
 
-use app_kit::{Change, ChangeOp};
+use this_app::{Change, ChangeOp};
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -109,7 +109,7 @@ impl Store {
 mod tests {
     use super::*;
     use crate::model::{Entity, Module};
-    use app_kit::Change;
+    use this_app::Change;
     use serde_json::json;
 
     fn module() -> Module {

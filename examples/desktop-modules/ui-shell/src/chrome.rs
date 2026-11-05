@@ -2,7 +2,7 @@
 //!
 //! [`install_chrome`] réunit ce que la coquille sait (plateforme, barre de titre, plein écran,
 //! modèle d'appareil — par `plugin:this-shell|env` sous Tauri) et ce que seule la webview sait (marges
-//! de sécurité, taille du viewport), demande la décision à `app_kit::chrome::layout`, puis
+//! de sécurité, taille du viewport), demande la décision à `this_app::chrome::layout`, puis
 //! écrit le résultat sur `<html>` :
 //!
 //! - variables `--chrome-top/right/bottom/left`, `--chrome-header-min`, `--chrome-lead`,
@@ -17,7 +17,7 @@
 //! Recalculé à chaque redimensionnement, rotation, entrée ou sortie du plein écran, et à
 //! chaque `chrome://changed` de la coquille.
 
-use app_kit::chrome::{layout, ChromeEnv, ChromeLayout, Insets, Platform, Size, WindowState};
+use this_app::chrome::{layout, ChromeEnv, ChromeLayout, Insets, Platform, Size, WindowState};
 use leptos::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -148,7 +148,7 @@ fn apply(l: &ChromeLayout) {
         return;
     };
     let style = root.style();
-    for name in app_kit::chrome::CUTOUT_VARS {
+    for name in this_app::chrome::CUTOUT_VARS {
         let _ = style.remove_property(name);
     }
     for (name, value) in l.css_vars() {

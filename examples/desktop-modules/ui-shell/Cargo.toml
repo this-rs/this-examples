@@ -10,7 +10,7 @@ description = "Composants partagés d'une app this-rs en Leptos : splash de dém
 
 [dependencies]
 leptos = { version = "0.8", features = ["csr"] }
-app-kit = { path = "../app-kit" }
+this-app = { path = "../../../../this/crates/this-app" }
 this-descriptor = { path = "../../../../this/crates/this-descriptor" }
 # Les décisions de plateforme (reprise, habillage) : le contrat du framework, pas une copie.
 this-platform = { path = "../../../../this/crates/this-platform" }

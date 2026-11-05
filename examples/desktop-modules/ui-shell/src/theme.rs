@@ -3,7 +3,7 @@
 //! Un seul endroit écrit `data-theme` et `data-motion` sur `<html>` : le CSS fait le reste.
 //! `Auto` **retire** l'attribut, ce qui laisse `prefers-color-scheme` décider.
 
-use app_kit::{Settings, Theme};
+use this_app::{Settings, Theme};
 
 pub use crate::storage::now_ms;
 

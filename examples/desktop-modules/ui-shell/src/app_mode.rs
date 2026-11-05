@@ -9,7 +9,7 @@
 //! (`display: standalone`, ou `navigator.standalone` sur iOS) n'est plus une page — elle
 //! s'ouvre en plein écran, sans navigateur, et doit se comporter comme l'app native.
 
-use app_kit::Surface;
+use this_app::Surface;
 use wasm_bindgen::{JsCast, JsValue};
 
 /// Largeur du viewport d'une coquille native : zoom verrouillé.

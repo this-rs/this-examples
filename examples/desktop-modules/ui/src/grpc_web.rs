@@ -12,7 +12,7 @@
 //! messages du service `Data`, et c'est ce qui permet de vérifier que le transport marche
 //! avant de généraliser.
 
-use app_kit::{Change, ChangeOp};
+use this_app::{Change, ChangeOp};
 use gloo_net::http::Request;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;

@@ -24,8 +24,8 @@ extern "C" {
 
 // ---- Plateforme -----------------------------------------------------------------------
 
-pub use app_kit::Change;
-pub use app_kit::Surface;
+pub use this_app::Change;
+pub use this_app::Surface;
 pub use this_descriptor::{
     Capabilities, Gap, ModuleDescriptor, Operation, PermissionDecision, Requirement, Session,
 };
@@ -33,7 +33,7 @@ pub use ui_shell::Module;
 
 /// La surface courante, lue à l'exécution (pas à la compilation).
 ///
-/// La définition (`Surface`, ses libellés, son transport) vit dans `app-kit` : l'UI et
+/// La définition (`Surface`, ses libellés, son transport) vit dans `this-app` : l'UI et
 /// les coquilles partagent la même, il n'y en a pas une deuxième ici.
 pub fn platform() -> Surface {
     let Some(win) = web_sys::window() else {

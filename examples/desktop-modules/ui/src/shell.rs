@@ -11,7 +11,7 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 
 use this_app::{Boot, BootState, Device, Notice, Notices, Settings};
-use ui_shell::{now_ms, BrowserDevice, LocalStorage, SettingsPanel, Splash, Store, ToastHost};
+use this_ui::{now_ms, BrowserDevice, LocalStorage, SettingsPanel, Splash, Store, ToastHost};
 
 use crate::api::{self, Capabilities, Module, ModuleDescriptor, Session, Snapshot, Surface};
 use crate::format::entity_label;
@@ -364,18 +364,18 @@ pub fn App() -> impl IntoView {
 
     let surface = api::platform();
     // Coquille native : pas de zoom, pas de sélection accidentelle. Le site n'est pas touché.
-    ui_shell::behave_like_app(surface);
+    this_ui::behave_like_app(surface);
     // Habillage système : feux macOS, plein écran, encoche, île, barre d'accueil. Le kit
     // mesure et décide ; le style lit `--chrome-*`, l'en-tête reçoit la poignée de fenêtre.
-    let chrome = ui_shell::install_chrome();
-    let drag = ui_shell::drag_region(chrome);
+    let chrome = this_ui::install_chrome();
+    let drag = this_ui::drag_region(chrome);
 
     // Réglages : lus depuis `localStorage`, appliqués au document, réécrits à chaque changement.
     let settings = RwSignal::new(Settings::load(&LocalStorage));
-    ui_shell::apply_settings(&settings.get_untracked());
+    this_ui::apply_settings(&settings.get_untracked());
     Effect::new(move |_| {
         let current = settings.get();
-        ui_shell::apply_settings(&current);
+        this_ui::apply_settings(&current);
         let mut store = LocalStorage;
         let _ = current.save(&mut store);
     });
@@ -419,12 +419,12 @@ pub fn App() -> impl IntoView {
     live();
 
     // Retour au premier plan, ou réseau revenu : `resume_plan` décide, l'app exécute.
-    ui_shell::on_resume(move || {
-        let plan = ui_shell::platform::resume_plan(
+    this_ui::on_resume(move || {
+        let plan = this_ui::platform::resume_plan(
             synced.get_value(),
             now_ms(),
             RESUME_STALE_MS,
-            ui_shell::is_online(),
+            this_ui::is_online(),
         );
         if plan.resync {
             refresh.run(());

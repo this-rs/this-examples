@@ -30,7 +30,7 @@ members = [
 ]
 # La coquille Tauri n'est **pas** un membre : c'est un binaire de plateforme, et sur Linux
 # il exige GTK/WebKit (`glib-2.0.pc`), ce qui ferait échouer `cargo build --workspace` en CI
-# pour tout le dépôt. Elle se construit depuis son répertoire, comme `ui` et `ui-shell`.
+# pour tout le dépôt. Elle se construit depuis son répertoire, comme `ui`.
 exclude = ["examples/desktop-modules/src-tauri"]
 resolver = "2"
 

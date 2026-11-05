@@ -17,6 +17,6 @@ serde-wasm-bindgen = "0.6"
 js-sys = "0.3"
 this-app = { path = "../../../../this/crates/this-app" }
 this-descriptor = { path = "../../../../this/crates/this-descriptor" }
-ui-shell = { path = "../ui-shell" }
+this-ui = { path = "../../../../this/crates/this-ui" }
 gloo-net = { version = "0.6", features = ["http", "json"] }
 web-sys = { version = "0.3", features = ["Window", "Document", "Element", "Storage", "Navigator", "ReadableStream", "ReadableStreamDefaultReader"] }

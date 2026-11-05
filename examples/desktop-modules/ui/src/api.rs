@@ -29,7 +29,7 @@ pub use this_app::Surface;
 pub use this_descriptor::{
     Capabilities, Gap, ModuleDescriptor, Operation, PermissionDecision, Requirement, Session,
 };
-pub use ui_shell::Module;
+pub use this_ui::Module;
 
 /// La surface courante, lue à l'exécution (pas à la compilation).
 ///

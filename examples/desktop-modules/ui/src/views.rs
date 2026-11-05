@@ -10,11 +10,11 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde_json::{json, Value};
 
-use ui_shell::{badge, kpi, meter, Cell, Column, Entity, EntityTable, Field, Kind, Row, Tone};
+use this_ui::{badge, kpi, meter, Cell, Column, Entity, EntityTable, Field, Kind, Row, Tone};
 
 use crate::api::{self, Gap, LineIn, Operation, Requirement, Snapshot};
 use crate::format::*;
-use ui_shell::Panel;
+use this_ui::Panel;
 
 use crate::icons;
 use crate::shell::{go, Ctx, Editing, Page};
@@ -360,7 +360,7 @@ pub fn entity_page(ctx: Ctx, name: String) -> impl IntoView {
 fn render_table(ctx: Ctx, name: &str) -> AnyView {
     let module = ctx.desc.get();
     let Some(entity) = module.as_ref().and_then(|m| m.entity(name)) else {
-        return ui_shell::empty("Entité inconnue.");
+        return this_ui::empty("Entité inconnue.");
     };
 
     let snap = ctx.snapshot();

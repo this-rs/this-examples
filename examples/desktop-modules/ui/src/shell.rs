@@ -468,6 +468,22 @@ pub fn App() -> impl IntoView {
                     </span>
                 </div>
 
+                // Le laboratoire ne dépend d'aucun module : il compile un programme
+                // fourni, pas la boutique. Le laisser sous `Show` le rendait
+                // invisible tant qu'on n'avait pas chargé un module — un outil caché
+                // derrière une étape sans rapport avec lui.
+                <nav class="nav" aria-label="Outils">
+                    <span class="nav-sep">"Outils"</span>
+                    <button
+                        class="nav-link"
+                        aria-current=move || (ctx.page.get() == Page::Lab).then_some("page")
+                        on:click=move |_| go(ctx, Page::Lab)
+                    >
+                        <span class="nav-ico" inner_html=icons::MODULE></span>
+                        <span>"Laboratoire"</span>
+                    </button>
+                </nav>
+
                 <Show
                     when=move || ctx.desc.get().is_some()
                     fallback=|| view! { <p class="muted small">"Module non chargé."</p> }
@@ -489,14 +505,6 @@ pub fn App() -> impl IntoView {
                         >
                             <span class="nav-ico" inner_html=icons::CART></span>
                             <span>"Nouvelle commande"</span>
-                        </button>
-                        <button
-                            class="nav-link"
-                            aria-current=move || (ctx.page.get() == Page::Lab).then_some("page")
-                            on:click=move |_| go(ctx, Page::Lab)
-                        >
-                            <span class="nav-ico" inner_html=icons::MODULE></span>
-                            <span>"Laboratoire"</span>
                         </button>
 
                         <span class="nav-sep">"Données"</span>

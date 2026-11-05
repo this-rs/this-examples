@@ -195,6 +195,42 @@ fn decode(value: &JsValue) -> Option<ChromeEnv> {
     serde_json::from_str(&text).ok()
 }
 
+/// Le survol des feux, rapporté par la coquille.
+///
+/// WebKit n'installe ses zones de suivi que pour la fenêtre active : une fenêtre
+/// en arrière-plan ne produit aucun `:hover`. La coquille relève donc la position
+/// de la souris et nous dit quand elle entre dans la boîte des feux — c'est la
+/// seule façon d'avoir le comportement de macOS, où les feux d'une fenêtre
+/// inactive se rallument au survol.
+fn listen_pointer(root: web_sys::Element) {
+    use wasm_bindgen::{JsCast, JsValue, closure::Closure};
+
+    let Ok(tauri) = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__TAURI__"))
+    else {
+        return;
+    };
+    let Ok(api) = js_sys::Reflect::get(&tauri, &JsValue::from_str("event")) else {
+        return;
+    };
+    let Ok(listen) = js_sys::Reflect::get(&api, &JsValue::from_str("listen")) else {
+        return;
+    };
+    let Ok(listen) = listen.dyn_into::<js_sys::Function>() else {
+        return;
+    };
+
+    let mark = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
+        let payload = js_sys::Reflect::get(&event, &JsValue::from_str("payload"))
+            .unwrap_or_else(|_| event.clone());
+        let inside = payload.as_bool().unwrap_or(false);
+        let _ = root.set_attribute("data-pointer", if inside { "in" } else { "out" });
+    });
+
+    let name = JsValue::from_str("shell://pointer");
+    let _ = listen.call2(&api, &name, mark.as_ref().unchecked_ref());
+    mark.forget();
+}
+
 /// L'activation de la fenêtre telle que la coquille la connaît.
 ///
 /// `onFocusChanged` de Tauri vient du système (AppKit sous macOS) : c'est la
@@ -274,7 +310,8 @@ pub fn install_chrome() -> RwSignal<ChromeLayout> {
             let on_focus = mark.clone();
             on(w, "focus", move || on_focus(true));
             on(w, "blur", move || mark(false));
-            watch_activation(root);
+            watch_activation(root.clone());
+            listen_pointer(root);
         }
         if let Some(doc) = win.document() {
             on(doc.as_ref(), "fullscreenchange", move || {

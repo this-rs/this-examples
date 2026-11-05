@@ -444,7 +444,7 @@ code {
   --win-minimize: #febc2e;
   --win-zoom: #28c840;
   --win-idle: var(--line-strong);
-  --win-glyph: rgba(0, 0, 0, 0.55);
+  --win-glyph: rgba(0, 0, 0, 0.72);
 }
 
 .win-controls {
@@ -515,31 +515,35 @@ code {
 
 /* Les trois icônes, en vecteur. Le vert est un « agrandir » (deux triangles
    opposés), pas un `+` : c'est ce que macOS dessine sur le bouton plein écran. */
+/* Les trois icônes sont les dessins d'Apple, exportés depuis SF Symbols par
+   `tools/export-symbols.swift` et embarqués en PNG 3x. Retracer un glyphe de
+   mémoire a été faux deux fois : le vert était un `+`, puis deux triangles,
+   alors que macOS dessine deux flèches diagonales. Un masque PNG ne se trompe
+   pas sur la forme, et le canal alpha donne le tracé. */
 .win-btn::before {
   content: "";
-  width: 9px;
-  height: 9px;
+  /* La boîte du masque fait la taille du point : le PNG exporté contient déjà
+     sa propre marge, donc le glyphe tombe à ~60 % du disque, comme chez Apple.
+     À 9px il tombait à 40 % — mesurable en comparant les deux captures. */
+  width: var(--win-dot);
+  height: var(--win-dot);
   background-color: currentColor;
   -webkit-mask: var(--win-icon) center / contain no-repeat;
   mask: var(--win-icon) center / contain no-repeat;
 }
 
 .win-btn.close {
-  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2.7 2.7 7.3 7.3M7.3 2.7 2.7 7.3' fill='none' stroke='black' stroke-width='1.05' stroke-linecap='round'/></svg>");
+  --win-icon: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAYAAAAcaxDBAAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAACQAAAAAQAAAJAAAAABAAKgAgAEAAAAAQAAAFSgAwAEAAAAAQAAAFQAAAAA3UIkRgAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAAwZJREFUeAHt281q1UAUB/DWbqqbQtuN2p3UvdDahQtdKOLKUvAB6taNDyB9i75BoUvduOzHA4grEbx+gCgF3VSk0IoF/R96D4TDJLmTOzP3zp3/gcMkmSQz+WWSG2M6NcWgAAUoQAEKUIACFKAABShAAQpQgAIUoAAFKEABClCAAhSgAAWSCsxEbG0B+15H3kFOI4+Qo4hLaPQ+8hHyKvIr8hyZVTxBb0+Q/yr5CtNXkCnjGhp7g6z2Q0BvpezEsG3dwA7+IKsHodMHWJ4KVTB7Nf34huWXkVnEC/RSAV3lIepjowrmh5Z+bKA+eMj9JXTIwTTFXVS+RsZClfYPkTeRTXG9qXKc6p6jM66RaZcdYL3QqILZG7D9h1gvi5Bf959IC+iaD4nqg/kW/YtxdUY7Qbex518JUX0wP6Jf2Vzu1TOUClUw236A9OoQzKVqJ3Objo3qOzKzxtSTHwu1SExFXcVEyHtq0ZihUYmpoih9Ruo+1rfPqT6Yn7D9RNwzK37Oya6oxHRyXiz0RV3GZj2kPv40lcWMTOvrg/qXmJbPPe+D2jQqpa7YkWlpQ6AS06gK6jGybRS66olpMHW2CyoxVa+mfIzlrlHoWnaOddteItc0U8Zin+dMBXY9/Jeh1XKUXTCJWoM6DCZRDWoITKL2UUNiFo/qgymPRuvIQZ9Ti/uh8sVc6o/oFQ/UPaxrX/31dzNZRVdMVSCqSqAcFlN3RdSAmESNgFk0aqjLXBFtWdTlHxtTcX1Rs/kuVA9QylSY2uZEo87iKN8h9V8vTWXI95k+qC/1TORQPh0Bprr4oK7pRuNebg8AGnJkWo9BUZ/ZDUPMx/jo9HdLxz6j/h7ye8t6Xavlrz4eIOVbqqaQdwNZhHxtV3ffjDkyLU7TSJWTPm83GOf5LXTOor7HMn3RkarvgvrD9OUM8/L2KkrIX7jFCvlfTOn4HFK+ad9FniJTxyIa3ETK5zxym9lBfkEyKEABClCAAhSgAAUoQAEKUIACFKAABShAAQpQgAIUoAAFKDASgf+q9/aUq5LWMQAAAABJRU5ErkJggg==");
   background: var(--win-close);
 }
 
 .win-btn.minimize {
-  /* macOS dessine une barre arrondie, pas un trait : le rendu d'AppKit le montre. */
-  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><rect x='2.4' y='4.1' width='5.2' height='1.8' rx='0.9' fill='black'/></svg>");
+  --win-icon: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAYAAAAcaxDBAAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAACQAAAAAQAAAJAAAAABAAKgAgAEAAAAAQAAAFSgAwAEAAAAAQAAAFQAAAAA3UIkRgAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAASlJREFUeAHt1bFNQmEUBWA0mGAoGMEBdAgWoGQFwhRsQUvpCrbEysohiBNYUFCIh+51NP9NfsJ3k5O8gpyc9xWP0cgRIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAj0L/BQNHGS3lUyT56TXu6cIT/JLvnqZdS1HbP84Du5jO81f9m2Tm7itlnZK+Rw1yk7X1qLPrYuTN+yoLOi8imli9bFFaDT1iML+5pvrQDdFwK0rv5sXVjR95rS32T4verx+b3i5as631L8kRyTnjAv/+6HZJOME0eAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIHCXAv/fsqqb2BJjKQAAAABJRU5ErkJggg==");
   background: var(--win-minimize);
 }
 
 .win-btn.zoom {
-  /* Ce ne sont pas deux triangles : macOS dessine deux FLÈCHES diagonales, une
-     vers le haut-gauche, une vers le bas-droite (`arrow.up.left.and.arrow.down.right`
-     de SF Symbols, rendu hors écran pour le vérifier). */
-  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M5.1 4.9 2.5 2.3M2.5 2.3h2M2.5 2.3v2M4.9 5.1 7.5 7.7M7.5 7.7h-2M7.5 7.7v-2' fill='none' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  --win-icon: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAYAAAAcaxDBAAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAACQAAAAAQAAAJAAAAABAAKgAgAEAAAAAQAAAFSgAwAEAAAAAQAAAFQAAAAA3UIkRgAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAA/xJREFUeAHtm02ITlEcxgcj4/VRykcoRVbDwoKVZFLKQjZWNpKEkM+FLRtT8pGyIhZDmiixImESIikLG4XMAsMI5ftzeB7eU6e3e8499zqT7nuefz2dc//n/M97z+89c8/HfaelRSYCIiACIiACIiACIiACIiACIiACIiACIiACIiACIiACJQgMKRHjC2lH4RpoLjQOGgoVtZ8IeAjtg24VDW6m+hvRmR/Qr0j6jnY6oCRtPnrNkRULpmnnepI00ekzgwCTUN+lCrRvkIA+qRrQMpNGVh8nZDkj+LoitFHJJswzLyTlDM7Z+zH0AcqKGYD/GDQcqpTFWjYRSqgR4jKopx5QQzoJmgi1QZzcHkEvoGQta5T5fJ9BammytAI67oPnKuM6c0VA20lWcUHL8/PPe22SxHI67QIXupzamtN+csUuoEdA4gDkKrf925Kj5umwDcbOn6vHEKztd+W3ez4jqSIXIHNaxA3EKUENHxMuoFy8G2tF5jzkqmv7d5igVFMbhp3nIt62Ebi4BNl1XPmkobqg0M+dkG0jcXEZ8sWYsmShGgBZ6XibZj1PqFcCoHJPv7gek1TyxQNnjIMER26PJ858Oacd8U3tvuoAcz+n16NQfs0Ra4Dy8ZCczUGP30IGAtNPUAeUZ6NRga867Fg7vzevgWYtn4qO7YJOQHugmVCoEepNyAbJfD/EdmUlCHCi6oQeQL3QSWgGJBMBEYhGINYrkGg3FNDQNNTZAs2GXkHHIa4yZCUItCPmDWRPXgO4LnpKNRkx66CdEDcOVRxYuO1/N9/hSihUvsv6CNlfykVc85whOWscnTYU5vNO/rmSeA01xvGaozU560OPs2DYvs0eKgs88VGewzz4rZJ1B9zsIdTZ5KjHDYTLfGWumMr7a+hB1o7KHqEmvyGjt4vgM+WN6Z2M+km4eHoVApWz//oGIrNw3QjSXCcLlIyKQF1pQeXZrAHYmCYN1EC94QFkgPFX1csZAON6k79YMWV2mjxQAuJEEgL1K+otYQDsOWSDNHkB/YPnL1TfeaoBxvPZhdA9Aa2T8yQcqSFQ+RPzXshAtlONUICxja9TQl9R2yBNXkBtmvU89+NnIQOpSCqgGUDpGgZ1QUVgsm7yQFsBgetK/sMEDz1s4/LoMFQEahSgvKmqWRtueD+0CqpBxt4j0w+9tFLm+ft9mYfAUZQVGXmhdW97PrNpi8aiZ66dTig4V70LMahV7fhuCjo9WI+puzGAVq0NLuC5jXSNsrL+b2hzetVgxLrfg5GB8vBkdaybq2I7XGfuhp5CPPMsMyr5HH4GdUPzIJkIiIAIiIAIiIAIiIAIiIAIiIAIiIAIiIAIiIAIiIAI/F8CvwHXcrWso4fk8wAAAABJRU5ErkJggg==");
   background: var(--win-zoom);
 }
 
@@ -568,6 +572,24 @@ code {
 /* Après la règle d'inactivité, à spécificité égale : sans cet ordre, l'icône
    restait transparente au survol d'une fenêtre inactive. */
 .win-controls:hover .win-btn {
+  color: var(--win-glyph);
+}
+
+/* Le survol d'une fenêtre INACTIVE, rapporté par la coquille : WebKit ne produit
+   pas de `:hover` hors focus. Même rendu que le survol CSS, par un autre canal. */
+[data-pointer="in"] .win-btn.close {
+  background: var(--win-close);
+}
+
+[data-pointer="in"] .win-btn.minimize {
+  background: var(--win-minimize);
+}
+
+[data-pointer="in"] .win-btn.zoom {
+  background: var(--win-zoom);
+}
+
+[data-pointer="in"] .win-btn {
   color: var(--win-glyph);
 }
 

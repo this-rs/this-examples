@@ -132,8 +132,84 @@ fn accept_mouse_moved(window: &tauri::WebviewWindow) {
         // cette fenêtre ; l'appel est un setter standard d'AppKit.
         unsafe {
             let _: () = msg_send![ns_window, setAcceptsMouseMovedEvents: Bool::YES];
+            // On relit : un setter qui échoue en silence laisserait le survol
+            // mort sans que rien ne le dise.
+            let accepted: Bool = msg_send![ns_window, acceptsMouseMovedEvents];
+            eprintln!("acceptsMouseMovedEvents = {}", accepted.as_bool());
         }
     }
+}
+
+/// La position de la souris, relevée pour que le survol marche même quand la
+/// fenêtre n'est pas active.
+///
+/// Pourquoi un relevé et pas un événement : WebKit n'installe ses zones de suivi
+/// que pour la fenêtre active (`activeInKeyWindow`), donc une fenêtre en
+/// arrière-plan ne produit aucun survol CSS — et ce masque vit dans WKWebView,
+/// hors de portée. `acceptsMouseMovedEvents` ne suffit pas, mesuré : il vaut
+/// `true` et le survol ne vient toujours pas.
+///
+/// `NSEvent.mouseLocation` ne demande aucune permission. On compare la position
+/// à la zone des feux (leur boîte, marges comprises) et on ne parle à l'app que
+/// quand l'état change.
+#[cfg(target_os = "macos")]
+fn watch_pointer(window: tauri::WebviewWindow) {
+    use objc2::msg_send;
+    use objc2_foundation::NSPoint;
+
+    std::thread::spawn(move || {
+        let mut inside = false;
+        loop {
+            std::thread::sleep(std::time::Duration::from_millis(80));
+
+            // Fenêtre active : le CSS fait son travail, inutile de doubler.
+            if window.is_focused().unwrap_or(true) {
+                if inside {
+                    inside = false;
+                    let _ = tauri::Emitter::emit(&window, "shell://pointer", false);
+                }
+                continue;
+            }
+
+            let where_is_it = unsafe {
+                let mouse: NSPoint = msg_send![objc2::class!(NSEvent), mouseLocation];
+                local_pointer(&window, mouse.x, mouse.y)
+            };
+
+            let should = matches!(where_is_it, Some((x, y)) if (3.0..=75.0).contains(&x) && (3.0..=29.0).contains(&y));
+            if should != inside {
+                inside = should;
+                let _ = tauri::Emitter::emit(&window, "shell://pointer", inside);
+                match where_is_it {
+                    Some((x, y)) => eprintln!("pointer over dots = {inside}  local {x:.0},{y:.0}"),
+                    None => eprintln!("pointer over dots = {inside}  (position indisponible)"),
+                }
+            }
+        }
+    });
+}
+
+/// `NSEvent.mouseLocation` donne des points, origine en bas à gauche de l'écran
+/// principal ; la fenêtre se décrit en pixels physiques, origine en haut à
+/// gauche. On ramène tout en points et on rend la position locale — le calcul
+/// est ainsi vérifiable en le lisant, pas en le supposant.
+#[cfg(target_os = "macos")]
+fn local_pointer(window: &tauri::WebviewWindow, mouse_x: f64, mouse_y: f64) -> Option<(f64, f64)> {
+    let Ok(Some(primary)) = window.primary_monitor() else {
+        return None;
+    };
+    let position = window.outer_position().ok()?;
+    let scale = window.scale_factor().unwrap_or(1.0);
+    if scale <= 0.0 {
+        return None;
+    }
+
+    let screen_height = primary.size().height as f64 / primary.scale_factor();
+    let from_top = screen_height - mouse_y;
+    let local_x = mouse_x - position.x as f64 / scale;
+    let local_y = from_top - position.y as f64 / scale;
+
+    Some((local_x, local_y))
 }
 
     tauri::Builder::default()
@@ -143,6 +219,7 @@ fn accept_mouse_moved(window: &tauri::WebviewWindow) {
             #[cfg(target_os = "macos")]
             if let Some(window) = app.get_webview_window("main") {
                 accept_mouse_moved(&window);
+                watch_pointer(window);
             }
 
             let dir = app.path().app_data_dir()?;

@@ -168,6 +168,43 @@ serveur HTTP à joindre.
    `ReadableStream` et découper les trames au fur et à mesure. Attendre la fin du corps,
    c'est attendre la fin d'un flux qui ne finit pas.
 
+## Le laboratoire de modules
+
+L'onglet **Laboratoire** compile un programme écrit dans la page et l'exécute **sans
+aller-retour serveur**. Le même programme passe deux fois — par l'interpréteur, puis par le
+module wasm assemblé et instancié — et les deux réponses s'affichent côte à côte, **effets
+compris**. Une divergence serait visible, pas racontée.
+
+```text
+source ──lex──▶ jetons ──parse──▶ AST ──check──▶ AST typé
+                                                    │
+                              ┌─────────────────────┴─────────────────────┐
+                              ▼                                           ▼
+                       eval (la référence)          WAT ──▶ wasm ──▶ WebAssembly.instantiate
+```
+
+Le langage est **total par construction**, et c'est ce qui rend l'exécution dans la page
+inoffensive :
+
+- **pas de boucle, pas de récursion** — un module termine, il ne peut pas affamer l'hôte ;
+- **pas d'état** — aucune mutation, donc aucune course entre deux appels ;
+- **pas d'I/O implicite** — tout effet passe par une primitive d'hôte nommée, visible dans les
+  imports du wasm : `emit` (écrire) et `now` (l'heure) ;
+- **quatre types** — `Int`, `Bool`, `Str`, `Unit` — plus quelques fonctions pures sur les
+  chaînes (`str_len`, `str_eq`, `str_starts_with`, `str_ends_with`, `str_contains`).
+
+L'assemblage se fait **en Rust** (`this_module_lang::assemble`, l'assembleur `wat`), pas avec
+`wabt.js` : la page reçoit des octets et appelle `WebAssembly.instantiate`, exactement comme
+le serveur les donne à `wasmi`. Un seul chemin d'assemblage des deux côtés, et le test de
+parité porte donc sur le code réellement livré.
+
+Un programme refusé le dit avant toute exécution : une erreur de syntaxe porte sa ligne et sa
+colonne, une erreur de type nomme le nœud fautif. Rien n'est compilé « au cas où ».
+
+**Ce que ça coûte** : le bundle wasm passe de **3,4 à 5,4 Mo**. La feature `assemble` est
+optionnelle dans la crate — un backend ne paie rien ; seul un front qui offre le laboratoire
+l'embarque.
+
 ## Lancer
 
 ### Desktop (Tauri)

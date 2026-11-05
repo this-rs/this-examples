@@ -195,6 +195,70 @@ fn decode(value: &JsValue) -> Option<ChromeEnv> {
     serde_json::from_str(&text).ok()
 }
 
+/// Le premier clic qui active la fenêtre n'agit pas — sauf sur les trois points.
+///
+/// `acceptFirstMouse` est une propriété de la **fenêtre entière** : l'activer
+/// fait agir le premier clic partout, y compris sur une ligne de tableau qu'on
+/// voulait seulement ramener au premier plan. macOS réserve ce privilège à ses
+/// contrôles ; on le restreint ici à la boîte des feux.
+///
+/// Le mécanisme : à l'activation on marque le document, et le premier clic venu
+/// d'ailleurs est avalé — sans être annulé pour les boutons de fenêtre, qui
+/// doivent agir dans ce clic-là.
+fn guard_first_click(root: web_sys::Element, win: web_sys::Window) {
+    use wasm_bindgen::{JsCast, closure::Closure};
+
+    const MARK: &str = "data-first-click";
+
+    // À l'activation : la fenêtre vient de prendre le focus, le prochain clic
+    // est donc « le premier ». La marque s'efface d'elle-même après 600 ms pour
+    // ne pas avaler un clic tardif.
+    {
+        let root = root.clone();
+        let win_for_timer = win.clone();
+        let on_focus = Closure::<dyn FnMut()>::new(move || {
+            let _ = root.set_attribute(MARK, "1");
+            let root = root.clone();
+            let clear = Closure::<dyn FnMut()>::new(move || {
+                let _ = root.remove_attribute(MARK);
+            });
+            let _ = win_for_timer
+                .set_timeout_with_callback_and_timeout_and_arguments_0(clear.as_ref().unchecked_ref(), 600);
+            clear.forget();
+        });
+        let _ = win.add_event_listener_with_callback("focus", on_focus.as_ref().unchecked_ref());
+        on_focus.forget();
+    }
+
+    // Au clic, en phase de capture : on décide avant que l'app ne voie l'événement.
+    let handler = Closure::<dyn FnMut(web_sys::Event)>::new(move |event: web_sys::Event| {
+        if root.get_attribute(MARK).is_none() {
+            return;
+        }
+        let _ = root.remove_attribute(MARK);
+
+        let inside_controls = event
+            .target()
+            .and_then(|target| target.dyn_into::<web_sys::Element>().ok())
+            .and_then(|element| element.closest(".win-controls").ok().flatten())
+            .is_some();
+
+        if !inside_controls {
+            event.prevent_default();
+            event.stop_propagation();
+        }
+    });
+
+    let _ = win
+        .document()
+        .and_then(|doc| doc.add_event_listener_with_callback_and_bool(
+            "click",
+            handler.as_ref().unchecked_ref(),
+            true, // capture
+        ).ok());
+    handler.forget();
+}
+
 /// Le survol des feux, rapporté par la coquille.
 ///
 /// WebKit n'installe ses zones de suivi que pour la fenêtre active : une fenêtre
@@ -311,7 +375,8 @@ pub fn install_chrome() -> RwSignal<ChromeLayout> {
             on(w, "focus", move || on_focus(true));
             on(w, "blur", move || mark(false));
             watch_activation(root.clone());
-            listen_pointer(root);
+            listen_pointer(root.clone());
+            guard_first_click(root, win.clone());
         }
         if let Some(doc) = win.document() {
             on(doc.as_ref(), "fullscreenchange", move || {

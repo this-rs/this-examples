@@ -30,10 +30,11 @@ en site web.
                  ┌───────────────┴────────────────┐
                  ▼                                ▼
       ┌────────────────────┐          ┌────────────────────────┐
-      │ app-kit (pur)      │          │ ui-shell (Leptos)      │
+      │ this-app           │          │ this-ui                │
       │ boot · settings ·  │          │ splash · panneau ·     │
-      │ surface — 16 tests │          │ réglages · thème       │
+      │ surface — 29 tests │          │ réglages · thème       │
       └────────────────────┘          └────────────────────────┘
+            └────────── les deux viennent du framework, plus recopiés ici ──────────┘
 
    les capacités (qui peut quoi) ne sont PAS ici :
    elles viennent de `this_descriptor::Capabilities`, calculées
@@ -45,8 +46,8 @@ en site web.
 | Morceau | Partagé ? |
 |---|---|
 | Domaine (stock, total, validation, erreurs) | **oui**, `shop-core`, un seul exemplaire |
-| Contrats d'app (démarrage, réglages, accès) | **oui**, `app-kit`, testés sans navigateur |
-| Composants d'app (splash, panneau, réglages) | **oui**, `ui-shell` |
+| Contrats d'app (démarrage, réglages, accès) | **oui**, `this-app` (framework), testés sans navigateur |
+| Composants d'app (splash, panneau, réglages) | **oui**, `this-ui` (framework) |
 | UI (écrans, formulaires générés) | **oui**, `ui/`, un seul crate wasm |
 | Design | **oui**, une feuille ; la largeur décide sidebar ⇄ onglets bas |
 | Transport | non : `invoke` (Tauri) ou `fetch` (`/api`) — `ui/src/api.rs` |
@@ -60,9 +61,9 @@ des données.
 ## Les crates d'app, en couches
 
 ```
-app-kit (pur)            boot · settings · surface                     16 tests
-ui-shell (le kit)
-  ├── model              modèle d'affichage d'un module (Kind typés)     5 tests
+this-app (framework)     boot · settings · notices · device            29 tests
+this-ui (framework)                                                      9 tests
+  ├── model              modèle d'affichage d'un module (Kind typés)
   ├── design             primitives : Tone typé, badge, jauge, tuile
   ├── browser            tableau d'entités (le kit décide *comment*)
   └── splash · panel · settings_panel · theme · storage · app_mode
@@ -113,10 +114,10 @@ Le kit distingue deux autorisations qu'on confond souvent :
 | | Qui décide | Où c'est défini |
 |---|---|---|
 | **Capacités sur les données** | le module (politiques du descripteur) | `this_descriptor::Capabilities` |
-| **Permissions système** (notifications, caméra…) | l'OS | `app_kit::Device` |
+| **Permissions système** (notifications, caméra…) | l'OS | `this_app::Device` |
 
-`app_kit::Device` est un trait : le kit **demande**, chaque coquille répond. `BrowserDevice`
-(`ui-shell`) branche les notifications du navigateur et répond « non supporté » pour caméra,
+`this_app::Device` est un trait : le kit **demande**, chaque coquille répond. `BrowserDevice`
+(`this_ui`) branche les notifications du navigateur et répond « non supporté » pour caméra,
 micro, localisation et partage — plutôt que de proposer un bouton inerte. Les implémentations
 natives viendront derrière le même trait, sans toucher au kit ni à l'app.
 
@@ -179,8 +180,8 @@ cargo tauri build --debug --no-bundle      # binaire autonome → src-tauri/targ
 
 La coquille a **son propre workspace** : elle est exclue de `this-examples` parce que Tauri
 exige GTK/WebKit sous Linux, ce qui ferait échouer `cargo build --workspace` en CI pour tout
-le dépôt. Le domaine (`shop-core`), les contrats (`app-kit`) et le serveur restent, eux,
-membres du workspace portable.
+le dépôt. Le domaine (`shop-core`) et le serveur restent, eux, membres du workspace portable ;
+les contrats et l'interface viennent du framework (`../this/crates/this-app`, `this-ui`).
 
 > Un binaire produit par `cargo build` **seul** reste en mode dev : Tauri charge `devUrl`
 > (localhost:1420) et la fenêtre est blanche si `trunk serve` ne tourne pas.
@@ -340,10 +341,9 @@ Un refus métier revient avec le code et le message **du module** :
 ```sh
 cargo test -p shop-core     # 10 tests : module, seed, stock, total, refus, références,
                             #             validation, garde de politique, demande d'autorisation
-cargo test -p app-kit       # 16 tests : démarrage, réglages, surface
-
-# le kit se teste sur l'hôte (pas besoin de navigateur pour le modèle)
-(cd examples/desktop-modules/ui-shell && cargo test)   # 5 tests : modèle et formats
+# les contrats et l'interface sont dans le framework maintenant, leurs tests aussi :
+cargo test -p this-app      # 29 tests : démarrage, réglages, avis, appareil
+cargo test -p this-ui       #  9 tests : modèle et formats
 
 # dans le dépôt du framework :
 cargo test -p this-descriptor capabilities   # 20 tests : politiques -> capacités de front,

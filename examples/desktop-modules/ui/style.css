@@ -431,12 +431,23 @@ code {
    et leur marge suivent une norme qui change avec la version de macOS.
    Rejouer `swift tools/measure-traffic-lights.swift` sur la machine cible et
    reporter ici. macOS 26.5.2 : 14 px, écart 9, marge 9, barre de 32. */
-.win-controls {
+/* À la racine : ce ne sont pas les contrôles qui en ont besoin, c'est la mise
+   en page autour. Déclarées dans `.win-controls`, `max(var(--s5), var(--win-bar))`
+   sur la barre latérale devenait invalide et retombait à 0 — le logo remontait
+   sous les points. */
+:root {
   --win-dot: 14px;
   --win-gap: 9px;
   --win-inset: 9px;
   --win-bar: 32px;
+  --win-close: #ff5f57;
+  --win-minimize: #febc2e;
+  --win-zoom: #28c840;
+  --win-idle: var(--line-strong);
+  --win-glyph: rgba(0, 0, 0, 0.55);
+}
 
+.win-controls {
   position: fixed;
   top: var(--win-inset);
   left: var(--win-inset);
@@ -488,19 +499,64 @@ code {
   padding: 0;
   border: none;
   border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 700 10px/1 system-ui, sans-serif;
+  /* L'icône n'apparaît qu'au survol du groupe, comme dans macOS. */
+  color: transparent;
   cursor: default;
 }
 
 .win-btn.close {
-  background: #ff5f57;
+  background: var(--win-close);
 }
 
 .win-btn.minimize {
-  background: #febc2e;
+  background: var(--win-minimize);
 }
 
 .win-btn.zoom {
-  background: #28c840;
+  background: var(--win-zoom);
+}
+
+.win-btn.close::before {
+  content: "×";
+}
+
+.win-btn.minimize::before {
+  content: "−";
+}
+
+.win-btn.zoom::before {
+  content: "+";
+}
+
+.win-controls:hover .win-btn {
+  color: var(--win-glyph);
+}
+
+/* Fenêtre inactive : les trois passent au gris — l'état vient de la coquille
+   (`data-focused`), pas d'un `:hover` qui ne dirait rien de l'activation. */
+[data-focused="false"] .win-btn {
+  background: var(--win-idle);
+  color: transparent;
+}
+
+/* … mais le survol rend les couleurs, même hors focus : on voit ce qu'on vise. */
+[data-focused="false"] .win-controls:hover .win-btn {
+  color: var(--win-glyph);
+}
+
+[data-focused="false"] .win-controls:hover .win-btn.close {
+  background: var(--win-close);
+}
+
+[data-focused="false"] .win-controls:hover .win-btn.minimize {
+  background: var(--win-minimize);
+}
+
+[data-focused="false"] .win-controls:hover .win-btn.zoom {
+  background: var(--win-zoom);
 }
 
 .win-btn:hover {

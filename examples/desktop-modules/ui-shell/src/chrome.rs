@@ -211,6 +211,22 @@ pub fn install_chrome() -> RwSignal<ChromeLayout> {
         let w: &web_sys::EventTarget = win.as_ref();
         on(w, "resize", move || refresh(base, out, native));
         on(w, "orientationchange", move || refresh(base, out, native));
+
+        // L'activation de la fenêtre : macOS grise les feux quand elle n'est plus
+        // active. C'est une information de coquille, pas de page — `focus`/`blur`
+        // sur `window` la porte, et le CSS la lit via `data-focused`.
+        if let Some(root) = win.document().and_then(|doc| doc.document_element()) {
+            let mark = {
+                let root = root.clone();
+                move |active: bool| {
+                    let _ = root.set_attribute("data-focused", if active { "true" } else { "false" });
+                }
+            };
+            mark(true);
+            let on_focus = mark.clone();
+            on(w, "focus", move || on_focus(true));
+            on(w, "blur", move || mark(false));
+        }
         if let Some(doc) = win.document() {
             on(doc.as_ref(), "fullscreenchange", move || {
                 refresh(base, out, native)

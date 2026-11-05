@@ -25,7 +25,8 @@
         "trafficLightPosition": {
           "x": -1000,
           "y": -1000
-        }
+        },
+        "acceptFirstMouse": true
       }
     ],
     "security": {

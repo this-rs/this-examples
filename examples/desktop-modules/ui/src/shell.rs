@@ -14,7 +14,20 @@ use this_app::{Boot, BootState, Device, Notice, Notices, Settings};
 use this_ui::{now_ms, BrowserDevice, LocalStorage, SettingsPanel, Splash, Store, ToastHost};
 
 use crate::api::{self, Capabilities, Module, ModuleDescriptor, Session, Snapshot, Surface};
-use crate::format::entity_label;
+use crate::format::{entity_label, known_label, prettify};
+
+/// Le libellé d'une entité : le vocabulaire de la boutique s'il existe, sinon le
+/// nom mis en forme.
+///
+/// Le pluriel déclaré par le descripteur serait meilleur (« Items » plutôt que
+/// « Item »), mais le modèle d'interface ne le transporte pas aujourd'hui : il
+/// faudrait l'ajouter à `api::Module`. En attendant, afficher un identifiant brut
+/// est le seul vrai défaut, et il est corrigé ici.
+fn entity_display(_ctx: Ctx, name: &str) -> String {
+    known_label(name)
+        .map(str::to_string)
+        .unwrap_or_else(|| prettify(name))
+}
 use crate::icons;
 use crate::lab;
 use crate::views;
@@ -524,7 +537,7 @@ pub fn App() -> impl IntoView {
                                     on:click=move |_| go(ctx, Page::Entity(name_go.clone()))
                                 >
                                     <span class="nav-ico" inner_html=icon></span>
-                                    <span>{entity_label(&e.name)}</span>
+                                    <span>{entity_display(ctx, &e.name)}</span>
                                 </button>
                             }
                         }).collect_view())}

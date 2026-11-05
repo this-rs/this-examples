@@ -305,8 +305,10 @@ pub async fn status() -> Result<Status, String> {
     if is_tauri() {
         return send(Call::get("module_status", "/status", json!({}))).await;
     }
-    let raw = crate::grpc_web::call(&rpc("Status"), Vec::new()).await?;
-    serde_json::from_str(&raw).map_err(|e| e.to_string())
+    // Sur le web, « chargé » veut dire : le framework a construit le module ici.
+    Ok(Status {
+        loaded: build_in_browser().await.is_ok(),
+    })
 }
 
 pub async fn load() -> Result<Status, String> {
@@ -317,12 +319,41 @@ pub async fn load() -> Result<Status, String> {
     serde_json::from_str(&raw).map_err(|e| e.to_string())
 }
 
+/// Le point de départ du module, livré avec l'app. Le navigateur n'y ajoute rien : il le
+/// dépose dans un store, puis le **construit** (lecture, parse, vérification) avec le
+/// framework (`module-runtime`, qui s'appuie sur `this-descriptor`).
+const SHOP_SEED: &str = include_str!("../assets/shop-interface.json");
+
+/// Le contrat du module. Sur le web, il est construit **dans le navigateur** ; la coquille
+/// native garde son `invoke`.
 pub async fn interface() -> Result<Interface, String> {
     if is_tauri() {
         return send(Call::get("module_interface", "/interface", json!({}))).await;
     }
-    let raw = crate::grpc_web::call(&rpc("Interface"), Vec::new()).await?;
-    serde_json::from_str(&raw).map_err(|e| e.to_string())
+    build_in_browser().await
+}
+
+async fn build_in_browser() -> Result<Interface, String> {
+    use module_runtime::ModuleStore;
+    let seed: Value = serde_json::from_str(SHOP_SEED).map_err(|e| e.to_string())?;
+    let bundles: Vec<this_descriptor::MessageBundle> =
+        serde_json::from_value(seed["bundles"].clone()).map_err(|e| e.to_string())?;
+    let mut store = module_runtime::InMemoryStore::new();
+    store
+        .put(&seed["descriptor"].to_string(), bundles)
+        .await
+        .map_err(|e| e.to_string())?;
+    let built = module_runtime::build(&store, "shop", None, false)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(Interface {
+        descriptor: built.descriptor,
+        bundles: built
+            .bundles
+            .iter()
+            .filter_map(|b| serde_json::to_value(b).ok())
+            .collect(),
+    })
 }
 
 /// La session de la surface. Le front ne décide pas qui il est : il le demande.

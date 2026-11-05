@@ -4,6 +4,7 @@ members = [
   "crates/catalog",
   "crates/inventory",
   "crates/shipping",
+  "crates/module-runtime",
   "crates/test-data",
   "examples/rest",
   "examples/graphql",
@@ -52,3 +53,4 @@ resolver = "2"
 # Members pull it with `this-rs = { workspace = true, features = [...] }`.
 [workspace.dependencies]
 this-rs = { path = "../this" }
+this-descriptor = { path = "../this/crates/this-descriptor" }

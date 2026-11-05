@@ -3755,6 +3755,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "module-runtime"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "serde_json",
+ "this-descriptor",
+ "tokio",
+]
+
+[[package]]
 name = "module_signing_example"
 version = "0.1.0"
 dependencies = [

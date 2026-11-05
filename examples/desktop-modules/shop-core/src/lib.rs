@@ -1537,3 +1537,20 @@ mod tests {
         assert!(t.starts_with("20"), "{t}");
     }
 }
+
+#[cfg(test)]
+mod browser_seed {
+    //! `ui/assets/shop-interface.json` est le point de départ du navigateur : la démo
+    //! construit le module à partir de ce fichier. Il doit rester identique à ce que la
+    //! boutique déclare, sinon la démo et le serveur divergent sans qu'on le voie.
+    use super::*;
+
+    #[test]
+    fn the_browser_seed_is_exactly_the_shop_declaration() {
+        let seed: serde_json::Value =
+            serde_json::from_str(include_str!("../../ui/assets/shop-interface.json")).unwrap();
+        let (desc, bundles) = build_shop();
+        assert_eq!(seed["descriptor"], serde_json::to_value(&desc).unwrap());
+        assert_eq!(seed["bundles"], serde_json::to_value(&bundles).unwrap());
+    }
+}

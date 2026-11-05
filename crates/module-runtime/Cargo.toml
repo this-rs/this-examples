@@ -1,0 +1,13 @@
+[package]
+name = "module-runtime"
+version = "0.0.1"
+edition = "2024"
+description = "Build a this-rs module at runtime from a ModuleStore. Pure: no tokio, no I/O, wasm32-safe."
+
+[dependencies]
+this-descriptor = { workspace = true }
+async-trait = "0.1"
+serde_json = "1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }

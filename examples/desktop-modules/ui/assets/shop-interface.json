@@ -1,0 +1,430 @@
+{
+  "descriptor": {
+    "format": 1,
+    "name": "shop",
+    "version": "0.3.0",
+    "entities": [
+      {
+        "name": "customer",
+        "plural": "customers",
+        "kind": "data",
+        "fields": [
+          {
+            "name": "name",
+            "ty": "string"
+          },
+          {
+            "name": "email",
+            "ty": "string"
+          },
+          {
+            "name": "city",
+            "ty": "string",
+            "optional": true
+          }
+        ],
+        "permissions": {
+          "list": "authenticated",
+          "get": "authenticated",
+          "create": "authenticated",
+          "update": "authenticated",
+          "delete": "perm:crm.delete"
+        }
+      },
+      {
+        "name": "product",
+        "plural": "products",
+        "kind": "data",
+        "fields": [
+          {
+            "name": "name",
+            "ty": "string"
+          },
+          {
+            "name": "sku",
+            "ty": "string"
+          },
+          {
+            "name": "category",
+            "ty": {
+              "enum": {
+                "name": "product_category",
+                "variants": [
+                  "audio",
+                  "peripherique",
+                  "ecran",
+                  "accessoire",
+                  "maison"
+                ]
+              }
+            }
+          },
+          {
+            "name": "price",
+            "ty": {
+              "decimal": {
+                "scale": 2
+              }
+            }
+          },
+          {
+            "name": "stock",
+            "ty": "i32"
+          },
+          {
+            "name": "active",
+            "ty": "bool"
+          }
+        ],
+        "permissions": {
+          "list": "authenticated",
+          "get": "authenticated",
+          "create": "authenticated",
+          "update": "authenticated",
+          "delete": "perm:catalog.delete"
+        }
+      },
+      {
+        "name": "order",
+        "plural": "orders",
+        "kind": "data",
+        "fields": [
+          {
+            "name": "number",
+            "ty": "string",
+            "read_only": true
+          },
+          {
+            "name": "customer",
+            "ty": {
+              "ref": {
+                "entity": "customer"
+              }
+            },
+            "read_only": true
+          },
+          {
+            "name": "state",
+            "ty": {
+              "enum": {
+                "name": "order_state",
+                "variants": [
+                  "draft",
+                  "paid",
+                  "shipped",
+                  "cancelled"
+                ]
+              }
+            }
+          },
+          {
+            "name": "total",
+            "ty": {
+              "decimal": {
+                "scale": 2
+              }
+            },
+            "read_only": true
+          },
+          {
+            "name": "placed_on",
+            "ty": "date",
+            "optional": true,
+            "read_only": true
+          }
+        ],
+        "permissions": {
+          "list": "authenticated",
+          "get": "authenticated",
+          "create": "authenticated",
+          "update": "authenticated",
+          "delete": "authenticated"
+        }
+      },
+      {
+        "name": "order_item",
+        "plural": "order_items",
+        "kind": "data",
+        "fields": [
+          {
+            "name": "order",
+            "ty": {
+              "ref": {
+                "entity": "order"
+              }
+            },
+            "read_only": true,
+            "on_delete": "cascade"
+          },
+          {
+            "name": "product",
+            "ty": {
+              "ref": {
+                "entity": "product"
+              }
+            },
+            "read_only": true
+          },
+          {
+            "name": "qty",
+            "ty": "i32",
+            "read_only": true
+          },
+          {
+            "name": "unit_price",
+            "ty": {
+              "decimal": {
+                "scale": 2
+              }
+            },
+            "read_only": true
+          }
+        ],
+        "permissions": {
+          "list": "authenticated",
+          "get": "authenticated",
+          "create": "authenticated",
+          "update": "authenticated",
+          "delete": "authenticated"
+        }
+      },
+      {
+        "name": "shipment",
+        "plural": "shipments",
+        "kind": "data",
+        "fields": [
+          {
+            "name": "order",
+            "ty": {
+              "ref": {
+                "entity": "order"
+              }
+            }
+          },
+          {
+            "name": "carrier",
+            "ty": "string"
+          },
+          {
+            "name": "tracking",
+            "ty": "string",
+            "optional": true
+          },
+          {
+            "name": "state",
+            "ty": {
+              "enum": {
+                "name": "shipment_state",
+                "variants": [
+                  "preparing",
+                  "shipped",
+                  "delivered"
+                ]
+              }
+            }
+          }
+        ],
+        "permissions": {
+          "list": "authenticated",
+          "get": "authenticated",
+          "create": "authenticated",
+          "update": "authenticated",
+          "delete": "authenticated"
+        }
+      }
+    ],
+    "links": [
+      {
+        "link_type": "placed_by",
+        "source": "order",
+        "target": "customer",
+        "forward_route": "customers-placed_bies",
+        "reverse_route": "orders-placed_bies",
+        "description": "Une commande appartient à un client."
+      },
+      {
+        "link_type": "contains",
+        "source": "order",
+        "target": "product",
+        "forward_route": "products-containses",
+        "reverse_route": "orders-containses",
+        "description": "Une commande contient des produits, via ses lignes."
+      },
+      {
+        "link_type": "ships",
+        "source": "shipment",
+        "target": "order",
+        "forward_route": "orders-shipses",
+        "reverse_route": "shipments-shipses",
+        "description": "Une expédition concerne une commande."
+      }
+    ],
+    "errors": [
+      {
+        "code": "shop.product.out_of_stock",
+        "kind": "validation",
+        "message_key": "shop.product.out_of_stock",
+        "params": [
+          "product",
+          "available"
+        ]
+      },
+      {
+        "code": "shop.product.not_found",
+        "kind": "not_found",
+        "message_key": "shop.product.not_found",
+        "params": [
+          "product"
+        ]
+      },
+      {
+        "code": "shop.customer.not_found",
+        "kind": "not_found",
+        "message_key": "shop.customer.not_found",
+        "params": [
+          "customer"
+        ]
+      },
+      {
+        "code": "shop.order.empty",
+        "kind": "validation",
+        "message_key": "shop.order.empty"
+      },
+      {
+        "code": "shop.order.quantity_invalid",
+        "kind": "validation",
+        "message_key": "shop.order.quantity_invalid",
+        "params": [
+          "product"
+        ]
+      },
+      {
+        "code": "shop.record.invalid",
+        "kind": "validation",
+        "message_key": "shop.record.invalid",
+        "params": [
+          "field",
+          "reason"
+        ]
+      },
+      {
+        "code": "shop.record.referenced",
+        "kind": "conflict",
+        "message_key": "shop.record.referenced",
+        "params": [
+          "entity",
+          "id"
+        ]
+      },
+      {
+        "code": "shop.record.not_found",
+        "kind": "not_found",
+        "message_key": "shop.record.not_found",
+        "params": [
+          "entity",
+          "id"
+        ]
+      },
+      {
+        "code": "shop.not_loaded",
+        "kind": "not_found",
+        "message_key": "shop.not_loaded"
+      }
+    ],
+    "i18n": {
+      "default_locale": "fr",
+      "locales": [
+        "fr",
+        "en"
+      ],
+      "keys": [
+        {
+          "key": "shop.product.out_of_stock",
+          "params": [
+            "product",
+            "available"
+          ]
+        },
+        {
+          "key": "shop.product.not_found",
+          "params": [
+            "product"
+          ]
+        },
+        {
+          "key": "shop.customer.not_found",
+          "params": [
+            "customer"
+          ]
+        },
+        {
+          "key": "shop.order.empty"
+        },
+        {
+          "key": "shop.order.quantity_invalid",
+          "params": [
+            "product"
+          ]
+        },
+        {
+          "key": "shop.record.invalid",
+          "params": [
+            "field",
+            "reason"
+          ]
+        },
+        {
+          "key": "shop.record.referenced",
+          "params": [
+            "entity",
+            "id"
+          ]
+        },
+        {
+          "key": "shop.record.not_found",
+          "params": [
+            "entity",
+            "id"
+          ]
+        },
+        {
+          "key": "shop.not_loaded"
+        }
+      ]
+    }
+  },
+  "bundles": [
+    {
+      "module": "shop",
+      "locale": "fr",
+      "syntax": "simple",
+      "messages": {
+        "shop.customer.not_found": "Client introuvable : {customer}.",
+        "shop.not_loaded": "Le module shop n'est pas chargé.",
+        "shop.order.empty": "La commande doit contenir au moins une ligne.",
+        "shop.order.quantity_invalid": "Quantité invalide pour {product} : elle doit être supérieure à 0.",
+        "shop.product.not_found": "Produit introuvable : {product}.",
+        "shop.product.out_of_stock": "Stock insuffisant pour {product} : {available} disponible(s).",
+        "shop.record.invalid": "Champ « {field} » : {reason}.",
+        "shop.record.not_found": "Aucun enregistrement {entity} avec l'identifiant {id}.",
+        "shop.record.referenced": "Impossible de supprimer : {id} est encore utilisé par {entity}."
+      }
+    },
+    {
+      "module": "shop",
+      "locale": "en",
+      "syntax": "simple",
+      "messages": {
+        "shop.customer.not_found": "Customer not found: {customer}.",
+        "shop.not_loaded": "The shop module is not loaded.",
+        "shop.order.empty": "An order must contain at least one line.",
+        "shop.order.quantity_invalid": "Invalid quantity for {product}: it must be greater than 0.",
+        "shop.product.not_found": "Product not found: {product}.",
+        "shop.product.out_of_stock": "Not enough stock for {product}: {available} available.",
+        "shop.record.invalid": "Field \"{field}\": {reason}.",
+        "shop.record.not_found": "No {entity} record with id {id}.",
+        "shop.record.referenced": "Cannot delete: {id} is still used by {entity}."
+      }
+    }
+  ]
+}

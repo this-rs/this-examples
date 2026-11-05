@@ -498,6 +498,31 @@ code {
   padding-top: var(--s5);
 }
 
+/* Windows et Linux : les contrôles sont à DROITE, et dans l'ordre inverse —
+   fermer est le plus à l'extérieur. Le modèle porte déjà `controls.side` ;
+   `data-platform` le traduit ici. Mesuré avec l'attribut forcé : la boîte finit
+   à droite de la fenêtre, sans recouvrir les actions de l'en-tête. */
+[data-platform="windows"] .win-controls,
+[data-platform="linux"] .win-controls {
+  left: auto;
+  right: var(--win-inset);
+  flex-direction: row-reverse;
+}
+
+[data-platform="windows"] .topbar,
+[data-platform="linux"] .topbar {
+  /* La place réservée passe à droite : trois points, leurs écarts et la marge. */
+  padding-right: calc(
+    var(--win-inset) + var(--win-dot) * 3 + var(--win-gap) * 2 + var(--s3)
+  );
+}
+
+[data-platform="windows"] .sidebar,
+[data-platform="linux"] .sidebar {
+  /* Pas de barre de titre en overlay : le contenu n'a pas à descendre. */
+  padding-top: var(--s5);
+}
+
 .win-btn {
   width: var(--win-dot);
   height: var(--win-dot);

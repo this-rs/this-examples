@@ -16,6 +16,8 @@
 //!   SHOP_SESSION=user SHOP_ROLES=accountant cargo run -p shop_server
 //! ```
 
+mod draft;
+
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::pin::Pin;
@@ -34,6 +36,7 @@ use shop_core::{
     AppError, Data, Interface, LineIn, Operation, PermissionDecision, PermissionRequest, Session,
     SessionKind, Sessions, Status,
 };
+use this_module_harness::drafter::Drafter;
 use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
@@ -140,6 +143,33 @@ fn session_of_env() -> (SessionKind, Vec<String>) {
 }
 
 // ---- Les mêmes opérations que les commandes Tauri -------------------------------------
+
+/// Demande à un modèle d'écrire un module. La clé reste côté serveur : la page
+/// ne reçoit que le programme, jamais le secret.
+async fn api_draft(
+    Json(request): Json<DraftRequest>,
+) -> Result<Json<DraftReply>, (StatusCode, String)> {
+    let completion = draft::ChatCompletion::from_env().map_err(bad_request)?;
+    let drafter = Drafter::new(completion);
+    match drafter.draft(&request.prompt).await {
+        Ok(source) => Ok(Json(DraftReply { source })),
+        Err(error) => Err(bad_request(error.to_string())),
+    }
+}
+
+fn bad_request(message: String) -> (StatusCode, String) {
+    (StatusCode::BAD_REQUEST, message)
+}
+
+#[derive(serde::Deserialize)]
+struct DraftRequest {
+    prompt: String,
+}
+
+#[derive(serde::Serialize)]
+struct DraftReply {
+    source: String,
+}
 
 async fn api_status(State(st): State<AppState>) -> Json<Status> {
     Json(shop_core::status(&st.data).await)
@@ -538,6 +568,7 @@ async fn main() -> Result<(), String> {
         .route("/api/records/{entity}/{id}", delete(api_delete))
         .route("/api/orders", post(api_order))
         .route("/api/permissions/request", post(api_permission_request))
+        .route("/api/draft", post(api_draft))
         .route("/api/events", get(api_events))
         .route("/api/ws", get(api_ws))
         .with_state(state);

@@ -669,10 +669,15 @@ pub fn App() -> impl IntoView {
                             </button>
                         }
                     }).collect_view())}
-                    <button class="tab accent" aria-current=move || (ctx.page.get() == Page::NewOrder).then_some("page")
-                        on:click=move |_| go(ctx, Page::NewOrder)>
-                        <span class="tab-ico" inner_html=icons::PLUS></span>
-                        <span>"Commande"</span>
+                    // « Nouvelle commande » n'est plus un onglet : le tableau de bord
+                    // porte déjà le bouton, et une barre à cinq entrées est le
+                    // maximum lisible sur un téléphone. Sa place revient au
+                    // laboratoire, qui n'était atteignable nulle part sur mobile —
+                    // la barre latérale y est masquée par le CSS.
+                    <button class="tab" aria-current=move || (ctx.page.get() == Page::Lab).then_some("page")
+                        on:click=move |_| go(ctx, Page::Lab)>
+                        <span class="tab-ico" inner_html=icons::MODULE></span>
+                        <span>"Labo"</span>
                     </button>
                 </nav>
             </div>

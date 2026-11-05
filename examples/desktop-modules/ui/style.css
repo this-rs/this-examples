@@ -2266,8 +2266,22 @@ a {
 
 .lab-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--s3);
   margin-bottom: var(--s4);
+}
+
+/* Sur un téléphone, une seule colonne : deux colonnes de texte de code côte à
+   côte dansent à la largeur d'un iPhone, et la comparaison devient illisible. */
+@media (max-width: 820px) {
+  .lab-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lab-text {
+    font-size: 12px;
+  }
 }
 
 .lab-verdict {

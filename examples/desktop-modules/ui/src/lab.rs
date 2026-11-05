@@ -22,6 +22,7 @@
 //! prouverait rien du stockage — et c'est justement ce que ce panneau existe pour
 //! montrer : le module survit à un rechargement de la page.
 
+use crate::api::{self, Surface};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
@@ -76,7 +77,7 @@ enum Report {
 /// Relit l'artefact **sans recompiler** et l'exécute. C'est ce geste qui montre
 /// que le VFS compte : si la compilation seule suffisait, il n'y aurait rien à
 /// ranger.
-async fn reload_and_run(arg: i64) -> Report {
+async fn reload_and_run(args: Vec<i64>) -> Report {
     let now = js_sys::Date::now() as i64;
     let vfs = match IndexedDbVfs::open("this-lab").await {
         Ok(vfs) => vfs,
@@ -87,7 +88,8 @@ async fn reload_and_run(arg: i64) -> Report {
         Ok(program) => program,
         Err(error) => return Report::Refused(format!("rien en store : {error}")),
     };
-    let executed = match BrowserExecutor.run(&program, &[Value::Int(arg)], now).await {
+    let values: Vec<Value> = args.iter().copied().map(Value::Int).collect();
+    let executed = match BrowserExecutor.run(&program, &values, now).await {
         Ok(outcome) => outcome,
         Err(error) => return Report::Refused(format!("exécution : {error}")),
     };
@@ -103,7 +105,7 @@ async fn reload_and_run(arg: i64) -> Report {
     }
 }
 
-async fn evaluate(source: String, arg: i64) -> Report {
+async fn evaluate(source: String, args: Vec<i64>) -> Report {
     // L'horloge est figée une fois, pour que les deux exécutions soient comparables.
     let now = js_sys::Date::now() as i64;
 
@@ -115,8 +117,9 @@ async fn evaluate(source: String, arg: i64) -> Report {
         now,
         effects: Vec::new(),
     };
+    let values: Vec<Value> = args.iter().copied().map(Value::Int).collect();
     let reference = Outcome {
-        value: show(&run(&compiled.function, &[Value::Int(arg)], &mut recorder)),
+        value: show(&run(&compiled.function, &values, &mut recorder)),
         effects: recorder.effects,
     };
 
@@ -136,7 +139,7 @@ async fn evaluate(source: String, arg: i64) -> Report {
         Err(error) => return Report::Refused(format!("relecture : {error}")),
     };
     let executed = match BrowserExecutor
-        .run(&program, &[Value::Int(arg)], now)
+        .run(&program, &values, now)
         .await
     {
         Ok(outcome) => outcome,
@@ -154,19 +157,76 @@ async fn evaluate(source: String, arg: i64) -> Report {
     }
 }
 
+/// Demande un module au serveur de démo, qui parle au modèle.
+///
+/// La clé ne quitte pas le serveur : la page n'envoie qu'une phrase et ne reçoit
+/// qu'un programme. Le programme rendu a déjà été compilé côté serveur — s'il ne
+/// compilait pas, c'est le message du compilateur qui revient.
+async fn ask_model(prompt: &str) -> Result<String, String> {
+    let body = serde_json::json!({ "prompt": prompt });
+    let response = gloo_net::http::Request::post("/api/draft")
+        .json(&body)
+        .map_err(|error| format!("requête : {error}"))?
+        .send()
+        .await
+        .map_err(|error| format!("appel : {error}"))?;
+
+    if !response.ok() {
+        return Err(response.text().await.unwrap_or_default());
+    }
+
+    let parsed: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|error| format!("réponse illisible : {error}"))?;
+    parsed["source"]
+        .as_str()
+        .map(str::to_string)
+        .ok_or_else(|| "réponse sans programme".to_string())
+}
+
+/// Un module peut prendre plusieurs entiers : « 41, 2 ».
+fn parse_args(text: &str) -> Vec<i64> {
+    text.split(',')
+        .filter_map(|part| part.trim().parse().ok())
+        .collect()
+}
+
 /// Le panneau.
 pub fn page() -> AnyView {
     let source = RwSignal::new(START.to_string());
     let argument = RwSignal::new("1".to_string());
     let report = RwSignal::new(None::<Report>);
     let busy = RwSignal::new(false);
+    let prompt = RwSignal::new(String::new());
+    let asking = RwSignal::new(false);
+
+    let ask = move |_| {
+        let text = prompt.get_untracked();
+        if text.trim().is_empty() {
+            return;
+        }
+        asking.set(true);
+        spawn_local(async move {
+            match ask_model(&text).await {
+                Ok(drafted) => {
+                    // Le programme prend la place de l'éditeur : on le relit avant
+                    // de le compiler, on ne l'exécute pas dans le dos.
+                    source.set(drafted);
+                    report.set(None);
+                }
+                Err(error) => report.set(Some(Report::Refused(error))),
+            }
+            asking.set(false);
+        });
+    };
 
     let execute = move |_| {
         let text = source.get_untracked();
-        let arg = argument.get_untracked().trim().parse().unwrap_or(0);
+        let args = parse_args(&argument.get_untracked());
         busy.set(true);
         spawn_local(async move {
-            report.set(Some(evaluate(text, arg).await));
+            report.set(Some(evaluate(text, args).await));
             busy.set(false);
         });
     };
@@ -183,6 +243,42 @@ pub fn page() -> AnyView {
                     </p>
                 </div>
             </header>
+
+            <Show
+                when=move || api::platform() == Surface::Web
+                fallback=|| view! {
+                    <section class="card">
+                        <p class="muted small">
+                            "Demander un module au modèle n'est disponible que sur la surface web : "
+                            "la coquille native n'a pas de serveur à joindre."
+                        </p>
+                    </section>
+                }
+            >
+                <section class="card">
+                    <header class="card-head">
+                        <h2>"Demander au modèle"</h2>
+                    </header>
+                    <p class="muted small">
+                        "Décris ce que le module doit faire. Le programme revient déjà compilé : "
+                        "s'il ne compilait pas, tu verrais le refus du compilateur."
+                    </p>
+                    <textarea
+                        class="lab-text"
+                        rows="3"
+                        spellcheck="false"
+                        aria-label="Demande au modèle"
+                        placeholder="un module qui prend un prix et une quantité, applique 20 % de TVA, et alerte au-delà de 100 €"
+                        prop:value=move || prompt.get()
+                        on:input=move |ev| prompt.set(event_target_value(&ev))
+                    ></textarea>
+                    <div class="lab-actions">
+                        <button class="btn primary" on:click=ask disabled=move || asking.get()>
+                            {move || if asking.get() { "Le modèle écrit…" } else { "Demander" }}
+                        </button>
+                    </div>
+                </section>
+            </Show>
 
             <section class="card">
                 <header class="card-head">
@@ -205,7 +301,9 @@ pub fn page() -> AnyView {
                     <label class="lab-arg">
                         <span class="muted small">"argument (a)"</span>
                         <input
-                            type="number"
+                            type="text"
+                            inputmode="numeric"
+                            placeholder="41  ou  1000, 2"
                             prop:value=move || argument.get()
                             on:input=move |ev| argument.set(event_target_value(&ev))
                         />
@@ -216,10 +314,10 @@ pub fn page() -> AnyView {
                     <button
                         class="btn"
                         on:click=move |_| {
-                            let arg = argument.get_untracked().trim().parse().unwrap_or(0);
+                            let args = parse_args(&argument.get_untracked());
                             busy.set(true);
                             spawn_local(async move {
-                                report.set(Some(reload_and_run(arg).await));
+                                report.set(Some(reload_and_run(args).await));
                                 busy.set(false);
                             });
                         }

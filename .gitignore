@@ -16,3 +16,6 @@ Cargo.lock
 
 # Debug files
 *.pdb
+
+# Demo state written by the shop server at runtime
+examples/desktop-modules/data/

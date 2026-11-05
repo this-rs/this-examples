@@ -37,7 +37,7 @@ const SHOP: &str = "shop";
 // Le descripteur est une **donnée** : changer sa déclaration dans le code n'a aucun effet
 // sur un store qui contient déjà une version. Toute évolution du contrat passe par ce
 // numéro, et par un `status` qui compare la version, pas la présence.
-const SHOP_VERSION: &str = "0.2.0";
+const SHOP_VERSION: &str = "0.3.0";
 
 /// Données de l'app : le store de modules et les enregistrements, sur disque.
 pub struct Data {
@@ -179,7 +179,7 @@ const ERRORS: [ErrorSpec; 9] = [
     ),
 ];
 
-/// La boutique complète : quatre entités, deux liens, neuf erreurs, deux locales.
+/// La boutique complète : cinq entités, trois liens, neuf erreurs, deux locales.
 pub fn build_shop() -> (ModuleDescriptor, Vec<MessageBundle>) {
     let mut m = ModuleDescriptor::new(SHOP, SHOP_VERSION);
 
@@ -249,7 +249,31 @@ pub fn build_shop() -> (ModuleDescriptor, Vec<MessageBundle>) {
         FieldDesc::new("unit_price", FieldType::Decimal { scale: 2 }).read_only(),
     ];
 
-    for e in [&mut customer, &mut product, &mut order, &mut item] {
+    // Module de livraison : une expédition concerne une commande. Elle ne possède ni
+    // le client ni les produits : elle référence la commande, comme une ligne.
+    let mut shipment = EntityDesc::new("shipment");
+    shipment.fields = vec![
+        FieldDesc::new(
+            "order",
+            FieldType::Ref {
+                entity: "order".into(),
+            },
+        ),
+        FieldDesc::new("carrier", FieldType::String),
+        FieldDesc::new("tracking", FieldType::String).optional(),
+        FieldDesc::new(
+            "state",
+            enum_of("shipment_state", &["preparing", "shipped", "delivered"]),
+        ),
+    ];
+
+    for e in [
+        &mut customer,
+        &mut product,
+        &mut order,
+        &mut item,
+        &mut shipment,
+    ] {
         crud(e);
     }
     // Deux suppressions passent par une permission IAM, pas seulement par l'authentification :
@@ -262,13 +286,15 @@ pub fn build_shop() -> (ModuleDescriptor, Vec<MessageBundle>) {
         .permissions
         .ops
         .insert(Operation::Delete, PolicyExpr::Perm("catalog.delete".into()));
-    m.entities = vec![customer, product, order, item];
+    m.entities = vec![customer, product, order, item, shipment];
 
     let mut placed_by = LinkDesc::new("placed_by", "order", "customer");
     placed_by.description = Some("Une commande appartient à un client.".into());
     let mut contains = LinkDesc::new("contains", "order", "product");
     contains.description = Some("Une commande contient des produits, via ses lignes.".into());
-    m.links = vec![placed_by, contains];
+    let mut ships = LinkDesc::new("ships", "shipment", "order");
+    ships.description = Some("Une expédition concerne une commande.".into());
+    m.links = vec![placed_by, contains, ships];
 
     m.errors = ERRORS
         .iter()
@@ -1179,8 +1205,8 @@ mod tests {
         let (d, dir) = temp_data("interface");
         load_shop(&d).await.unwrap();
         let desc = d.descriptor().await.unwrap();
-        assert_eq!(desc.entities.len(), 4);
-        assert_eq!(desc.links.len(), 2);
+        assert_eq!(desc.entities.len(), 5);
+        assert_eq!(desc.links.len(), 3);
         assert_eq!(desc.errors.len(), 9);
         let fr = d.fr(SHOP_VERSION).await.expect("bundle fr");
         assert!(fr

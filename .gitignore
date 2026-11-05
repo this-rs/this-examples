@@ -20,5 +20,12 @@ Cargo.lock
 # Demo state written by the shop server at runtime
 examples/desktop-modules/data/
 
+# Verrou d'outil écrit par trunk pendant un build — pas du contenu
+.trunk-lock
+
+# `examples/desktop-modules/ui/dist` n'est PAS ignoré, volontairement : la CI ne
+# lance jamais `trunk`, donc c'est ce bundle commité qui fait tourner la démo.
+# Il doit être régénéré après un changement du front (`cd ui && trunk build`).
+
 # Dépendances des vérifications d'interface (tools/check-ui.mjs)
 examples/desktop-modules/tools/node_modules/

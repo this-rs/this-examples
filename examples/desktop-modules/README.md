@@ -196,6 +196,11 @@ SHOP_DIST=$PWD/ui/dist \
 # http://127.0.0.1:8790/ — dist et API sur la même origine (pas de CORS)
 ```
 
+> `ui/dist` est **commité**, et la CI ne lance jamais `trunk` : c'est ce bundle qui fait tourner
+> la démo sans outillage front. La contrepartie est à connaître — après un changement du front,
+> il faut le régénérer par `(cd ui && trunk build)`, sinon la démo sert l'ancien build en
+> silence. Le fichier `.trunk-lock` est un verrou d'outil et n'a rien à faire dans le dépôt.
+
 `SHOP_SESSION=anonymous` (défaut : `user`) restreint la surface à la lecture : le front
 grise les écritures et le serveur répond 403.
 

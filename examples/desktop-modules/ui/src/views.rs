@@ -10,11 +10,11 @@ use leptos::prelude::*;
 use leptos::task::spawn_local;
 use serde_json::{json, Value};
 
-use ui_shell::{badge, kpi, meter, Cell, Column, Entity, EntityTable, Field, Kind, Row, Tone};
+use this_ui::{badge, kpi, meter, Cell, Column, Entity, EntityTable, Field, Kind, Row, Tone};
 
 use crate::api::{self, Gap, LineIn, Operation, Requirement, Snapshot};
 use crate::format::*;
-use ui_shell::Panel;
+use this_ui::Panel;
 
 use crate::icons;
 use crate::shell::{go, Ctx, Editing, Page};
@@ -87,11 +87,11 @@ fn request_access(
                 let granted = outcome.decision.granted();
                 crate::shell::apply_session(ctx, outcome.session);
                 ctx.notice(
-                    app_kit::Notice::new("permission", "Autorisation", outcome.message).with_tone(
+                    this_app::Notice::new("permission", "Autorisation", outcome.message).with_tone(
                         if granted {
-                            app_kit::Tone::Ok
+                            this_app::Tone::Ok
                         } else {
-                            app_kit::Tone::Danger
+                            this_app::Tone::Danger
                         },
                     ),
                 );
@@ -360,7 +360,7 @@ pub fn entity_page(ctx: Ctx, name: String) -> impl IntoView {
 fn render_table(ctx: Ctx, name: &str) -> AnyView {
     let module = ctx.desc.get();
     let Some(entity) = module.as_ref().and_then(|m| m.entity(name)) else {
-        return ui_shell::empty("Entité inconnue.");
+        return this_ui::empty("Entité inconnue.");
     };
 
     let snap = ctx.snapshot();
@@ -771,7 +771,7 @@ fn save(ctx: Ctx, entity: String, id: Option<String>) {
                     id: rid,
                 }));
                 // le magasin se corrige tout seul : un enregistrement, zéro requête
-                ctx.apply_local(app_kit::Change::updated(entity, rec));
+                ctx.apply_local(this_app::Change::updated(entity, rec));
             }
             Err(e) => ctx.msg.set(Some((false, e))),
         }
@@ -784,7 +784,7 @@ fn delete(ctx: Ctx, entity: String, id: String) {
             Ok(()) => {
                 ctx.msg.set(Some((true, "Enregistrement supprimé.".into())));
                 ctx.editing.set(None);
-                ctx.apply_local(app_kit::Change::deleted(entity, id));
+                ctx.apply_local(this_app::Change::deleted(entity, id));
             }
             Err(e) => ctx.msg.set(Some((false, e))),
         }

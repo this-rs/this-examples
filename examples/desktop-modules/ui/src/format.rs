@@ -20,6 +20,7 @@ pub fn entity_label(name: &str) -> String {
         "product" => "Produits",
         "order" => "Commandes",
         "order_item" => "Lignes de commande",
+        "shipment" => "Expéditions",
         other => other,
     }
     .into()
@@ -31,6 +32,7 @@ pub fn entity_label_one(name: &str) -> String {
         "product" => "Produit",
         "order" => "Commande",
         "order_item" => "Ligne de commande",
+        "shipment" => "Expédition",
         other => other,
     }
     .into()
@@ -55,6 +57,8 @@ pub fn field_label(name: &str) -> String {
         "product" => "Produit",
         "qty" => "Quantité",
         "unit_price" => "Prix unitaire",
+        "carrier" => "Transporteur",
+        "tracking" => "Suivi",
         other => other,
     }
     .into()

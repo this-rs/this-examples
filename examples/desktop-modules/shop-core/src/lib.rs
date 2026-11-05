@@ -267,7 +267,13 @@ pub fn build_shop() -> (ModuleDescriptor, Vec<MessageBundle>) {
         ),
     ];
 
-    for e in [&mut customer, &mut product, &mut order, &mut item, &mut shipment] {
+    for e in [
+        &mut customer,
+        &mut product,
+        &mut order,
+        &mut item,
+        &mut shipment,
+    ] {
         crud(e);
     }
     // Deux suppressions passent par une permission IAM, pas seulement par l'authentification :

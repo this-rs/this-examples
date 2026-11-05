@@ -553,8 +553,8 @@ pub fn App() -> impl IntoView {
                             on:click=move |_| crate::window::close()></button>
                         <button class="win-btn minimize" aria-label="Réduire"
                             on:click=move |_| crate::window::minimize()></button>
-                        <button class="win-btn zoom" aria-label="Agrandir"
-                            on:click=move |_| crate::window::toggle_maximize()></button>
+                        <button class="win-btn zoom" aria-label="Plein écran"
+                            on:click=move |_| crate::window::toggle_fullscreen()></button>
                     </div>
                     <nav class="crumbs" aria-label="Fil d'Ariane" data-tauri-drag-region=drag>
                         <span class="crumb-root">"shop"</span>

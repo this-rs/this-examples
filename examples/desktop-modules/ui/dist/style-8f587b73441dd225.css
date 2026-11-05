@@ -233,6 +233,19 @@ code {
   min-height: 100vh;
 }
 
+/* Fenêtre sans cadre : le rayon est celui de l'app, donc la page doit être
+   transparente hors du rayon. `clip` et non `hidden` : `hidden` créerait un
+   conteneur de défilement et casserait le `position: sticky` de la barre. */
+[data-titlebar="hidden"] body {
+  background: transparent;
+}
+
+[data-titlebar="hidden"] .shell {
+  background: var(--bg);
+  border-radius: 10px;
+  overflow: clip;
+}
+
 .sidebar {
   position: sticky;
   top: 0;

@@ -195,6 +195,52 @@ fn decode(value: &JsValue) -> Option<ChromeEnv> {
     serde_json::from_str(&text).ok()
 }
 
+/// L'activation de la fenêtre telle que la coquille la connaît.
+///
+/// `onFocusChanged` de Tauri vient du système (AppKit sous macOS) : c'est la
+/// seule source qui sache qu'une fenêtre a perdu le focus *sans* clic. Sans
+/// elle, les feux restent colorés alors que l'app est en arrière-plan, et le
+/// survol ne rend rien puisqu'il n'y a rien à rendre.
+fn watch_activation(root: web_sys::Element) {
+    use wasm_bindgen::{JsCast, JsValue, closure::Closure};
+
+    let Ok(tauri) = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__TAURI__"))
+    else {
+        return;
+    };
+    let Ok(api) = js_sys::Reflect::get(&tauri, &JsValue::from_str("window")) else {
+        return;
+    };
+    let Ok(getter) = js_sys::Reflect::get(&api, &JsValue::from_str("getCurrentWindow")) else {
+        return;
+    };
+    let Ok(getter) = getter.dyn_into::<js_sys::Function>() else {
+        return;
+    };
+    let Ok(current) = getter.call0(&api) else {
+        return;
+    };
+    let Ok(listen) = js_sys::Reflect::get(&current, &JsValue::from_str("onFocusChanged")) else {
+        return;
+    };
+    let Ok(listen) = listen.dyn_into::<js_sys::Function>() else {
+        return;
+    };
+
+    let mark = Closure::<dyn FnMut(JsValue)>::new(move |event: JsValue| {
+        // Tauri 2 enveloppe la charge utile : { event, id, payload }.
+        let payload = js_sys::Reflect::get(&event, &JsValue::from_str("payload"))
+            .unwrap_or_else(|_| event.clone());
+        let active = payload.as_bool().unwrap_or(true);
+        let _ = root.set_attribute("data-focused", if active { "true" } else { "false" });
+    });
+
+    let _ = listen.call1(&current, mark.as_ref().unchecked_ref());
+    // Le rappel vit aussi longtemps que la page : c'est le prix d'une écoute
+    // qu'on ne peut pas désabonner sans garder la poignée.
+    mark.forget();
+}
+
 /// Installe l'habillage et rend un signal qu'un composant peut lire (placer un élément
 /// à côté de l'île, masquer un bouton en plein écran…).
 ///
@@ -213,8 +259,10 @@ pub fn install_chrome() -> RwSignal<ChromeLayout> {
         on(w, "orientationchange", move || refresh(base, out, native));
 
         // L'activation de la fenêtre : macOS grise les feux quand elle n'est plus
-        // active. C'est une information de coquille, pas de page — `focus`/`blur`
-        // sur `window` la porte, et le CSS la lit via `data-focused`.
+        // active. Le DOM ne le dit pas de façon fiable dans une webview — `blur`
+        // ne part pas toujours quand la fenêtre perd le focus — donc on écoute
+        // les deux : `focus`/`blur` pour le web, et `onFocusChanged` de Tauri,
+        // qui vient du système, pour la coquille native. Le second gagne.
         if let Some(root) = win.document().and_then(|doc| doc.document_element()) {
             let mark = {
                 let root = root.clone();
@@ -226,6 +274,7 @@ pub fn install_chrome() -> RwSignal<ChromeLayout> {
             let on_focus = mark.clone();
             on(w, "focus", move || on_focus(true));
             on(w, "blur", move || mark(false));
+            watch_activation(root);
         }
         if let Some(doc) = win.document() {
             on(doc.as_ref(), "fullscreenchange", move || {

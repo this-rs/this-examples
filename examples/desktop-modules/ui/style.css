@@ -427,14 +427,23 @@ code {
    Fixés au coin de la FENÊTRE, pas de l'en-tête : la barre latérale occupe les
    premiers pixels, et c'est là que l'œil cherche les feux. Fixe aussi pour
    rester visible quand la barre latérale s'efface sur écran étroit. */
+/* Géométrie mesurée avec l'OS, pas recopiée : la taille des points, leur écart
+   et leur marge suivent une norme qui change avec la version de macOS.
+   Rejouer `swift tools/measure-traffic-lights.swift` sur la machine cible et
+   reporter ici. macOS 26.5.2 : 14 px, écart 9, marge 9, barre de 32. */
 .win-controls {
+  --win-dot: 14px;
+  --win-gap: 9px;
+  --win-inset: 9px;
+  --win-bar: 32px;
+
   position: fixed;
-  top: 16px;
-  left: var(--s4);
+  top: var(--win-inset);
+  left: var(--win-inset);
   z-index: 30;
   display: none;
   align-items: center;
-  gap: 8px;
+  gap: var(--win-gap);
 }
 
 /* Overlay : la fenêtre est décorée (l'OS arrondit selon sa norme) mais ses feux
@@ -454,7 +463,8 @@ code {
 
 [data-titlebar="hidden"] .sidebar,
 [data-titlebar="overlay"] .sidebar {
-  padding-top: calc(var(--s5) + 18px);
+  /* Le contenu commence là où la barre de titre finit, jamais avant. */
+  padding-top: max(var(--s5), var(--win-bar));
 }
 
 /* Plein écran : macOS fait glisser sa barre de menus par-dessus le haut de
@@ -473,8 +483,8 @@ code {
 }
 
 .win-btn {
-  width: 12px;
-  height: 12px;
+  width: var(--win-dot);
+  height: var(--win-dot);
   padding: 0;
   border: none;
   border-radius: 50%;

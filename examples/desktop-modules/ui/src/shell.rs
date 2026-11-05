@@ -16,6 +16,7 @@ use this_ui::{now_ms, BrowserDevice, LocalStorage, SettingsPanel, Splash, Store,
 use crate::api::{self, Capabilities, Module, ModuleDescriptor, Session, Snapshot, Surface};
 use crate::format::entity_label;
 use crate::icons;
+use crate::lab;
 use crate::views;
 
 /// Au-delà de ce délai sans synchronisation, un retour recharge les données.
@@ -26,6 +27,8 @@ pub enum Page {
     Dashboard,
     Entity(String),
     NewOrder,
+    /// Le laboratoire : compiler et exécuter un module **dans la page**.
+    Lab,
 }
 
 impl Page {
@@ -34,6 +37,7 @@ impl Page {
             Page::Dashboard => "Tableau de bord".into(),
             Page::Entity(name) => entity_label(name),
             Page::NewOrder => "Nouvelle commande".into(),
+            Page::Lab => "Laboratoire de modules".into(),
         }
     }
 }
@@ -486,6 +490,14 @@ pub fn App() -> impl IntoView {
                             <span class="nav-ico" inner_html=icons::CART></span>
                             <span>"Nouvelle commande"</span>
                         </button>
+                        <button
+                            class="nav-link"
+                            aria-current=move || (ctx.page.get() == Page::Lab).then_some("page")
+                            on:click=move |_| go(ctx, Page::Lab)
+                        >
+                            <span class="nav-ico" inner_html=icons::MODULE></span>
+                            <span>"Laboratoire"</span>
+                        </button>
 
                         <span class="nav-sep">"Données"</span>
                         {move || ctx.desc.get().map(|d| d.entities.iter().map(|e| {
@@ -614,6 +626,7 @@ pub fn App() -> impl IntoView {
                             Page::Dashboard => views::dashboard(ctx).into_any(),
                             Page::Entity(name) => views::entity_page(ctx, name).into_any(),
                             Page::NewOrder => views::new_order(ctx).into_any(),
+                            Page::Lab => lab::page(),
                         }}
                     </Show>
                 </main>

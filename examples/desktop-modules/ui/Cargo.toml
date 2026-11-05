@@ -18,6 +18,9 @@ js-sys = "0.3"
 this-app = { path = "../../../../this/crates/this-app" }
 this-descriptor = { path = "../../../../this/crates/this-descriptor" }
 this-module-lang = { path = "../../../../this/crates/this-module-lang", features = ["assemble"] }
+# Un panic dans le wasm est sinon MUET : la page se fige sans rien dire. Le hook
+# le transforme en erreur de console, donc en quelque chose qu'on peut lire.
+console_error_panic_hook = "0.1"
 module-runtime = { path = "../../../crates/module-runtime" }
 this-ui = { path = "../../../../this/crates/this-ui" }
 this-client-web = { path = "../../../../this/crates/this-client-web" }

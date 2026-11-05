@@ -169,11 +169,19 @@ async fn run_in_page(
             let Ok(buffer) = js_sys::Reflect::get(&memory, &"buffer".into()) else {
                 return;
             };
-            let view = js_sys::Uint8Array::new_with_byte_offset_and_length(
-                &buffer,
-                ptr as u32,
-                len as u32,
-            );
+            // Bornes vérifiées AVANT toute allocation : un pointeur ou une
+            // longueur aberrante allouerait des gigaoctets et ferait tuer le
+            // processus du webview, ce qui ressemble à un crash de l'app.
+            let total = js_sys::Uint8Array::new(&buffer).length();
+            let start = ptr.max(0) as u32;
+            let size = len.max(0) as u32;
+            if start.checked_add(size).is_none_or(|end| end > total) {
+                effects
+                    .borrow_mut()
+                    .push(format!("emit(hors mémoire : {start}+{size} > {total})"));
+                return;
+            }
+            let view = js_sys::Uint8Array::new_with_byte_offset_and_length(&buffer, start, size);
             let text = String::from_utf8_lossy(&view.to_vec()).into_owned();
             effects.borrow_mut().push(format!("emit({text:?})"));
         })
@@ -231,9 +239,9 @@ async fn run_in_page(
     }
     .map_err(|error| format!("exécution refusée : {}", describe(&error)))?;
 
-    // Les effets sont lus avant que les closures ne soient relâchées.
-    emit.forget();
-    clock.forget();
+    // Les closures restent vivantes jusqu'à la fin de cette fonction, donc
+    // jusqu'après l'appel : c'est suffisant, le module n'est plus exécuté
+    // ensuite. `forget()` les faisait fuir à chaque clic.
 
     let value = match function.returns {
         Type::Unit => "()".to_string(),

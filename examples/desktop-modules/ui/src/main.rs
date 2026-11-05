@@ -16,5 +16,8 @@ mod views;
 use leptos::mount::mount_to_body;
 
 fn main() {
+    // Sans cela, un panic dans le wasm se traduit par une page figée et un
+    // message vide : on ne sait pas ce qui a échoué, ni où.
+    console_error_panic_hook::set_once();
     mount_to_body(shell::App);
 }

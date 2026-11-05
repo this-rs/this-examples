@@ -1,0 +1,50 @@
+# Configuration for the shipping module
+# A shipment depends on two other modules: it carries products (catalog)
+# and fulfils orders (billing). It owns no product or order: it only links to them.
+
+entities:
+  - singular: shipment
+    plural: shipments
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: owner_or_role:admin
+
+links:
+  # Shipment → Product (cross-module: catalog)
+  - link_type: ships_product
+    source_type: shipment
+    target_type: product
+    forward_route_name: products
+    reverse_route_name: shipments
+    description: "Shipment carries products"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+  # Shipment → Order (cross-module: billing)
+  - link_type: ships_order
+    source_type: shipment
+    target_type: order
+    forward_route_name: orders
+    reverse_route_name: shipments
+    description: "Shipment fulfils orders"
+    auth:
+      list: authenticated
+      get: authenticated
+      create: authenticated
+      update: authenticated
+      delete: authenticated
+
+validation_rules:
+  ships_product:
+    - source: shipment
+      targets: [product]
+  ships_order:
+    - source: shipment
+      targets: [order]

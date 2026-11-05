@@ -160,16 +160,19 @@ fn watch_pointer(window: tauri::WebviewWindow) {
     std::thread::spawn(move || {
         let mut inside = false;
         loop {
-            std::thread::sleep(std::time::Duration::from_millis(80));
-
-            // Fenêtre active : le CSS fait son travail, inutile de doubler.
+            // Fenêtre active : le CSS fait son travail. On ne relève rien et on
+            // dort longtemps — un fil qui interroge le système douze fois par
+            // seconde pour ne rien en faire est un fil qui ne dort jamais.
             if window.is_focused().unwrap_or(true) {
                 if inside {
                     inside = false;
                     let _ = tauri::Emitter::emit(&window, "shell://pointer", false);
                 }
+                std::thread::sleep(std::time::Duration::from_millis(600));
                 continue;
             }
+
+            std::thread::sleep(std::time::Duration::from_millis(80));
 
             let where_is_it = unsafe {
                 let mouse: NSPoint = msg_send![objc2::class!(NSEvent), mouseLocation];

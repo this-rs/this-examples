@@ -408,14 +408,76 @@ code {
   z-index: 20;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--s4);
   /* hauteur des feux, marge du haut (barre d'état, découpe), contrôles à droite (Windows) */
   min-height: var(--chrome-header-min);
+  /* La bande de gauche est réservée aux contrôles — ceux de l'OS en Overlay, ceux
+     que l'app dessine quand la fenêtre n'a pas de cadre. */
   padding: max(10px, var(--chrome-top))
-    calc(var(--s5) + var(--chrome-trail) + var(--chrome-right)) 10px var(--s5);
+    calc(var(--s5) + var(--chrome-trail) + var(--chrome-right)) 10px
+    calc(var(--s5) + var(--chrome-lead));
+  position: relative;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
+}
+
+/* Contrôles de fenêtre dessinés par l'app (fenêtre sans cadre système).
+   Fixés au coin de la FENÊTRE, pas de l'en-tête : la barre latérale occupe les
+   premiers pixels, et c'est là que l'œil cherche les feux. Fixe aussi pour
+   rester visible quand la barre latérale s'efface sur écran étroit. */
+.win-controls {
+  position: fixed;
+  top: 16px;
+  left: var(--s4);
+  z-index: 30;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-titlebar="hidden"] .win-controls {
+  display: flex;
+}
+
+/* L'app dessine ses contrôles au-dessus de la barre latérale : on leur fait de
+   la place, et l'en-tête n'a plus de bande à réserver. */
+[data-titlebar="hidden"] .topbar {
+  padding-left: var(--s3);
+}
+
+[data-titlebar="hidden"] .sidebar {
+  padding-top: calc(var(--s5) + 18px);
+}
+
+.win-btn {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: default;
+}
+
+.win-btn.close {
+  background: #ff5f57;
+}
+
+.win-btn.minimize {
+  background: #febc2e;
+}
+
+.win-btn.zoom {
+  background: #28c840;
+}
+
+.win-btn:hover {
+  filter: brightness(0.88);
+}
+
+.win-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .crumbs {
@@ -453,6 +515,7 @@ code {
   display: flex;
   align-items: center;
   gap: var(--s2);
+  margin-left: auto;
 }
 
 .surface-pill {

@@ -233,6 +233,7 @@ code {
   min-height: 100vh;
 }
 
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -408,14 +409,223 @@ code {
   z-index: 20;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--s4);
   /* hauteur des feux, marge du haut (barre d'état, découpe), contrôles à droite (Windows) */
   min-height: var(--chrome-header-min);
+  /* La bande de gauche est réservée aux contrôles — ceux de l'OS en Overlay, ceux
+     que l'app dessine quand la fenêtre n'a pas de cadre. */
   padding: max(10px, var(--chrome-top))
-    calc(var(--s5) + var(--chrome-trail) + var(--chrome-right)) 10px var(--s5);
+    calc(var(--s5) + var(--chrome-trail) + var(--chrome-right)) 10px
+    calc(var(--s5) + var(--chrome-lead));
+  position: relative;
   background: var(--bg);
   border-bottom: 1px solid var(--line);
+}
+
+/* Contrôles de fenêtre dessinés par l'app (fenêtre sans cadre système).
+   Fixés au coin de la FENÊTRE, pas de l'en-tête : la barre latérale occupe les
+   premiers pixels, et c'est là que l'œil cherche les feux. Fixe aussi pour
+   rester visible quand la barre latérale s'efface sur écran étroit. */
+/* Géométrie mesurée avec l'OS, pas recopiée : la taille des points, leur écart
+   et leur marge suivent une norme qui change avec la version de macOS.
+   Rejouer `swift tools/measure-traffic-lights.swift` sur la machine cible et
+   reporter ici. macOS 26.5.2 : 14 px, écart 9, marge 9, barre de 32. */
+/* À la racine : ce ne sont pas les contrôles qui en ont besoin, c'est la mise
+   en page autour. Déclarées dans `.win-controls`, `max(var(--s5), var(--win-bar))`
+   sur la barre latérale devenait invalide et retombait à 0 — le logo remontait
+   sous les points. */
+:root {
+  --win-dot: 14px;
+  --win-gap: 9px;
+  --win-inset: 9px;
+  --win-bar: 32px;
+  --win-close: #ff5f57;
+  --win-minimize: #febc2e;
+  --win-zoom: #28c840;
+  --win-idle: var(--line-strong);
+  --win-glyph: rgba(0, 0, 0, 0.72);
+}
+
+.win-controls {
+  position: fixed;
+  top: var(--win-inset);
+  left: var(--win-inset);
+  z-index: 30;
+  display: none;
+  align-items: center;
+  gap: var(--win-gap);
+  /* La zone de survol déborde les points de 6 px : c'est la zone que la main
+     vise, pas le disque lui-même. Le `margin` négatif annule le décalage, donc
+     les points restent à 9,9 comme AppKit les place. */
+  padding: 6px;
+  margin: -6px;
+}
+
+/* Overlay : la fenêtre est décorée (l'OS arrondit selon sa norme) mais ses feux
+   sont poussés hors du cadre — donc c'est l'app qui les dessine.
+   Hidden : aucune décoration du tout, même conclusion. */
+[data-titlebar="overlay"] .win-controls,
+[data-titlebar="hidden"] .win-controls {
+  display: flex;
+}
+
+/* L'app dessine ses contrôles au-dessus de la barre latérale : on leur fait de
+   la place, et l'en-tête n'a plus de bande à réserver. */
+[data-titlebar="hidden"] .topbar,
+[data-titlebar="overlay"] .topbar {
+  padding-left: var(--s3);
+}
+
+[data-titlebar="hidden"] .sidebar,
+[data-titlebar="overlay"] .sidebar {
+  /* Le contenu commence là où la barre de titre finit, jamais avant. */
+  padding-top: max(var(--s5), var(--win-bar));
+}
+
+/* Plein écran : macOS fait glisser sa barre de menus par-dessus le haut de
+   l'écran dès que le pointeur y monte. Nos boutons seraient recouverts et
+   inutiles — la sortie du plein écran appartient alors à l'OS. */
+[data-fullscreen="true"] .win-controls {
+  display: none;
+}
+
+[data-fullscreen="true"] .topbar {
+  padding-left: var(--s5);
+}
+
+[data-fullscreen="true"] .sidebar {
+  padding-top: var(--s5);
+}
+
+/* Windows et Linux : les contrôles sont à DROITE, et dans l'ordre inverse —
+   fermer est le plus à l'extérieur. Le modèle porte déjà `controls.side` ;
+   `data-platform` le traduit ici. Mesuré avec l'attribut forcé : la boîte finit
+   à droite de la fenêtre, sans recouvrir les actions de l'en-tête. */
+[data-platform="windows"] .win-controls,
+[data-platform="linux"] .win-controls {
+  left: auto;
+  right: var(--win-inset);
+  flex-direction: row-reverse;
+}
+
+[data-platform="windows"] .topbar,
+[data-platform="linux"] .topbar {
+  /* La place réservée passe à droite : trois points, leurs écarts et la marge. */
+  padding-right: calc(
+    var(--win-inset) + var(--win-dot) * 3 + var(--win-gap) * 2 + var(--s3)
+  );
+}
+
+[data-platform="windows"] .sidebar,
+[data-platform="linux"] .sidebar {
+  /* Pas de barre de titre en overlay : le contenu n'a pas à descendre. */
+  padding-top: var(--s5);
+}
+
+.win-btn {
+  width: var(--win-dot);
+  height: var(--win-dot);
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  /* Pas de glyphe de police : à 14 px, un `×` de système est flou et son dessin
+     change avec la police. L'icône est un masque SVG — net à toutes les tailles,
+     et sa couleur suit `currentColor`. */
+  color: transparent;
+  cursor: default;
+}
+
+/* Les trois icônes, en vecteur. Le vert est un « agrandir » (deux triangles
+   opposés), pas un `+` : c'est ce que macOS dessine sur le bouton plein écran. */
+/* Les trois icônes sont les dessins d'Apple, exportés depuis SF Symbols par
+   `tools/export-symbols.swift` et embarqués en PNG 3x. Retracer un glyphe de
+   mémoire a été faux deux fois : le vert était un `+`, puis deux triangles,
+   alors que macOS dessine deux flèches diagonales. Un masque PNG ne se trompe
+   pas sur la forme, et le canal alpha donne le tracé. */
+.win-btn::before {
+  content: "";
+  /* La boîte du masque fait la taille du point : le PNG exporté contient déjà
+     sa propre marge, donc le glyphe tombe à ~60 % du disque, comme chez Apple.
+     À 9px il tombait à 40 % — mesurable en comparant les deux captures. */
+  width: var(--win-dot);
+  height: var(--win-dot);
+  background-color: currentColor;
+  -webkit-mask: var(--win-icon) center / contain no-repeat;
+  mask: var(--win-icon) center / contain no-repeat;
+}
+
+.win-btn.close {
+  --win-icon: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAYAAAAcaxDBAAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAACQAAAAAQAAAJAAAAABAAKgAgAEAAAAAQAAAFSgAwAEAAAAAQAAAFQAAAAA3UIkRgAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAAwZJREFUeAHt281q1UAUB/DWbqqbQtuN2p3UvdDahQtdKOLKUvAB6taNDyB9i75BoUvduOzHA4grEbx+gCgF3VSk0IoF/R96D4TDJLmTOzP3zp3/gcMkmSQz+WWSG2M6NcWgAAUoQAEKUIACFKAABShAAQpQgAIUoAAFKEABClCAAhSgAAWSCsxEbG0B+15H3kFOI4+Qo4hLaPQ+8hHyKvIr8hyZVTxBb0+Q/yr5CtNXkCnjGhp7g6z2Q0BvpezEsG3dwA7+IKsHodMHWJ4KVTB7Nf34huWXkVnEC/RSAV3lIepjowrmh5Z+bKA+eMj9JXTIwTTFXVS+RsZClfYPkTeRTXG9qXKc6p6jM66RaZcdYL3QqILZG7D9h1gvi5Bf959IC+iaD4nqg/kW/YtxdUY7Qbex518JUX0wP6Jf2Vzu1TOUClUw236A9OoQzKVqJ3Objo3qOzKzxtSTHwu1SExFXcVEyHtq0ZihUYmpoih9Ruo+1rfPqT6Yn7D9RNwzK37Oya6oxHRyXiz0RV3GZj2kPv40lcWMTOvrg/qXmJbPPe+D2jQqpa7YkWlpQ6AS06gK6jGybRS66olpMHW2CyoxVa+mfIzlrlHoWnaOddteItc0U8Zin+dMBXY9/Jeh1XKUXTCJWoM6DCZRDWoITKL2UUNiFo/qgymPRuvIQZ9Ti/uh8sVc6o/oFQ/UPaxrX/31dzNZRVdMVSCqSqAcFlN3RdSAmESNgFk0aqjLXBFtWdTlHxtTcX1Rs/kuVA9QylSY2uZEo87iKN8h9V8vTWXI95k+qC/1TORQPh0Bprr4oK7pRuNebg8AGnJkWo9BUZ/ZDUPMx/jo9HdLxz6j/h7ye8t6Xavlrz4eIOVbqqaQdwNZhHxtV3ffjDkyLU7TSJWTPm83GOf5LXTOor7HMn3RkarvgvrD9OUM8/L2KkrIX7jFCvlfTOn4HFK+ad9FniJTxyIa3ETK5zxym9lBfkEyKEABClCAAhSgAAUoQAEKUIACFKAABShAAQpQgAIUoAAFKDASgf+q9/aUq5LWMQAAAABJRU5ErkJggg==");
+  background: var(--win-close);
+}
+
+.win-btn.minimize {
+  --win-icon: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAYAAAAcaxDBAAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAACQAAAAAQAAAJAAAAABAAKgAgAEAAAAAQAAAFSgAwAEAAAAAQAAAFQAAAAA3UIkRgAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAASlJREFUeAHt1bFNQmEUBWA0mGAoGMEBdAgWoGQFwhRsQUvpCrbEysohiBNYUFCIh+51NP9NfsJ3k5O8gpyc9xWP0cgRIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAj0L/BQNHGS3lUyT56TXu6cIT/JLvnqZdS1HbP84Du5jO81f9m2Tm7itlnZK+Rw1yk7X1qLPrYuTN+yoLOi8imli9bFFaDT1iML+5pvrQDdFwK0rv5sXVjR95rS32T4verx+b3i5as631L8kRyTnjAv/+6HZJOME0eAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIECAAAECBAgQIHCXAv/fsqqb2BJjKQAAAABJRU5ErkJggg==");
+  background: var(--win-minimize);
+}
+
+.win-btn.zoom {
+  --win-icon: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAABUCAYAAAAcaxDBAAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAACQAAAAAQAAAJAAAAABAAKgAgAEAAAAAQAAAFSgAwAEAAAAAQAAAFQAAAAA3UIkRgAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAA/xJREFUeAHtm02ITlEcxgcj4/VRykcoRVbDwoKVZFLKQjZWNpKEkM+FLRtT8pGyIhZDmiixImESIikLG4XMAsMI5ftzeB7eU6e3e8499zqT7nuefz2dc//n/M97z+89c8/HfaelRSYCIiACIiACIiACIiACIiACIiACIiACIiACIiACIiACJQgMKRHjC2lH4RpoLjQOGgoVtZ8IeAjtg24VDW6m+hvRmR/Qr0j6jnY6oCRtPnrNkRULpmnnepI00ekzgwCTUN+lCrRvkIA+qRrQMpNGVh8nZDkj+LoitFHJJswzLyTlDM7Z+zH0AcqKGYD/GDQcqpTFWjYRSqgR4jKopx5QQzoJmgi1QZzcHkEvoGQta5T5fJ9BammytAI67oPnKuM6c0VA20lWcUHL8/PPe22SxHI67QIXupzamtN+csUuoEdA4gDkKrf925Kj5umwDcbOn6vHEKztd+W3ez4jqSIXIHNaxA3EKUENHxMuoFy8G2tF5jzkqmv7d5igVFMbhp3nIt62Ebi4BNl1XPmkobqg0M+dkG0jcXEZ8sWYsmShGgBZ6XibZj1PqFcCoHJPv7gek1TyxQNnjIMER26PJ858Oacd8U3tvuoAcz+n16NQfs0Ra4Dy8ZCczUGP30IGAtNPUAeUZ6NRga867Fg7vzevgWYtn4qO7YJOQHugmVCoEepNyAbJfD/EdmUlCHCi6oQeQL3QSWgGJBMBEYhGINYrkGg3FNDQNNTZAs2GXkHHIa4yZCUItCPmDWRPXgO4LnpKNRkx66CdEDcOVRxYuO1/N9/hSihUvsv6CNlfykVc85whOWscnTYU5vNO/rmSeA01xvGaozU560OPs2DYvs0eKgs88VGewzz4rZJ1B9zsIdTZ5KjHDYTLfGWumMr7a+hB1o7KHqEmvyGjt4vgM+WN6Z2M+km4eHoVApWz//oGIrNw3QjSXCcLlIyKQF1pQeXZrAHYmCYN1EC94QFkgPFX1csZAON6k79YMWV2mjxQAuJEEgL1K+otYQDsOWSDNHkB/YPnL1TfeaoBxvPZhdA9Aa2T8yQcqSFQ+RPzXshAtlONUICxja9TQl9R2yBNXkBtmvU89+NnIQOpSCqgGUDpGgZ1QUVgsm7yQFsBgetK/sMEDz1s4/LoMFQEahSgvKmqWRtueD+0CqpBxt4j0w+9tFLm+ft9mYfAUZQVGXmhdW97PrNpi8aiZ66dTig4V70LMahV7fhuCjo9WI+puzGAVq0NLuC5jXSNsrL+b2hzetVgxLrfg5GB8vBkdaybq2I7XGfuhp5CPPMsMyr5HH4GdUPzIJkIiIAIiIAIiIAIiIAIiIAIiIAIiIAIiIAIiIAIiIAI/F8CvwHXcrWso4fk8wAAAABJRU5ErkJggg==");
+  background: var(--win-zoom);
+}
+
+/* Fenêtre inactive : les trois passent au gris — l'état vient de la coquille
+   (`data-focused`), pas d'un `:hover` qui ne dirait rien de l'activation. */
+[data-focused="false"] .win-btn {
+  background: var(--win-idle);
+  color: transparent;
+}
+
+/* … et le survol du GROUPE rallume les couleurs, même hors focus. Ces règles
+   sont plus spécifiques que la précédente, elles gagnent donc quel que soit
+   l'ordre — sauf pour la couleur, qui doit venir APRÈS (voir plus bas). */
+[data-focused="false"] .win-controls:hover .win-btn.close {
+  background: var(--win-close);
+}
+
+[data-focused="false"] .win-controls:hover .win-btn.minimize {
+  background: var(--win-minimize);
+}
+
+[data-focused="false"] .win-controls:hover .win-btn.zoom {
+  background: var(--win-zoom);
+}
+
+/* Après la règle d'inactivité, à spécificité égale : sans cet ordre, l'icône
+   restait transparente au survol d'une fenêtre inactive. */
+.win-controls:hover .win-btn {
+  color: var(--win-glyph);
+}
+
+/* Le survol d'une fenêtre INACTIVE, rapporté par la coquille : WebKit ne produit
+   pas de `:hover` hors focus. Même rendu que le survol CSS, par un autre canal. */
+[data-pointer="in"] .win-btn.close {
+  background: var(--win-close);
+}
+
+[data-pointer="in"] .win-btn.minimize {
+  background: var(--win-minimize);
+}
+
+[data-pointer="in"] .win-btn.zoom {
+  background: var(--win-zoom);
+}
+
+[data-pointer="in"] .win-btn {
+  color: var(--win-glyph);
+}
+
+.win-btn:hover {
+  filter: brightness(0.88);
+}
+
+
+.win-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .crumbs {
@@ -453,6 +663,7 @@ code {
   display: flex;
   align-items: center;
   gap: var(--s2);
+  margin-left: auto;
 }
 
 .surface-pill {

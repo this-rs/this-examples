@@ -19,12 +19,14 @@
         "minWidth": 420,
         "minHeight": 480,
         "label": "main",
+        "decorations": true,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true,
         "trafficLightPosition": {
-          "x": 18,
-          "y": 30
-        }
+          "x": -1000,
+          "y": -1000
+        },
+        "acceptFirstMouse": true
       }
     ],
     "security": {

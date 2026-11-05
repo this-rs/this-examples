@@ -453,10 +453,42 @@ jobs:
   # `if: always()` makes it report even when a dependency failed, which is the
   # whole point: a red CI must be able to block a merge. A skipped job counts as
   # fine here, and that is honest — a docs-only PR genuinely had nothing to check.
+  # Vérifie l'interface de la démo sans œil humain : géométrie des contrôles et
+  # son côté selon la plateforme, icônes en masque (pas des glyphes de police),
+  # garde du premier clic. Écrit parce que six allers-retours sur cette interface
+  # ont été vérifiés à la main — chacun pouvant être mesuré.
+  ui-checks:
+    name: UI checks
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install the browser checks
+        working-directory: examples/desktop-modules/tools
+        run: npm ci
+
+      # `ui/dist` est commité : on sert ce qui est livré, sans reconstruire.
+      - name: Serve the built front
+        run: |
+          python3 -m http.server 8790 --directory examples/desktop-modules/ui/dist &
+          sleep 1
+          curl -s -o /dev/null -w 'front : %{http_code}\n' http://127.0.0.1:8790/
+
+      - name: Check the interface
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node examples/desktop-modules/tools/check-ui.mjs http://127.0.0.1:8790/
+
   gate:
     name: CI gate
     if: always()
-    needs: [changes, fmt, clippy, build-examples, coverage, test, smoke, cross-platform]
+    needs: [changes, fmt, clippy, build-examples, coverage, test, smoke, cross-platform, ui-checks]
     runs-on: ubuntu-latest
     steps:
       - name: Nothing failed, nothing was cancelled

@@ -19,3 +19,6 @@ Cargo.lock
 
 # Demo state written by the shop server at runtime
 examples/desktop-modules/data/
+
+# Dépendances des vérifications d'interface (tools/check-ui.mjs)
+examples/desktop-modules/tools/node_modules/

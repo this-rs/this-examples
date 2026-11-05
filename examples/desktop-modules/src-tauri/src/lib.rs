@@ -115,10 +115,142 @@ async fn place_order_cmd(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+/// Une fenêtre inactive ne reçoit pas les mouvements de souris : AppKit ne les
+/// envoie que si la fenêtre les accepte, et `wry` ne règle que
+/// `acceptsFirstMouse:` (les clics). Sans ça, `:hover` ne s'applique jamais
+/// quand l'app est en arrière-plan : les feux restent gris et le survol ne les
+/// rallume pas. Mesuré dans `wry-0.57.1` : aucune occurrence de
+/// `acceptsMouseMovedEvents`.
+#[cfg(target_os = "macos")]
+fn accept_mouse_moved(window: &tauri::WebviewWindow) {
+    use objc2::msg_send;
+    use objc2::runtime::{AnyObject, Bool};
+
+    if let Ok(pointer) = window.ns_window() {
+        let ns_window = pointer as *mut AnyObject;
+        // SAFETY: `ns_window` vient de Tauri et désigne la NSWindow vivante de
+        // cette fenêtre ; l'appel est un setter standard d'AppKit.
+        unsafe {
+            let _: () = msg_send![ns_window, setAcceptsMouseMovedEvents: Bool::YES];
+            // On relit : un setter qui échoue en silence laisserait le survol
+            // mort sans que rien ne le dise.
+            let accepted: Bool = msg_send![ns_window, acceptsMouseMovedEvents];
+            eprintln!("acceptsMouseMovedEvents = {}", accepted.as_bool());
+        }
+    }
+}
+
+/// La position de la souris, relevée pour que le survol marche même quand la
+/// fenêtre n'est pas active.
+///
+/// Pourquoi un relevé et pas un événement : WebKit n'installe ses zones de suivi
+/// que pour la fenêtre active (`activeInKeyWindow`), donc une fenêtre en
+/// arrière-plan ne produit aucun survol CSS — et ce masque vit dans WKWebView,
+/// hors de portée. `acceptsMouseMovedEvents` ne suffit pas, mesuré : il vaut
+/// `true` et le survol ne vient toujours pas.
+///
+/// `NSEvent.mouseLocation` ne demande aucune permission. On compare la position
+/// à la zone des feux (leur boîte, marges comprises) et on ne parle à l'app que
+/// quand l'état change.
+#[cfg(target_os = "macos")]
+fn watch_pointer(window: tauri::WebviewWindow) {
+    use objc2::msg_send;
+    use objc2_foundation::NSPoint;
+
+    // Le front publie la boîte réelle des contrôles : c'est le DOM qui fait
+    // autorité sur ce qui est dessiné, pas une constante recopiée ici. Changer
+    // le CSS déplace donc la zone de survol sans toucher à ce fichier.
+    let zone: std::sync::Arc<std::sync::Mutex<Option<(f64, f64, f64, f64)>>> =
+        std::sync::Arc::new(std::sync::Mutex::new(None));
+    {
+        use tauri::Listener;
+
+        let zone = zone.clone();
+        let _ = window.listen("shell://controls", move |event| {
+            let Ok(value) = serde_json::from_str::<serde_json::Value>(event.payload()) else {
+                return;
+            };
+            let number = |key: &str| value.get(key).and_then(|value| value.as_f64());
+            if let (Some(x), Some(y), Some(width), Some(height)) =
+                (number("x"), number("y"), number("w"), number("h"))
+            {
+                if let Ok(mut zone) = zone.lock() {
+                    *zone = Some((x, y, x + width, y + height));
+                }
+            }
+        });
+    }
+
+    std::thread::spawn(move || {
+        let mut inside = false;
+        loop {
+            // Fenêtre active : le CSS fait son travail. On ne relève rien et on
+            // dort longtemps — un fil qui interroge le système douze fois par
+            // seconde pour ne rien en faire est un fil qui ne dort jamais.
+            if window.is_focused().unwrap_or(true) {
+                if inside {
+                    inside = false;
+                    let _ = tauri::Emitter::emit(&window, "shell://pointer", false);
+                }
+                std::thread::sleep(std::time::Duration::from_millis(600));
+                continue;
+            }
+
+            std::thread::sleep(std::time::Duration::from_millis(80));
+
+            let where_is_it = unsafe {
+                let mouse: NSPoint = msg_send![objc2::class!(NSEvent), mouseLocation];
+                local_pointer(&window, mouse.x, mouse.y)
+            };
+
+            let bounds = zone.lock().ok().and_then(|zone| *zone);
+            let should = match (bounds, where_is_it) {
+                (Some((x0, y0, x1, y1)), Some((x, y))) => {
+                    x >= x0 && x <= x1 && y >= y0 && y <= y1
+                }
+                _ => false,
+            };
+            if should != inside {
+                inside = should;
+                let _ = tauri::Emitter::emit(&window, "shell://pointer", inside);
+
+            }
+        }
+    });
+}
+
+/// `NSEvent.mouseLocation` donne des points, origine en bas à gauche de l'écran
+/// principal ; la fenêtre se décrit en pixels physiques, origine en haut à
+/// gauche. On ramène tout en points et on rend la position locale — le calcul
+/// est ainsi vérifiable en le lisant, pas en le supposant.
+#[cfg(target_os = "macos")]
+fn local_pointer(window: &tauri::WebviewWindow, mouse_x: f64, mouse_y: f64) -> Option<(f64, f64)> {
+    let Ok(Some(primary)) = window.primary_monitor() else {
+        return None;
+    };
+    let position = window.outer_position().ok()?;
+    let scale = window.scale_factor().unwrap_or(1.0);
+    if scale <= 0.0 {
+        return None;
+    }
+
+    let screen_height = primary.size().height as f64 / primary.scale_factor();
+    let from_top = screen_height - mouse_y;
+    let local_x = mouse_x - position.x as f64 / scale;
+    let local_y = from_top - position.y as f64 / scale;
+
+    Some((local_x, local_y))
+}
+
     tauri::Builder::default()
         // Fenêtre, Dock, habillage et reprise : la coquille est un plugin, une ligne.
         .plugin(this_shell_tauri::init(this_shell_tauri::ShellConfig::default()))
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            if let Some(window) = app.get_webview_window("main") {
+                accept_mouse_moved(&window);
+                watch_pointer(window);
+            }
 
             let dir = app.path().app_data_dir()?;
             let data = Data::open(dir).map_err(|e| e.to_string())?;

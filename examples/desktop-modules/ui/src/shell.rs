@@ -545,6 +545,17 @@ pub fn App() -> impl IntoView {
 
             <div class="content">
                 <header class="topbar" data-tauri-drag-region=drag>
+                    // Fenêtre sans cadre système : les boutons sont à l'app. Ils ne
+                    // s'affichent que si la coquille rapporte `data-titlebar="hidden"`,
+                    // sinon l'OS les dessine déjà et on en aurait deux jeux.
+                    <div class="win-controls">
+                        <button class="win-btn close" aria-label="Fermer"
+                            on:click=move |_| crate::window::close()></button>
+                        <button class="win-btn minimize" aria-label="Réduire"
+                            on:click=move |_| crate::window::minimize()></button>
+                        <button class="win-btn zoom" aria-label="Plein écran"
+                            on:click=move |_| crate::window::toggle_fullscreen()></button>
+                    </div>
                     <nav class="crumbs" aria-label="Fil d'Ariane" data-tauri-drag-region=drag>
                         <span class="crumb-root">"shop"</span>
                         <span class="crumb-sep" inner_html=icons::ARROW></span>

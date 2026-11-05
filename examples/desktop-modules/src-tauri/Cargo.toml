@@ -30,3 +30,8 @@ serde_json = "1"
 [target.'cfg(target_os = "ios")'.dependencies]
 # `uname` : l'identifiant machine distingue Dynamic Island, encoche et écran entier.
 # Régler la vue de défilement de la WKWebView (marges de sécurité appliquées une seule fois).
+
+# Pour que la fenêtre inactive reçoive les mouvements de souris (voir src/lib.rs).
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = "0.3"

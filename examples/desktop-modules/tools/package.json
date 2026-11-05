@@ -1,0 +1,9 @@
+{
+  "name": "desktop-modules-ui-checks",
+  "private": true,
+  "type": "module",
+  "description": "Vérifications de l'interface de la démo, exécutables sans œil humain",
+  "dependencies": {
+    "puppeteer-core": "^23"
+  }
+}

@@ -9,6 +9,7 @@ mod format;
 mod grpc_web;
 mod icons;
 mod shell;
+mod window;
 mod views;
 
 use leptos::mount::mount_to_body;

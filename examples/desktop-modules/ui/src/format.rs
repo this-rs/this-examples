@@ -8,11 +8,11 @@
 //! passer silencieusement.
 
 use serde_json::Value;
-use ui_shell::{Entity, Field, Kind, Tone};
+use this_ui::{Entity, Field, Kind, Tone};
 
 use crate::api::Snapshot;
 
-pub use ui_shell::{count as count_f, money_f};
+pub use this_ui::{count as count_f, money_f};
 
 pub fn entity_label(name: &str) -> String {
     match name {

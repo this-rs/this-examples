@@ -15,9 +15,10 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde-wasm-bindgen = "0.6"
 js-sys = "0.3"
-app-kit = { path = "../app-kit" }
+this-app = { path = "../../../../this/crates/this-app" }
 this-descriptor = { path = "../../../../this/crates/this-descriptor" }
 module-runtime = { path = "../../../crates/module-runtime" }
-ui-shell = { path = "../ui-shell" }
+this-ui = { path = "../../../../this/crates/this-ui" }
+this-client-web = { path = "../../../../this/crates/this-client-web" }
 gloo-net = { version = "0.6", features = ["http", "json"] }
 web-sys = { version = "0.3", features = ["Window", "Document", "Element", "Storage", "Navigator", "ReadableStream", "ReadableStreamDefaultReader"] }

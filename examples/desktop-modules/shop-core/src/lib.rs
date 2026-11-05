@@ -17,11 +17,11 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-pub use app_kit::{Change, ChangeOp};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
+pub use this_app::{Change, ChangeOp};
 use tokio::sync::broadcast;
 
 use serde::{Deserialize, Serialize};
@@ -1184,7 +1184,7 @@ pub fn list_records(d: &Data, entity: &str) -> Vec<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use app_kit::ChangeOp;
+    use this_app::ChangeOp;
 
     fn temp_data(tag: &str) -> (Data, PathBuf) {
         let dir = std::env::temp_dir().join(format!("shop-{tag}-{}", std::process::id()));

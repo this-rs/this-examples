@@ -1,52 +1,41 @@
 //! # Le laboratoire de modules
 //!
-//! Un programme du langage de module, compilé et **exécuté dans la page** :
-//! aucun aller-retour serveur. Le même programme passe deux fois — par
-//! l'interpréteur, puis par le module wasm assemblé et instancié — et les deux
-//! réponses sont affichées côte à côte. Si elles divergent, c'est visible.
+//! Un programme s'écrit, se compile **dans la page**, se range dans un VFS
+//! navigateur, se relit depuis ce VFS, puis s'exécute — et on peut lui passer un
+//! argument pour voir ce qu'il répond.
 //!
-//! ## Pourquoi c'est ici et pas au serveur
+//! ## Ce que la vue fait, et ce qu'elle ne fait plus
 //!
-//! Un module chargé à chaud doit pouvoir être produit là où on l'écrit. Le
-//! langage est total (pas de boucle, pas d'état, aucun I/O implicite), donc
-//! l'exécuter dans la page ne demande aucune confiance : il n'y a rien à
-//! échapper, parce que rien n'est exprimable.
+//! Elle saisit, appelle, affiche. La compilation, le rangement et l'exécution
+//! vivent dans `this-module-harness` et `this-module-harness-web` : c'est ce qui
+//! permet à un harness de faire la même chose sans interface.
 //!
-//! L'assemblage se fait en Rust (`this_module_lang::assemble`), pas en
-//! JavaScript : la page reçoit des octets et appelle `WebAssembly.instantiate`,
-//! exactement comme le serveur les donne à `wasmi`.
+//! ## Pourquoi deux exécuteurs
 //!
-//! ## Ce que le laboratoire fige
+//! L'interpréteur et le module wasm doivent dire la même chose. Cette comparaison
+//! est une valeur du laboratoire, pas une fonctionnalité du harness : la vue
+//! appelle deux fois, avec deux moteurs.
 //!
-//! `now()` rend la même valeur aux deux exécuteurs, capturée **une fois** avant
-//! l'exécution. Sans cela un programme qui lit l'heure divergerait de quelques
-//! millisecondes et la comparaison ne dirait plus rien.
-
-use std::cell::RefCell;
-use std::rc::Rc;
+//! ## Pourquoi l'artefact est relu du VFS
+//!
+//! `load` le relit après l'avoir rangé. Passer les octets encore en main ne
+//! prouverait rien du stockage — et c'est justement ce que ce panneau existe pour
+//! montrer : le module survit à un rechargement de la page.
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::closure::Closure;
-use wasm_bindgen::JsValue;
-use wasm_bindgen_futures::JsFuture;
 
-use this_module_lang::assemble::compile_to_wasm;
+use this_module_harness::Harness;
+use this_module_harness::executor::{Executor, Outcome, show};
+use this_module_harness_web::BrowserExecutor;
 use this_module_lang::compile;
 use this_module_lang::eval::{Host, Value, run};
-use this_module_lang::{Function, Type};
+use this_vfs_web::IndexedDbVfs;
 
-/// Le programme proposé : il montre un paramètre, un opérateur et un effet.
+/// Le programme proposé : un paramètre, un opérateur, un effet.
 const START: &str = "fn run(a: Int) -> Int {\n    emit(\"bonjour depuis la page\");\n    a + 1\n}";
-
-/// Ce qu'un exécuteur a produit. Comparable : c'est ce qui rend la divergence
-/// visible plutôt que racontée.
-#[derive(Clone, Debug, PartialEq)]
-struct Outcome {
-    value: String,
-    effects: Vec<String>,
-}
+const NAME: &str = "lab";
+const VERSION: &str = "0.1.0";
 
 struct Recorder {
     now: i64,
@@ -64,232 +53,120 @@ impl Host for Recorder {
                 self.effects.push("now()".into());
                 Ok(Value::Int(self.now))
             }
-            ("emit", other) => Err(format!("`emit` attend une chaîne, reçu {other:?}")),
             _ => Err(format!("`{name}` n'a pas d'hôte dans le laboratoire")),
         }
     }
 }
 
-/// Le rapport affiché. Trois formes, parce qu'il y a trois choses à dire.
 #[derive(Clone, Debug)]
 enum Report {
     Refused(String),
-    Compared {
+    Ran {
+        stored: usize,
+        etag: String,
         reference: Outcome,
-        emitted: Outcome,
-        bytes: usize,
+        executed: Outcome,
         agree: bool,
+        /// Vrai quand l'artefact vient du VFS sans recompilation — la preuve que
+        /// le stockage sert à quelque chose.
+        reloaded: bool,
     },
 }
 
-/// Les arguments que le programme attend, à zéro. Un laboratoire n'a pas de
-/// saisie par paramètre : ce qui compte est que les deux côtés reçoivent la
-/// même chose.
-fn default_args(function: &Function) -> Vec<Value> {
-    function
-        .params
-        .iter()
-        .map(|param| match param.ty {
-            Type::Int => Value::Int(0),
-            Type::Bool => Value::Bool(false),
-            Type::Str => Value::Str(String::new()),
-            Type::Unit => Value::Unit,
-        })
-        .collect()
-}
-
-fn show(value: &Result<Value, String>) -> String {
-    match value {
-        Ok(Value::Int(n)) => n.to_string(),
-        Ok(Value::Bool(b)) => b.to_string(),
-        Ok(Value::Str(s)) => format!("{s:?}"),
-        Ok(Value::Unit) => "()".to_string(),
-        Err(error) => format!("erreur : {error}"),
+/// Relit l'artefact **sans recompiler** et l'exécute. C'est ce geste qui montre
+/// que le VFS compte : si la compilation seule suffisait, il n'y aurait rien à
+/// ranger.
+async fn reload_and_run(arg: i64) -> Report {
+    let now = js_sys::Date::now() as i64;
+    let vfs = match IndexedDbVfs::open("this-lab").await {
+        Ok(vfs) => vfs,
+        Err(error) => return Report::Refused(format!("VFS : {error}")),
+    };
+    let harness = Harness::new(&vfs);
+    let program = match harness.load(NAME, VERSION).await {
+        Ok(program) => program,
+        Err(error) => return Report::Refused(format!("rien en store : {error}")),
+    };
+    let executed = match BrowserExecutor.run(&program, &[Value::Int(arg)], now).await {
+        Ok(outcome) => outcome,
+        Err(error) => return Report::Refused(format!("exécution : {error}")),
+    };
+    Report::Ran {
+        stored: program.len(),
+        etag: this_vfs::etag_of(&program),
+        // Sans compilation, il n'y a pas d'interpréteur à comparer : la référence
+        // est le module lui-même, relu.
+        reference: executed.clone(),
+        executed,
+        agree: true,
+        reloaded: true,
     }
 }
 
-async fn evaluate(source: &str) -> Report {
-    let compiled = match compile(source) {
+async fn evaluate(source: String, arg: i64) -> Report {
+    // L'horloge est figée une fois, pour que les deux exécutions soient comparables.
+    let now = js_sys::Date::now() as i64;
+
+    let compiled = match compile(&source) {
         Ok(compiled) => compiled,
         Err(error) => return Report::Refused(error),
     };
-
-    // La même horloge pour les deux exécuteurs.
-    let now = js_sys::Date::now() as i64;
-
     let mut recorder = Recorder {
         now,
         effects: Vec::new(),
     };
-    let args = default_args(&compiled.function);
-    let reference = run(&compiled.function, &args, &mut recorder);
     let reference = Outcome {
-        value: show(&reference),
+        value: show(&run(&compiled.function, &[Value::Int(arg)], &mut recorder)),
         effects: recorder.effects,
     };
 
-    let bytes = match compile_to_wasm(source) {
-        Ok(bytes) => bytes,
-        Err(error) => return Report::Refused(error),
+    // Le vrai chemin : compiler → ranger → RELIRE → exécuter.
+    let vfs = match IndexedDbVfs::open("this-lab").await {
+        Ok(vfs) => vfs,
+        Err(error) => return Report::Refused(format!("VFS : {error}")),
     };
+    let harness = Harness::new(&vfs);
 
-    match run_in_page(&bytes, &compiled.function, &args, now).await {
-        Ok(emitted) => {
-            let agree = emitted == reference;
-            Report::Compared {
-                reference,
-                emitted,
-                bytes: bytes.len(),
-                agree,
-            }
-        }
-        Err(error) => Report::Refused(error),
-    }
-}
-
-/// Assemble puis instancie le module dans la page, et l'exécute.
-async fn run_in_page(
-    bytes: &[u8],
-    function: &Function,
-    args: &[Value],
-    now: i64,
-) -> Result<Outcome, String> {
-    // La mémoire n'existe qu'après l'instanciation, mais `emit` en a besoin
-    // pendant l'exécution : on la dépose ici dès qu'elle est connue.
-    let memory: Rc<RefCell<Option<JsValue>>> = Rc::new(RefCell::new(None));
-    let effects: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
-
-    let emit = {
-        let memory = memory.clone();
-        let effects = effects.clone();
-        Closure::<dyn FnMut(i32, i32)>::new(move |ptr: i32, len: i32| {
-            let Some(memory) = memory.borrow().clone() else {
-                return;
-            };
-            let Ok(buffer) = js_sys::Reflect::get(&memory, &"buffer".into()) else {
-                return;
-            };
-            // Bornes vérifiées AVANT toute allocation : un pointeur ou une
-            // longueur aberrante allouerait des gigaoctets et ferait tuer le
-            // processus du webview, ce qui ressemble à un crash de l'app.
-            let total = js_sys::Uint8Array::new(&buffer).length();
-            let start = ptr.max(0) as u32;
-            let size = len.max(0) as u32;
-            if start.checked_add(size).is_none_or(|end| end > total) {
-                effects
-                    .borrow_mut()
-                    .push(format!("emit(hors mémoire : {start}+{size} > {total})"));
-                return;
-            }
-            let view = js_sys::Uint8Array::new_with_byte_offset_and_length(&buffer, start, size);
-            let text = String::from_utf8_lossy(&view.to_vec()).into_owned();
-            effects.borrow_mut().push(format!("emit({text:?})"));
-        })
+    let artifact = match harness.compile(NAME, VERSION, &source).await {
+        Ok(artifact) => artifact,
+        Err(error) => return Report::Refused(format!("compilation : {error}")),
     };
-
-    let clock = {
-        let effects = effects.clone();
-        Closure::<dyn FnMut() -> i64>::new(move || {
-            effects.borrow_mut().push("now()".into());
-            now
-        })
+    let program = match harness.load(NAME, VERSION).await {
+        Ok(program) => program,
+        Err(error) => return Report::Refused(format!("relecture : {error}")),
     };
-
-    let host = js_sys::Object::new();
-    set(&host, "emit", emit.as_ref().unchecked_ref())?;
-    set(&host, "now", clock.as_ref().unchecked_ref())?;
-
-    let imports = js_sys::Object::new();
-    set(&imports, "host", &host)?;
-
-    // `WebAssembly.instantiate(bytes, imports)` rend `{ module, instance }` — pas
-    // l'instance seule. On lit le champ plutôt que de croire la signature.
-    let source = JsFuture::from(js_sys::WebAssembly::instantiate_buffer(bytes, &imports))
+    let executed = match BrowserExecutor
+        .run(&program, &[Value::Int(arg)], now)
         .await
-        .map_err(|error| format!("instanciation refusée : {}", describe(&error)))?;
-    let held = js_sys::Reflect::get(&source, &"instance".into()).unwrap_or(source);
-    let instance: js_sys::WebAssembly::Instance = held
-        .dyn_into()
-        .map_err(|value| format!("instanciation : type inattendu ({})", describe(&value)))?;
-
-    let exports = js_sys::WebAssembly::Instance::exports(&instance);
-    *memory.borrow_mut() = js_sys::Reflect::get(&exports, &"memory".into()).ok();
-
-    let entry = js_sys::Reflect::get(&exports, &"run".into())
-        .map_err(|error| format!("le module n'exporte pas `run` : {}", describe(&error)))?;
-    let entry: js_sys::Function = entry
-        .dyn_into()
-        .map_err(|_| "`run` n'est pas une fonction".to_string())?;
-
-    let js_args: Vec<JsValue> = args
-        .iter()
-        .map(|value| match value {
-            Value::Int(n) => js_sys::BigInt::from(*n).into(),
-            Value::Bool(b) => JsValue::from_bool(*b),
-            _ => JsValue::UNDEFINED,
-        })
-        .collect();
-
-    let count = js_args.len() as u32;
-    let outcome = match count {
-        0 => entry.call0(&JsValue::NULL),
-        1 => entry.call1(&JsValue::NULL, &js_args[0]),
-        2 => entry.call2(&JsValue::NULL, &js_args[0], &js_args[1]),
-        _ => return Err("le laboratoire n'accepte que deux paramètres".into()),
-    }
-    .map_err(|error| format!("exécution refusée : {}", describe(&error)))?;
-
-    // Les closures restent vivantes jusqu'à la fin de cette fonction, donc
-    // jusqu'après l'appel : c'est suffisant, le module n'est plus exécuté
-    // ensuite. `forget()` les faisait fuir à chaque clic.
-
-    let value = match function.returns {
-        Type::Unit => "()".to_string(),
-        Type::Bool => outcome.as_f64().map(|n| (n != 0.0).to_string()).unwrap_or_default(),
-        Type::Int => bigint_to_string(&outcome),
-        Type::Str => "chaîne".to_string(),
+    {
+        Ok(outcome) => outcome,
+        Err(error) => return Report::Refused(format!("exécution : {error}")),
     };
 
-    let effects = effects.borrow().clone();
-    Ok(Outcome { value, effects })
-}
-
-fn set(target: &js_sys::Object, key: &str, value: &JsValue) -> Result<(), String> {
-    js_sys::Reflect::set(target, &JsValue::from_str(key), value)
-        .map(|_| ())
-        .map_err(|error| format!("imports : {}", describe(&error)))
-}
-
-fn describe(error: &JsValue) -> String {
-    error
-        .as_string()
-        .or_else(|| {
-            js_sys::Reflect::get(error, &"message".into())
-                .ok()
-                .and_then(|message| message.as_string())
-        })
-        .unwrap_or_else(|| format!("{error:?}"))
-}
-
-fn bigint_to_string(value: &JsValue) -> String {
-    let bigint: &js_sys::BigInt = value.unchecked_ref();
-    match bigint.to_string(10) {
-        Ok(text) => text.as_string().unwrap_or_default(),
-        Err(_) => "?".to_string(),
+    let agree = executed == reference;
+    Report::Ran {
+        stored: artifact.bytes,
+        etag: artifact.etag,
+        reference,
+        executed,
+        agree,
+        reloaded: false,
     }
 }
 
 /// Le panneau.
 pub fn page() -> AnyView {
     let source = RwSignal::new(START.to_string());
+    let argument = RwSignal::new("1".to_string());
     let report = RwSignal::new(None::<Report>);
     let busy = RwSignal::new(false);
 
     let execute = move |_| {
         let text = source.get_untracked();
+        let arg = argument.get_untracked().trim().parse().unwrap_or(0);
         busy.set(true);
         spawn_local(async move {
-            report.set(Some(evaluate(&text).await));
+            report.set(Some(evaluate(text, arg).await));
             busy.set(false);
         });
     };
@@ -300,7 +177,7 @@ pub fn page() -> AnyView {
                 <div class="page-title">
                     <h1>"Laboratoire de modules"</h1>
                     <p class="page-sub">
-                        "Compilé, assemblé et exécuté "
+                        "Compilé, rangé dans un VFS, relu et exécuté "
                         <strong>"dans cette page"</strong>
                         " — aucune requête au serveur."
                     </p>
@@ -325,8 +202,30 @@ pub fn page() -> AnyView {
                 ></textarea>
 
                 <div class="lab-actions">
+                    <label class="lab-arg">
+                        <span class="muted small">"argument (a)"</span>
+                        <input
+                            type="number"
+                            prop:value=move || argument.get()
+                            on:input=move |ev| argument.set(event_target_value(&ev))
+                        />
+                    </label>
                     <button class="btn primary" on:click=execute disabled=move || busy.get()>
-                        <span>"Compiler et exécuter"</span>
+                        <span>"Compiler, ranger et exécuter"</span>
+                    </button>
+                    <button
+                        class="btn"
+                        on:click=move |_| {
+                            let arg = argument.get_untracked().trim().parse().unwrap_or(0);
+                            busy.set(true);
+                            spawn_local(async move {
+                                report.set(Some(reload_and_run(arg).await));
+                                busy.set(false);
+                            });
+                        }
+                        disabled=move || busy.get()
+                    >
+                        "Relire depuis le VFS"
                     </button>
                     <Show when=move || busy.get() fallback=|| ()>
                         <span class="muted small">"Compilation…"</span>
@@ -348,13 +247,16 @@ pub fn page() -> AnyView {
                             <pre>{error}</pre>
                         </div>
                     }.into_any(),
-                    Some(Report::Compared { reference, emitted, bytes, agree }) => {
+                    Some(Report::Ran { stored, etag, reference, executed, agree, reloaded }) => {
                         let (reference_value, reference_effects) = flatten(&reference);
-                        let (emitted_value, emitted_effects) = flatten(&emitted);
+                        let (emitted_value, emitted_effects) = flatten(&executed);
+                        let short_etag = etag.chars().take(12).collect::<String>();
                         view! {
                             <div class="lab-verdict" class:ok=move || agree class:ko=move || !agree>
-                                {if agree {
-                                    format!("Les deux exécuteurs sont d'accord — {bytes} octets de wasm assemblé")
+                                {if reloaded {
+                                    format!("Relu du VFS sans recompiler ({stored} octets, etag {short_etag}) puis exécuté")
+                                } else if agree {
+                                    format!("Rangé ({stored} octets, etag {short_etag}), relu du VFS, exécuté — les deux moteurs sont d'accord")
                                 } else {
                                     "DIVERGENCE : l'interpréteur et le module wasm ne disent pas la même chose".to_string()
                                 }}
@@ -367,7 +269,7 @@ pub fn page() -> AnyView {
                                     <pre>{reference_effects}</pre>
                                 </div>
                                 <div>
-                                    <h3>"Module wasm (assemblé ici)"</h3>
+                                    <h3>"Module wasm (relu du VFS)"</h3>
                                     <pre>{emitted_value}</pre>
                                     <h4>"Effets"</h4>
                                     <pre>{emitted_effects}</pre>

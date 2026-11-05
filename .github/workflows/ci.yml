@@ -19,6 +19,16 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
 
+# Un push qui en remplace un autre annule le run précédent. Sans ça, chaque
+# correction poussée coup sur coup empile un run complet : le 05/11/2026, quatre
+# pushes ont mis quatre runs de ~25 min en file, et le dernier — celui qui
+# comptait — a attendu que les périmés finissent. Les workflows n'ont pas de
+# limite de temps ici, donc rien ne les arrêtait : j'en ai annulé trois à la main,
+# ce que le workflow doit faire lui-même.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ── Documentation-only changes ─────────────────────────────────────────────
   # Every other job needs `code == 'true'`. `paths-ignore` used to live on

@@ -11,6 +11,9 @@
     <!-- installable : ajoutée à l'écran d'accueil, elle s'ouvre en plein écran, sans navigateur -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Sans ça, chaque navigateur demande /favicon.ico et reçoit un 404 : une
+         requête inutile par chargement, et une erreur rouge dans la console. -->
+    <link rel="icon" href="/icon-192.png" type="image/png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

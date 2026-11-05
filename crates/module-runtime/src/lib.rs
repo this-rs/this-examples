@@ -325,4 +325,44 @@ mod tests {
         );
         assert!(store.remove("shop", "0.3.0").await.is_err());
     }
+
+    /// Le fichier livré à la démo navigateur : la vérification du framework doit
+    /// l'accepter tel quel. C'est le seul lien entre cette démo et le descripteur réel.
+    const SHOP_SEED: &str =
+        include_str!("../../../examples/desktop-modules/ui/assets/shop-interface.json");
+
+    #[tokio::test]
+    async fn the_shop_seed_passes_the_framework_stored_profile() {
+        let seed: serde_json::Value = serde_json::from_str(SHOP_SEED).unwrap();
+        let mut store = InMemoryStore::new();
+        store
+            .put(&seed["descriptor"].to_string(), vec![])
+            .await
+            .unwrap();
+        let built = build(&store, "shop", None, false)
+            .await
+            .expect("la boutique doit se construire");
+        assert_eq!(built.descriptor.entities.len(), 5);
+    }
+
+    #[tokio::test]
+    async fn a_shop_seed_without_policies_is_refused_by_the_framework_with_its_reason() {
+        let mut seed: serde_json::Value = serde_json::from_str(SHOP_SEED).unwrap();
+        seed["descriptor"]["entities"][0]["permissions"] = serde_json::json!({});
+        let mut store = InMemoryStore::new();
+        store
+            .put(&seed["descriptor"].to_string(), vec![])
+            .await
+            .unwrap();
+        match build(&store, "shop", None, false).await {
+            Err(BuildError::Invalid(issues)) => {
+                assert!(
+                    issues.iter().any(|i| i.path.contains("customer")),
+                    "le motif doit nommer l'entité fautive : {issues:?}"
+                );
+                println!("motif du framework : {issues:?}");
+            }
+            other => panic!("attendu un refus du framework, reçu {other:?}"),
+        }
+    }
 }

@@ -188,7 +188,7 @@ membres du workspace portable.
 ### Site web
 
 ```sh
-(cd ui && trunk build)                                   # produit ui/dist
+(cd ui && trunk build --release)                         # produit ui/dist (3,4 Mo)
 SHOP_ADDR=127.0.0.1:8790 \
 SHOP_DATA=/tmp/shop-web-data \
 SHOP_DIST=$PWD/ui/dist \

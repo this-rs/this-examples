@@ -17,6 +17,7 @@ serde-wasm-bindgen = "0.6"
 js-sys = "0.3"
 this-app = { path = "../../../../this/crates/this-app" }
 this-descriptor = { path = "../../../../this/crates/this-descriptor" }
+this-module-lang = { path = "../../../../this/crates/this-module-lang", features = ["assemble"] }
 module-runtime = { path = "../../../crates/module-runtime" }
 this-ui = { path = "../../../../this/crates/this-ui" }
 this-client-web = { path = "../../../../this/crates/this-client-web" }

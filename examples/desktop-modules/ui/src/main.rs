@@ -8,6 +8,7 @@ mod api;
 mod format;
 mod grpc_web;
 mod icons;
+mod lab;
 mod shell;
 mod window;
 mod views;

@@ -157,6 +157,10 @@ fn apply(l: &ChromeLayout) {
     for (name, value) in l.attributes() {
         let _ = root.set_attribute(name, value);
     }
+
+    // Les contrôles viennent d'être montrés ou cachés par l'attribut ci-dessus :
+    // c'est le seul moment où leur boîte est celle qui sera vue.
+    publish_controls();
 }
 
 /// La valeur de `data-tauri-drag-region` pour une zone d'en-tête : présente quand l'en-tête
@@ -259,6 +263,54 @@ fn guard_first_click(root: web_sys::Element, win: web_sys::Window) {
     handler.forget();
 }
 
+/// Dit à la coquille où sont les contrôles, tels qu'ils sont dessinés.
+///
+/// La géométrie vivait à trois endroits : la constante du modèle, les variables
+/// CSS et une boîte recopiée à la main dans le Rust de la coquille. Changer l'un
+/// faisait diverger les autres en silence. Le DOM sait ce qui est réellement
+/// dessiné — c'est donc lui qui fait autorité, et la coquille reçoit la boîte au
+/// lieu de la deviner.
+fn publish_controls() {
+    use wasm_bindgen::{JsCast, JsValue};
+
+    let Some(win) = web_sys::window() else {
+        return;
+    };
+    let Some(document) = win.document() else {
+        return;
+    };
+    let Ok(Some(element)) = document.query_selector(".win-controls") else {
+        return;
+    };
+    let Ok(tauri) = js_sys::Reflect::get(&js_sys::global(), &JsValue::from_str("__TAURI__"))
+    else {
+        return;
+    };
+    let Ok(api) = js_sys::Reflect::get(&tauri, &JsValue::from_str("event")) else {
+        return;
+    };
+    let Ok(emit) = js_sys::Reflect::get(&api, &JsValue::from_str("emit")) else {
+        return;
+    };
+    let Ok(emit) = emit.dyn_into::<js_sys::Function>() else {
+        return;
+    };
+
+    let rect = element.get_bounding_client_rect();
+    let payload = js_sys::Object::new();
+    for (key, value) in [
+        ("x", rect.x()),
+        ("y", rect.y()),
+        ("w", rect.width()),
+        ("h", rect.height()),
+    ] {
+        let _ = js_sys::Reflect::set(&payload, &JsValue::from_str(key), &JsValue::from_f64(value));
+    }
+
+    let name = JsValue::from_str("shell://controls");
+    let _ = emit.call2(&api, &name, &payload);
+}
+
 /// Le survol des feux, rapporté par la coquille.
 ///
 /// WebKit n'installe ses zones de suivi que pour la fenêtre active : une fenêtre
@@ -355,7 +407,10 @@ pub fn install_chrome() -> RwSignal<ChromeLayout> {
 
     if let Some(win) = web_sys::window() {
         let w: &web_sys::EventTarget = win.as_ref();
-        on(w, "resize", move || refresh(base, out, native));
+        on(w, "resize", move || {
+            refresh(base, out, native);
+            publish_controls();
+        });
         on(w, "orientationchange", move || refresh(base, out, native));
 
         // L'activation de la fenêtre : macOS grise les feux quand elle n'est plus
@@ -374,6 +429,7 @@ pub fn install_chrome() -> RwSignal<ChromeLayout> {
             let on_focus = mark.clone();
             on(w, "focus", move || on_focus(true));
             on(w, "blur", move || mark(false));
+            publish_controls();
             watch_activation(root.clone());
             listen_pointer(root.clone());
             guard_first_click(root, win.clone());

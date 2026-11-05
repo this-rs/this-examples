@@ -157,6 +157,30 @@ fn watch_pointer(window: tauri::WebviewWindow) {
     use objc2::msg_send;
     use objc2_foundation::NSPoint;
 
+    // Le front publie la boîte réelle des contrôles : c'est le DOM qui fait
+    // autorité sur ce qui est dessiné, pas une constante recopiée ici. Changer
+    // le CSS déplace donc la zone de survol sans toucher à ce fichier.
+    let zone: std::sync::Arc<std::sync::Mutex<Option<(f64, f64, f64, f64)>>> =
+        std::sync::Arc::new(std::sync::Mutex::new(None));
+    {
+        use tauri::Listener;
+
+        let zone = zone.clone();
+        let _ = window.listen("shell://controls", move |event| {
+            let Ok(value) = serde_json::from_str::<serde_json::Value>(event.payload()) else {
+                return;
+            };
+            let number = |key: &str| value.get(key).and_then(|value| value.as_f64());
+            if let (Some(x), Some(y), Some(width), Some(height)) =
+                (number("x"), number("y"), number("w"), number("h"))
+            {
+                if let Ok(mut zone) = zone.lock() {
+                    *zone = Some((x, y, x + width, y + height));
+                }
+            }
+        });
+    }
+
     std::thread::spawn(move || {
         let mut inside = false;
         loop {
@@ -179,14 +203,17 @@ fn watch_pointer(window: tauri::WebviewWindow) {
                 local_pointer(&window, mouse.x, mouse.y)
             };
 
-            let should = matches!(where_is_it, Some((x, y)) if (3.0..=75.0).contains(&x) && (3.0..=29.0).contains(&y));
+            let bounds = zone.lock().ok().and_then(|zone| *zone);
+            let should = match (bounds, where_is_it) {
+                (Some((x0, y0, x1, y1)), Some((x, y))) => {
+                    x >= x0 && x <= x1 && y >= y0 && y <= y1
+                }
+                _ => false,
+            };
             if should != inside {
                 inside = should;
                 let _ = tauri::Emitter::emit(&window, "shell://pointer", inside);
-                match where_is_it {
-                    Some((x, y)) => eprintln!("pointer over dots = {inside}  local {x:.0},{y:.0}"),
-                    None => eprintln!("pointer over dots = {inside}  (position indisponible)"),
-                }
+
             }
         }
     });

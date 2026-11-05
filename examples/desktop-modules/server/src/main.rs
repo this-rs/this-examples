@@ -36,7 +36,6 @@ use shop_core::{
     AppError, Data, Interface, LineIn, Operation, PermissionDecision, PermissionRequest, Session,
     SessionKind, Sessions, Status,
 };
-use this_module_harness::drafter::Drafter;
 use tokio::sync::broadcast;
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
@@ -149,11 +148,35 @@ fn session_of_env() -> (SessionKind, Vec<String>) {
 async fn api_draft(
     Json(request): Json<DraftRequest>,
 ) -> Result<Json<DraftReply>, (StatusCode, String)> {
-    let completion = draft::ChatCompletion::from_env().map_err(bad_request)?;
-    let drafter = Drafter::new(completion);
-    match drafter.draft(&request.prompt).await {
+    match draft::draft_program(&request.prompt).await {
         Ok(source) => Ok(Json(DraftReply { source })),
         Err(error) => Err(bad_request(error.to_string())),
+    }
+}
+
+/// Demande une **feature complète** : un descripteur validé par le framework.
+///
+/// La réponse est le descripteur lui-même, tel qu'il sera chargé — pas une
+/// reformulation. Si le validateur le refuse, c'est son message qui revient.
+async fn api_module(
+    Json(request): Json<DraftRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    match draft::draft_feature(&request.prompt).await {
+        Ok(descriptor) => serde_json::to_value(&descriptor)
+            .map(Json)
+            .map_err(|error| bad_request(error.to_string())),
+        Err(error) => Err(bad_request(error.to_string())),
+    }
+}
+
+/// Quel moteur répond. L'app l'affiche : avec plusieurs moteurs possibles, « ça
+/// échoue » ne dit rien, « vLLM · Qwen3.8-27B injoignable » dit tout.
+async fn api_model() -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    match draft::ChatCompletion::from_env().await {
+        Ok(completion) => Ok(Json(serde_json::json!({
+            "provider": completion.describe(),
+        }))),
+        Err(error) => Err(bad_request(error)),
     }
 }
 
@@ -569,6 +592,8 @@ async fn main() -> Result<(), String> {
         .route("/api/orders", post(api_order))
         .route("/api/permissions/request", post(api_permission_request))
         .route("/api/draft", post(api_draft))
+        .route("/api/module", post(api_module))
+        .route("/api/model", get(api_model))
         .route("/api/events", get(api_events))
         .route("/api/ws", get(api_ws))
         .with_state(state);

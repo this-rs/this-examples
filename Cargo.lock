@@ -5806,6 +5806,8 @@ dependencies = [
  "serde",
  "serde_json",
  "shop-core",
+ "this-descriptor",
+ "this-llm",
  "this-module-harness",
  "tokio",
  "tokio-stream",
@@ -6445,12 +6447,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "this-llm"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "serde",
+]
+
+[[package]]
 name = "this-module-harness"
 version = "0.0.1"
 dependencies = [
  "async-trait",
  "chrono",
  "serde_json",
+ "this-descriptor",
+ "this-llm",
  "this-module-lang",
  "this-vfs",
  "thiserror 2.0.21",

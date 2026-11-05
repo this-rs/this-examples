@@ -91,7 +91,7 @@ pub fn go(ctx: Ctx, page: Page) {
 ///
 /// Les capacités ne sont pas devinées : elles se calculent depuis les politiques du
 /// descripteur et la session que la surface vient de transmettre.
-async fn adopt_interface(ctx: Ctx, iface: api::Interface) -> Result<Module, String> {
+pub(crate) async fn adopt_interface(ctx: Ctx, iface: api::Interface) -> Result<Module, String> {
     // Une seule lecture du descripteur : le contrat typé sert aux politiques **et** au
     // modèle d'affichage.
     let locales = iface.locales();
@@ -634,7 +634,7 @@ pub fn App() -> impl IntoView {
                             Page::Dashboard => views::dashboard(ctx).into_any(),
                             Page::Entity(name) => views::entity_page(ctx, name).into_any(),
                             Page::NewOrder => views::new_order(ctx).into_any(),
-                            Page::Lab => lab::page(),
+                            Page::Lab => lab::page(ctx),
                         }}
                     </Show>
                 </main>

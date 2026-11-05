@@ -455,6 +455,11 @@ code {
   display: none;
   align-items: center;
   gap: var(--win-gap);
+  /* La zone de survol déborde les points de 6 px : c'est la zone que la main
+     vise, pas le disque lui-même. Le `margin` négatif annule le décalage, donc
+     les points restent à 9,9 comme AppKit les place. */
+  padding: 6px;
+  margin: -6px;
 }
 
 /* Overlay : la fenêtre est décorée (l'OS arrondit selon sa norme) mais ses feux
@@ -501,38 +506,37 @@ code {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  font: 700 10px/1 system-ui, sans-serif;
-  /* L'icône n'apparaît qu'au survol du groupe, comme dans macOS. */
+  /* Pas de glyphe de police : à 14 px, un `×` de système est flou et son dessin
+     change avec la police. L'icône est un masque SVG — net à toutes les tailles,
+     et sa couleur suit `currentColor`. */
   color: transparent;
   cursor: default;
 }
 
+/* Les trois icônes, en vecteur. Le vert est un « agrandir » (deux triangles
+   opposés), pas un `+` : c'est ce que macOS dessine sur le bouton plein écran. */
+.win-btn::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background-color: currentColor;
+  -webkit-mask: var(--win-icon) center / contain no-repeat;
+  mask: var(--win-icon) center / contain no-repeat;
+}
+
 .win-btn.close {
+  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2.6 2.6 7.4 7.4M7.4 2.6 2.6 7.4' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/></svg>");
   background: var(--win-close);
 }
 
 .win-btn.minimize {
+  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2.4 5 7.6 5' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/></svg>");
   background: var(--win-minimize);
 }
 
 .win-btn.zoom {
+  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M6.2 2 8 2 8 3.8Z M3.8 8 2 8 2 6.2Z' fill='black'/></svg>");
   background: var(--win-zoom);
-}
-
-.win-btn.close::before {
-  content: "×";
-}
-
-.win-btn.minimize::before {
-  content: "−";
-}
-
-.win-btn.zoom::before {
-  content: "+";
-}
-
-.win-controls:hover .win-btn {
-  color: var(--win-glyph);
 }
 
 /* Fenêtre inactive : les trois passent au gris — l'état vient de la coquille
@@ -542,11 +546,9 @@ code {
   color: transparent;
 }
 
-/* … mais le survol rend les couleurs, même hors focus : on voit ce qu'on vise. */
-[data-focused="false"] .win-controls:hover .win-btn {
-  color: var(--win-glyph);
-}
-
+/* … et le survol du GROUPE rallume les couleurs, même hors focus. Ces règles
+   sont plus spécifiques que la précédente, elles gagnent donc quel que soit
+   l'ordre — sauf pour la couleur, qui doit venir APRÈS (voir plus bas). */
 [data-focused="false"] .win-controls:hover .win-btn.close {
   background: var(--win-close);
 }
@@ -559,9 +561,16 @@ code {
   background: var(--win-zoom);
 }
 
+/* Après la règle d'inactivité, à spécificité égale : sans cet ordre, l'icône
+   restait transparente au survol d'une fenêtre inactive. */
+.win-controls:hover .win-btn {
+  color: var(--win-glyph);
+}
+
 .win-btn:hover {
   filter: brightness(0.88);
 }
+
 
 .win-btn:focus-visible {
   outline: 2px solid var(--accent);

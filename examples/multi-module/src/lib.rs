@@ -6,6 +6,7 @@ use tower_http::services::ServeDir;
 use billing::{BillingModule, BillingStores};
 use catalog::{CatalogModule, CatalogStores};
 use inventory::{InventoryModule, InventoryStores};
+use shipping::{ShippingModule, ShippingStores};
 use test_data::{populate_catalog_data, populate_inventory_data, populate_test_data};
 
 use this::config::LinksConfig;
@@ -57,6 +58,9 @@ pub async fn app() -> Result<Router> {
     populate_inventory_data(&inventory_stores, link_service.clone()).await?;
     let inventory_module = InventoryModule::new(inventory_stores);
 
+    // Shipping depends on catalog (products) and billing (orders) through links only.
+    let shipping_module = ShippingModule::new(ShippingStores::new_in_memory());
+
     let host = Arc::new(
         ServerBuilder::new()
             .with_link_service((*link_service).clone())
@@ -64,6 +68,7 @@ pub async fn app() -> Result<Router> {
             .register_module(billing_module)?
             .register_module(catalog_module)?
             .register_module(inventory_module)?
+            .register_module(shipping_module)?
             .register_module(EventsConfigModule)?
             .build_host()?,
     );

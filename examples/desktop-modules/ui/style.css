@@ -517,25 +517,29 @@ code {
    opposés), pas un `+` : c'est ce que macOS dessine sur le bouton plein écran. */
 .win-btn::before {
   content: "";
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   background-color: currentColor;
   -webkit-mask: var(--win-icon) center / contain no-repeat;
   mask: var(--win-icon) center / contain no-repeat;
 }
 
 .win-btn.close {
-  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2.6 2.6 7.4 7.4M7.4 2.6 2.6 7.4' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/></svg>");
+  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2.7 2.7 7.3 7.3M7.3 2.7 2.7 7.3' fill='none' stroke='black' stroke-width='1.05' stroke-linecap='round'/></svg>");
   background: var(--win-close);
 }
 
 .win-btn.minimize {
-  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2.4 5 7.6 5' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'/></svg>");
+  /* macOS dessine une barre arrondie, pas un trait : le rendu d'AppKit le montre. */
+  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><rect x='2.4' y='4.1' width='5.2' height='1.8' rx='0.9' fill='black'/></svg>");
   background: var(--win-minimize);
 }
 
 .win-btn.zoom {
-  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M6.2 2 8 2 8 3.8Z M3.8 8 2 8 2 6.2Z' fill='black'/></svg>");
+  /* Ce ne sont pas deux triangles : macOS dessine deux FLÈCHES diagonales, une
+     vers le haut-gauche, une vers le bas-droite (`arrow.up.left.and.arrow.down.right`
+     de SF Symbols, rendu hors écran pour le vérifier). */
+  --win-icon: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M5.1 4.9 2.5 2.3M2.5 2.3h2M2.5 2.3v2M4.9 5.1 7.5 7.7M7.5 7.7h-2M7.5 7.7v-2' fill='none' stroke='black' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'/></svg>");
   background: var(--win-zoom);
 }
 

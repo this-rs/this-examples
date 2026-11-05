@@ -115,10 +115,35 @@ async fn place_order_cmd(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+/// Une fenêtre inactive ne reçoit pas les mouvements de souris : AppKit ne les
+/// envoie que si la fenêtre les accepte, et `wry` ne règle que
+/// `acceptsFirstMouse:` (les clics). Sans ça, `:hover` ne s'applique jamais
+/// quand l'app est en arrière-plan : les feux restent gris et le survol ne les
+/// rallume pas. Mesuré dans `wry-0.57.1` : aucune occurrence de
+/// `acceptsMouseMovedEvents`.
+#[cfg(target_os = "macos")]
+fn accept_mouse_moved(window: &tauri::WebviewWindow) {
+    use objc2::msg_send;
+    use objc2::runtime::{AnyObject, Bool};
+
+    if let Ok(pointer) = window.ns_window() {
+        let ns_window = pointer as *mut AnyObject;
+        // SAFETY: `ns_window` vient de Tauri et désigne la NSWindow vivante de
+        // cette fenêtre ; l'appel est un setter standard d'AppKit.
+        unsafe {
+            let _: () = msg_send![ns_window, setAcceptsMouseMovedEvents: Bool::YES];
+        }
+    }
+}
+
     tauri::Builder::default()
         // Fenêtre, Dock, habillage et reprise : la coquille est un plugin, une ligne.
         .plugin(this_shell_tauri::init(this_shell_tauri::ShellConfig::default()))
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            if let Some(window) = app.get_webview_window("main") {
+                accept_mouse_moved(&window);
+            }
 
             let dir = app.path().app_data_dir()?;
             let data = Data::open(dir).map_err(|e| e.to_string())?;

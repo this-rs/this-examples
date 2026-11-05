@@ -17,11 +17,11 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-pub use this_app::{Change, ChangeOp};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
+pub use this_app::{Change, ChangeOp};
 use tokio::sync::broadcast;
 
 use serde::{Deserialize, Serialize};

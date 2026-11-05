@@ -306,7 +306,9 @@ pub async fn status() -> Result<Status, String> {
         return send(Call::get("module_status", "/status", json!({}))).await;
     }
     // Sur le web, « chargé » veut dire : le framework a construit le module ici.
-    Ok(Status { loaded: build_in_browser().await.is_ok() })
+    Ok(Status {
+        loaded: build_in_browser().await.is_ok(),
+    })
 }
 
 pub async fn load() -> Result<Status, String> {

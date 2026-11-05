@@ -5,3 +5,11 @@ api:
   port: 4243
 
 targets: []
+
+# Le framework que cet exemple suit. Déclaré ici pour que `this framework
+# status/check/digest` ait quelque chose à lire : sans section `this:`, la seule
+# vérité est le manifeste, et `check` ne peut rien comparer.
+this:
+  source: path
+  path: ../../../this
+  features: [websocket]

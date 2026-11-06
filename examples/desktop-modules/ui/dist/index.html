@@ -11,6 +11,9 @@
     <!-- installable : ajoutée à l'écran d'accueil, elle s'ouvre en plein écran, sans navigateur -->
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Sans ça, chaque navigateur demande /favicon.ico et reçoit un 404 : une
+         requête inutile par chargement, et une erreur rouge dans la console. -->
+    <link rel="icon" href="/icon-192.png" type="image/png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -19,11 +22,11 @@
     
     
     
-    <link rel="stylesheet" href="/style-2515dd4e872d517c.css" integrity="sha384-C9VrNEf+AWrP5Xqs4p6RGqwq371HJwBk1/DYMLD/TT9V7BinTD3bM9QjHeGYA5i3"/>
+    <link rel="stylesheet" href="/style-176a5614bb2132ee.css" integrity="sha384-FikjR07QodPYN29UhSa02VABHqNlFjDjFNc6enFoy0obLM+uHL8GRk+gAycl5ai2"/>
     
 <script type="module">
-import init, * as bindings from '/desktop_modules_ui-ff82951d98b3bce0.js';
-const wasm = await init({ module_or_path: '/desktop_modules_ui-80a790505bd9949e_bg.wasm' });
+import init, * as bindings from '/desktop_modules_ui-d2b2161929eb2347.js';
+const wasm = await init({ module_or_path: '/desktop_modules_ui-207f7fde334cf5ea_bg.wasm' });
 
 
 window.wasmBindings = bindings;
@@ -32,6 +35,6 @@ window.wasmBindings = bindings;
 dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
 
 </script>
-  <link rel="modulepreload" href="/desktop_modules_ui-ff82951d98b3bce0.js" crossorigin="anonymous" integrity="sha384-KJsdEegTg6UTtrV5Xo9gEq0i85lcIWiYO9Z6/atMPge/yb+LLE8mVRc3lTog2jRZ"><link rel="preload" href="/desktop_modules_ui-80a790505bd9949e_bg.wasm" crossorigin="anonymous" integrity="sha384-vAK5AF6SUxRZLesVQNJAhrJhe3GrWecqySC9x5EdYkKszQOOp5GPm5jB4dNiVYnp" as="fetch" type="application/wasm"></head>
+  <link rel="modulepreload" href="/desktop_modules_ui-d2b2161929eb2347.js" crossorigin="anonymous" integrity="sha384-sSEQNznJjXzp84IkLlLd4plclPZxtxrOc4Va2Ho/3n7sCSL8GKiYRWEIIz+R9i9H"><link rel="preload" href="/desktop_modules_ui-207f7fde334cf5ea_bg.wasm" crossorigin="anonymous" integrity="sha384-9RkXw3V+0h1Catc/8o+mZ+6XFMsi0caKMZkDYc1eupohMY53wmiXTBC3mdr4sUpb" as="fetch" type="application/wasm"></head>
   <body></body>
 </html>

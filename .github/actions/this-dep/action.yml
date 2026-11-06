@@ -51,13 +51,24 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        # The stub script `touch`es an empty lib.rs. `cargo fmt --all` (which
-        # walks path dependencies) then reports a spurious diff on each of them
-        # and the Rustfmt job fails on files that are not ours. One comment line
-        # makes them rustfmt-clean -- measured: 7 diffs before, 0 after.
+        # The stub script `touch`es an empty lib.rs, and `cargo fmt --all` walks
+        # path dependencies: each empty stub shows up as a diff on a file that is
+        # not ours, so the Rustfmt job fails for reasons unrelated to the PR.
+        # One comment line makes them rustfmt-clean -- measured: 7 diffs, then 0.
+        #
+        # Which stubs exist is the framework's business: `create-local-dep-stubs.sh`
+        # decides, and it has already moved once (banc-obrain-j4 -> obrain/obrain-db),
+        # which made this step silently fix nothing. So find them instead of naming
+        # them -- an empty `src/lib.rs` is a stub by construction (no real crate
+        # ships one), and our own checkout is pruned.
         DEPS="$(cd "$GITHUB_WORKSPACE/../.." && pwd)"
-        for f in "$DEPS"/banc-obrain-j4/crates/*/src/lib.rs "$DEPS"/vite-rs/src/lib.rs; do
-          if [ -f "$f" ] && [ ! -s "$f" ]; then
-            printf '// CI stub: not the real crate.\n' > "$f"
-          fi
-        done
+        filled=0
+        while IFS= read -r f; do
+          printf '// CI stub: not the real crate.\n' > "$f"
+          filled=$((filled + 1))
+        done < <(find "$DEPS" \( -name .git -o -path "$GITHUB_WORKSPACE" \) -prune \
+                  -o -type f -name lib.rs -size 0 -print)
+        echo "stub sources made non-empty: $filled"
+        if [ "$filled" -eq 0 ]; then
+          echo "::warning::no empty stub found -- the framework's stub script may have changed again"
+        fi

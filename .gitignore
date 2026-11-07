@@ -17,11 +17,18 @@ Cargo.lock
 # Debug files
 *.pdb
 
-# Demo state written by the shop server at runtime
-examples/desktop-modules/data/
+# Demo state written by the shop server at runtime. Le serveur a déménagé sous
+# `server/`, et cette règle nommait l'ancien chemin : elle ne couvrait donc plus
+# rien, et huit fichiers d'état apparaissaient comme non suivis. Un `**` couvre
+# les deux emplacements plutôt que celui qui existe aujourd'hui.
+examples/desktop-modules/**/data/
 
 # Verrou d'outil écrit par trunk pendant un build — pas du contenu
 .trunk-lock
+
+# Captures d'écran des sessions de mise au point (`.shots`, `.shots6`, `.shotsA`…).
+# Jamais du contenu : un dossier par session, avec un suffixe qui change à chaque fois.
+.shots*/
 
 # `examples/desktop-modules/ui/dist` n'est PAS ignoré, volontairement : la CI ne
 # lance jamais `trunk`, donc c'est ce bundle commité qui fait tourner la démo.

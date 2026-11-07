@@ -23,6 +23,7 @@
 //! montrer : le module survit à un rechargement de la page.
 
 use crate::api::{self, Surface};
+use crate::shell::{Ctx, Page, adopt_interface};
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 
@@ -206,8 +207,37 @@ fn parse_args(text: &str) -> Vec<i64> {
         .collect()
 }
 
+/// Demande une **feature complète** : un module que l'app adoptera.
+///
+/// La réponse est un `ModuleDescriptor` validé par le framework côté serveur. Ici
+/// on ne fait que le désérialiser et l'adopter — aucune logique de génération dans
+/// la vue, et aucune réparation de JSON à la main.
+async fn ask_feature(prompt: &str) -> Result<api::Interface, String> {
+    let response = gloo_net::http::Request::post("/api/module")
+        .json(&serde_json::json!({ "prompt": prompt }))
+        .map_err(|error| format!("requête : {error}"))?
+        .send()
+        .await
+        .map_err(|error| format!("appel : {error}"))?;
+
+    if !response.ok() {
+        return Err(response.text().await.unwrap_or_default());
+    }
+
+    let value: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|error| format!("réponse illisible : {error}"))?;
+    let descriptor: api::ModuleDescriptor = serde_json::from_value(value)
+        .map_err(|error| format!("descripteur inattendu : {error}"))?;
+    Ok(api::Interface {
+        descriptor,
+        bundles: Vec::new(),
+    })
+}
+
 /// Le panneau.
-pub fn page() -> AnyView {
+pub fn page(ctx: Ctx) -> AnyView {
     let source = RwSignal::new(START.to_string());
     let argument = RwSignal::new("1".to_string());
     let report = RwSignal::new(None::<Report>);
@@ -228,6 +258,32 @@ pub fn page() -> AnyView {
 
     let prompt = RwSignal::new(String::new());
     let asking = RwSignal::new(false);
+    let feature = RwSignal::new(String::new());
+    let creating = RwSignal::new(false);
+
+    // Le geste de la démo : une phrase, et l'agent restructure l'app. Le module
+    // revient validé par le framework côté serveur ; ici on l'adopte tel quel.
+    let create = move |_| {
+        let text = feature.get_untracked();
+        if text.trim().is_empty() {
+            return;
+        }
+        creating.set(true);
+        spawn_local(async move {
+            match ask_feature(&text).await {
+                Ok(interface) => match adopt_interface(ctx, interface).await {
+                    Ok(_) => {
+                        // La structure a changé : on montre le résultat, pas un message.
+                        ctx.page.set(Page::Dashboard);
+                        report.set(None);
+                    }
+                    Err(error) => report.set(Some(Report::Refused(error))),
+                },
+                Err(error) => report.set(Some(Report::Refused(error))),
+            }
+            creating.set(false);
+        });
+    };
 
     let ask = move |_| {
         let text = prompt.get_untracked();
@@ -281,6 +337,35 @@ pub fn page() -> AnyView {
                     </p>
                 </div>
             </header>
+
+            <Show
+                when=move || api::platform() == Surface::Web
+                fallback=|| view! { () }
+            >
+                <section class="card">
+                    <header class="card-head">
+                        <h2>"Créer une feature"</h2>
+                    </header>
+                    <p class="muted small">
+                        "Décris ce que l'app doit savoir faire. L'agent écrit le module, "
+                        "le framework le valide, et les entités apparaissent dans la navigation."
+                    </p>
+                    <textarea
+                        class="lab-text"
+                        rows="3"
+                        spellcheck="false"
+                        aria-label="Créer une feature"
+                        placeholder="un inventaire d'articles avec une alerte de rupture de stock"
+                        prop:value=move || feature.get()
+                        on:input=move |ev| feature.set(event_target_value(&ev))
+                    ></textarea>
+                    <div class="lab-actions">
+                        <button class="btn primary" on:click=create disabled=move || creating.get()>
+                            {move || if creating.get() { "L'agent structure…" } else { "Créer" }}
+                        </button>
+                    </div>
+                </section>
+            </Show>
 
             <Show
                 when=move || api::platform() == Surface::Web

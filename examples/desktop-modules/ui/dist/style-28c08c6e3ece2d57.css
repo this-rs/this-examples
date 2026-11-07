@@ -79,6 +79,10 @@
   --shadow-1: 0 1px 2px rgba(15, 19, 28, 0.05), 0 1px 3px rgba(15, 19, 28, 0.05);
   --shadow-2: 0 12px 32px rgba(15, 19, 28, 0.14), 0 2px 8px rgba(15, 19, 28, 0.08);
 
+  /* Hauteur de la barre d'onglets, hors marges de sécurité : le contenu s'en
+     sert pour ne jamais finir dessous. */
+  --tabbar-h: 60px;
+
   /* Typographie */
   --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
     Roboto, Inter, system-ui, sans-serif;
@@ -1133,6 +1137,105 @@ table.mini thead th {
   min-width: 90px;
 }
 
+/* ------------------------------------------------------------------ items
+   La liste du téléphone. Deux règles portent la lecture : la première colonne
+   est l'identité, le premier montant (ou la première pastille) est le chiffre
+   qui compte, le reste passe en second plan. Aucun libellé répété — la position
+   dit le rôle. Le tableau reste dans le DOM pour le desktop, et réciproquement :
+   `display: none` retire la forme inutilisée de l'arbre d'accessibilité.
+   ------------------------------------------------------------------------- */
+
+.items {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-grab {
+  display: none;
+}
+
+.item + .item {
+  border-top: 1px solid var(--line);
+}
+
+.item-hit {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  padding: 13px var(--s4);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.item-hit:active {
+  background: var(--surface-2);
+}
+
+.item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.item-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+  min-width: 0;
+}
+
+/* le point sépare sans ajouter de nœud texte : il ne colle pas au premier */
+.item-sub-cell + .item-sub-cell::before {
+  content: "·";
+  margin-right: 8px;
+  opacity: 0.55;
+}
+
+.item-sub .badge {
+  padding: 1px 7px;
+  font-size: 11.5px;
+}
+
+.item-end {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: none;
+}
+
+.item-end .amount {
+  font-size: 15px;
+}
+
+.item-chevron {
+  display: grid;
+  place-items: center;
+  color: var(--line-strong);
+}
+
 .col-bar .meter {
   width: 100%;
   color: var(--accent);
@@ -1575,7 +1678,10 @@ table.mini thead th {
   }
 }
 
-@media (max-width: 820px) {
+/* Le seuil est une largeur, mais un téléphone en paysage mesure 852 px de large
+   et 393 de haut : la hauteur le trahit, et la barre latérale de 264 px n'y tient
+   pas. Les deux conditions ouvrent donc la même coquille mobile. */
+@media (max-width: 820px), (pointer: coarse) and (max-height: 520px) {
   .shell {
     grid-template-columns: 1fr;
   }
@@ -1584,17 +1690,93 @@ table.mini thead th {
     display: none;
   }
 
-  /* plus de barre latérale : l'en-tête touche le bord, il évite les feux lui-même */
+  /* ---- la barre du haut est la barre de l'app ----------------------------
+     Elle porte le nom de la page, et elle flotte : le contenu défile dessous
+     avec un flou, comme une barre de navigation native. */
   .topbar {
-    padding-left: calc(var(--s4) + var(--chrome-lead) + var(--chrome-left));
-    padding-right: calc(var(--s4) + var(--chrome-trail) + var(--chrome-right));
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    gap: var(--s3);
+    padding: max(8px, var(--chrome-top)) calc(var(--s4) + var(--chrome-trail) + var(--chrome-right))
+      8px calc(var(--s4) + var(--chrome-lead) + var(--chrome-left));
+    background: var(--bg);
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  }
+
+  /* Le crumb porte déjà le nom de la page : c'est la plus grosse typo de
+     l'écran, et le `h1` de la page se tait (sinon le titre s'écrit deux fois). */
+  .crumbs {
+    font-size: 15px;
+  }
+
+  .crumb-root,
+  .crumb-sep {
+    display: none;
+  }
+
+  .crumb {
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+  }
+
+  .surface-pill {
+    padding: 3px 8px;
+    font-size: 11px;
   }
 
   .main {
-    padding: var(--s4) calc(var(--s4) + var(--chrome-right)) calc(88px + var(--chrome-bottom))
-      calc(var(--s4) + var(--chrome-left));
+    padding: var(--s3) calc(var(--s3) + var(--chrome-right))
+      calc(var(--tabbar-h) + var(--s4) + var(--chrome-bottom))
+      calc(var(--s3) + var(--chrome-left));
   }
 
+  .page {
+    gap: var(--s3);
+  }
+
+  /* ---- le titre de page se range sous la barre ------------------------- */
+  .page-head {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--s2) var(--s3);
+  }
+
+  .page-title {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .page-title h1 {
+    display: none;
+  }
+
+  .page-sub {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  /* L'action principale prend la ligne : sur un téléphone, un bouton qui flotte
+     à droite sous une ligne de texte se lit mal, et 44 px de haut sur toute la
+     largeur se touchent au pouce. */
+  .page-head > .btn {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  /* ---- recherche pleine largeur ---------------------------------------- */
+  .toolbar {
+    gap: var(--s2);
+  }
+
+  .search {
+    max-width: none;
+  }
+
+  /* ---- onglets bas ------------------------------------------------------ */
   .tabbar {
     position: fixed;
     left: 0;
@@ -1604,9 +1786,13 @@ table.mini thead th {
     display: flex;
     align-items: stretch;
     gap: 2px;
+    min-height: var(--tabbar-h);
     padding: 6px calc(6px + var(--chrome-right)) calc(6px + var(--chrome-bottom))
       calc(6px + var(--chrome-left));
     background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
     border-top: 1px solid var(--line);
   }
 
@@ -1617,7 +1803,7 @@ table.mini thead th {
     align-items: center;
     justify-content: center;
     gap: 3px;
-    min-height: 52px;
+    min-height: 48px;
     padding: 4px 2px;
     border: 0;
     border-radius: var(--r-sm);
@@ -1627,6 +1813,7 @@ table.mini thead th {
     font-size: 10.5px;
     font-weight: 550;
     cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
   }
 
   .tab-ico {
@@ -1639,12 +1826,101 @@ table.mini thead th {
     background: var(--accent-soft);
   }
 
+  .tab:active {
+    background: var(--surface-2);
+  }
+
   .tab.accent {
     color: var(--accent-fg);
     background: var(--accent);
   }
 
-  /* zones tactiles : au moins 44 px */
+  /* ---- le panneau devient une feuille du bas --------------------------- */
+  .overlay {
+    align-items: flex-end;
+    justify-content: stretch;
+  }
+
+  .panel {
+    width: 100%;
+    height: auto;
+    max-height: calc(100dvh - var(--chrome-top) - 28px);
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 18px 18px 0 0;
+    padding-bottom: var(--chrome-bottom);
+    animation: sheet-up 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .panel-grab {
+    display: block;
+    flex: none;
+    width: 38px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: 999px;
+    background: var(--line-strong);
+  }
+
+  .panel-head {
+    align-items: center;
+    padding: var(--s3) var(--s4);
+  }
+
+  .panel-body {
+    padding: var(--s4);
+  }
+
+  .panel-foot {
+    gap: var(--s2);
+    padding: var(--s3) var(--s4);
+  }
+
+  /* deux actions de largeur égale : le pouce ne vise pas un bouton plus court
+     que son voisin pour une décision symétrique (enregistrer / annuler) */
+  .panel-foot .btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  /* le démarrage : les étapes suivent l'alignement de la carte */
+  .splash-steps {
+    align-items: center;
+    text-align: center;
+  }
+
+  .splash-step {
+    justify-content: center;
+  }
+
+  /* ---- cartes : une marge de 24 px mange un dixième de l'écran --------- */
+  .card {
+    padding: var(--s4);
+  }
+
+  .card-head {
+    margin-bottom: var(--s2);
+  }
+
+  /* le texte d'explication d'une carte se lit en une colonne étroite */
+  .card > .muted,
+  .card > p {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  /* l'action d'un formulaire occupe la ligne : le pouce la trouve sans viser */
+  .lab-actions .btn,
+  .card > .btn {
+    flex: 1 1 100%;
+  }
+
+  .lab-text {
+    padding: var(--s3);
+    font-size: 13px;
+  }
+
+  /* ---- zones tactiles : au moins 44 px --------------------------------- */
   .btn {
     min-height: 44px;
   }
@@ -1669,7 +1945,46 @@ table.mini thead th {
   }
 }
 
-@media (max-width: 700px) {
+/* Téléphone en paysage : la hauteur est la ressource rare. Les onglets passent
+   à l'horizontale, l'action principale redevient compacte, et la barre amaigrit. */
+@media (pointer: coarse) and (max-height: 520px) {
+  :root {
+    --tabbar-h: 50px;
+  }
+
+  .main {
+    padding-top: var(--s2);
+  }
+
+  .page-head > .btn {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  .tab {
+    flex-direction: row;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .item-hit {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(14px);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 700px), (pointer: coarse) and (max-height: 520px) {
   h1 {
     font-size: 21px;
   }
@@ -1679,76 +1994,66 @@ table.mini thead th {
     display: none;
   }
 
-  /* le tableau devient une pile de cartes */
-  .table-wrap {
-    background: transparent;
-    border: 0;
-    box-shadow: none;
-    overflow: visible;
-  }
-
-  table.grid,
-  table.grid tbody,
-  table.grid tr,
-  table.grid td {
-    display: block;
-    width: auto;
-  }
-
-  table.grid thead {
+  /* Le tableau cède la place à la liste d'items : une ligne par
+     enregistrement, l'identité d'abord, le chiffre qui compte à droite. */
+  table.grid {
     display: none;
   }
 
-  table.grid tr {
-    margin-bottom: var(--s2);
-    padding: 4px var(--s4);
+  .items {
+    display: block;
+  }
+
+  .table-wrap {
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r);
     box-shadow: var(--shadow-1);
-  }
-
-  table.grid td {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--s4);
-    padding: 8px 0;
-    border-top: 1px solid var(--line);
-    white-space: normal;
-  }
-
-  table.grid td:first-child {
-    border-top: 0;
-  }
-
-  table.grid td::before {
-    content: attr(data-label);
-    font-size: 12px;
-    color: var(--muted);
-    flex: none;
-  }
-
-  table.grid td:empty::before,
-  table.grid td.col-actions::before {
-    content: none;
-  }
-
-  table.grid td.col-actions {
-    display: block;
-  }
-
-  table.grid td.col-actions .btn {
-    width: 100%;
+    overflow: hidden;
   }
 
   .kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--s2);
   }
 
-  /* nombre impair de tuiles : la dernière prend toute la largeur */
+  .kpi {
+    gap: 1px;
+    padding: 10px 12px;
+  }
+
+  .kpi-label {
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .kpi-value {
+    font-size: 18px;
+  }
+
+  .kpi-hint {
+    font-size: 11.5px;
+    line-height: 1.3;
+  }
+
+  /* Nombre impair de tuiles : la dernière devient un bandeau — libellé à gauche,
+     chiffre à droite — plutôt qu'une carte pleine largeur à moitié vide. */
   .kpis > :last-child:nth-child(odd) {
     grid-column: span 2;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--s3);
+    row-gap: 0;
+  }
+
+  .kpis > :last-child:nth-child(odd) .kpi-value {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .kpis > :last-child:nth-child(odd) .kpi-hint {
+    grid-column: 1 / -1;
   }
 
   table.mini .col-bar {
@@ -2035,11 +2340,46 @@ table.mini thead th {
   font-weight: 550;
 }
 
+/* Un interrupteur, pas une case à cocher : sur un téléphone, une case de 20 px
+   se rate, et son état se lit mal. La cible reste la ligne entière. */
 .switch-row input {
-  width: 20px;
-  height: 20px;
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
   flex: none;
-  accent-color: var(--accent);
+  width: 46px;
+  height: 28px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--line-strong);
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.switch-row input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.switch-row input:checked {
+  background: var(--accent);
+}
+
+.switch-row input:checked::after {
+  transform: translateX(18px);
+}
+
+.switch-row input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .facts {
@@ -2062,13 +2402,16 @@ table.mini thead th {
 }
 
 .fact dt {
+  flex: 0 0 auto;
   color: var(--muted);
 }
 
 .fact dd {
   margin: 0;
+  min-width: 0;
   font-weight: 550;
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 /* le corps du panneau occupe la hauteur : le pied reste en bas */

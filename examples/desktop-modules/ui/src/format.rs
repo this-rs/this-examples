@@ -14,16 +14,40 @@ use crate::api::Snapshot;
 
 pub use this_ui::{count as count_f, money_f};
 
-pub fn entity_label(name: &str) -> String {
-    match name {
+/// Le vocabulaire de la boutique, quand l'entité en fait partie.
+///
+/// `None` signifie « entité inconnue » — un module drafté, par exemple. C'est
+/// volontairement distinct d'un repli : sans cette distinction, le code ne peut
+/// pas savoir s'il a un vrai libellé ou le nom brut.
+pub fn known_label(name: &str) -> Option<&'static str> {
+    Some(match name {
         "customer" => "Clients",
         "product" => "Produits",
         "order" => "Commandes",
         "order_item" => "Lignes de commande",
         "shipment" => "Expéditions",
-        other => other,
+        _ => return None,
+    })
+}
+
+/// Met en forme un identifiant : `order_item` → « Order item ».
+///
+/// Un module drafté n'embarque pas encore de bundles de messages ; sans ça, la
+/// navigation afficherait `order_item` tel quel, ce qui est un identifiant, pas un
+/// libellé.
+pub fn prettify(identifier: &str) -> String {
+    let spaced = identifier.replace('_', " ");
+    let mut chars = spaced.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+        None => String::new(),
     }
-    .into()
+}
+
+pub fn entity_label(name: &str) -> String {
+    known_label(name)
+        .map(str::to_string)
+        .unwrap_or_else(|| prettify(name))
 }
 
 pub fn entity_label_one(name: &str) -> String {

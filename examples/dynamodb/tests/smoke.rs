@@ -1,7 +1,6 @@
-use aws_sdk_dynamodb::types::{
-    AttributeDefinition, KeySchemaElement, KeyType, ProvisionedThroughput, ScalarAttributeType,
-};
 use aws_sdk_dynamodb::Client;
+
+mod support;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::Extension;
@@ -10,39 +9,6 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers::GenericImage;
 use this::prelude::{AuthContext, Uuid};
 use tower::ServiceExt;
-
-/// The table layout `setup.sh` creates: a single `id` hash key (no `tenant_id`), which is what the
-/// billing stores write. The smoke test's fixture uses a `tenant_id` + `id` key; billing never writes
-/// `tenant_id`, so that layout cannot store an order.
-async fn create_table(client: &Client, name: &str) {
-    client
-        .create_table()
-        .table_name(name)
-        .key_schema(
-            KeySchemaElement::builder()
-                .attribute_name("id")
-                .key_type(KeyType::Hash)
-                .build()
-                .unwrap(),
-        )
-        .attribute_definitions(
-            AttributeDefinition::builder()
-                .attribute_name("id")
-                .attribute_type(ScalarAttributeType::S)
-                .build()
-                .unwrap(),
-        )
-        .provisioned_throughput(
-            ProvisionedThroughput::builder()
-                .read_capacity_units(5)
-                .write_capacity_units(5)
-                .build()
-                .unwrap(),
-        )
-        .send()
-        .await
-        .unwrap();
-}
 
 #[ignore = "container-backed: needs Docker, run explicitly by the smoke CI job (--ignored)"]
 #[tokio::test]
@@ -56,6 +22,7 @@ async fn dynamodb_serves_orders() {
 
     let host = container.get_host().await.unwrap();
     let port = container.get_host_port_ipv4(8000).await.unwrap();
+    support::wait_until_serving(&host.to_string(), port).await;
     let endpoint = format!("http://{host}:{port}");
 
     // Credentials must be supplied explicitly. DynamoDB Local accepts anything,
@@ -78,7 +45,7 @@ async fn dynamodb_serves_orders() {
     let client = Client::new(&config);
 
     for t in ["links", "orders", "invoices", "payments"] {
-        create_table(&client, t).await;
+        support::create_table(&client, t).await;
     }
 
     let app = dynamodb_example::app(&endpoint).await.expect("build app");
